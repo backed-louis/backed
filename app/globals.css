@@ -1,0 +1,109 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-base:     #07080F;
+  --bg-surface:  #0C0E1A;
+  --bg-elevated: #111426;
+  --bg-hover:    #171B30;
+  --bg-card:     #0F1120;
+
+  --accent:        #8B00FF;
+  --accent-hover:  #A020FF;
+  --accent-subtle: rgba(139, 0, 255, 0.12);
+  --accent-border: rgba(139, 0, 255, 0.25);
+  --accent-text:   #CC77FF;
+
+  --text-1: #ECEDF2;
+  --text-2: #8B8D9E;
+  --text-3: #565770;
+  --text-4: #4A4C62;
+
+  --border:       rgba(255, 255, 255, 0.07);
+  --border-hover: rgba(255, 255, 255, 0.13);
+
+  --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-1);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-4); }
+
+/* Sélection */
+::selection { background: rgba(139, 0, 255, 0.25); color: var(--text-1); }
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; border: none; }
+img { max-width: 100%; display: block; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.section { padding: 96px 0; }
+
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent-text); margin-bottom: 12px;
+}
+.section-title {
+  font-size: 32px; font-weight: 800;
+  letter-spacing: -0.02em; margin-bottom: 8px;
+}
+.section-sub { font-size: 16px; color: var(--text-2); margin-bottom: 48px; }
+
+/* ── Category Cards ── */
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  text-decoration: none;
+  color: var(--text-1);
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.category-card:hover {
+  border-color: var(--accent);
+  background: rgba(139, 0, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+/* ── Offer Cards ── */
+.offer-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.offer-card:hover {
+  border-color: var(--accent);
+  background: rgba(139, 0, 255, 0.05);
+  transform: translateY(-2px);
+}
