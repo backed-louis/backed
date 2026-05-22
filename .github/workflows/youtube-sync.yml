@@ -1,14 +1,12 @@
 name: YouTube Sync
-
 on:
   schedule:
-    - cron: '0 8 * * *'  # Chaque jour à 8h UTC
-  workflow_dispatch:       # Permet aussi de le lancer manuellement
+    - cron: '0 8 * * *'
+  workflow_dispatch:
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,7 +14,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install dependencies
         run: npm install airtable
@@ -26,5 +24,5 @@ jobs:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}  # ← manquait
         run: node scripts/youtube-sync.js
-        
