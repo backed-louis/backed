@@ -226,4 +226,25 @@ async function main() {
         }])
 
         for (const c of codes) {
-          a
+          await createOffer(
+            c.code,
+            c.brand,
+            c.benefit,
+            c.url || video.url,
+            creator.id,
+            creator.name
+          )
+          totalCodes++
+        }
+
+        totalVideos++
+      }
+    } catch (err) {
+      console.error(`  ❌ ${creator.name}:`, err.message)
+    }
+  }
+
+  console.log(`\n✅ Sync terminé : ${totalVideos} vidéos, ${totalCodes} codes détectés`)
+}
+
+main().catch(console.error)
