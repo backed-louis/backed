@@ -158,38 +158,12 @@ export async function getAllCreators(): Promise<Creator[]> {
     'sort[0][direction]': 'asc',
   })
 
-  const creators = data.records.map((r: any) => ({
+  return data.records.map((r: any) => ({
     id: r.id,
     name: r.fields['Name'] || '',
     slug: r.fields['Slug'] || '',
     platforms: r.fields['Platforms'] || [],
     channelId: r.fields['Channel ID'] || '',
-    avatar: null as string | null,
+    avatar: r.fields['Avatar'] || null,
   }))
-
-  // Batch fetch avatars YouTube en un seul appel
-  const channelIds = creators.map((c: any) => c.channelId).filter(Boolean).join(',')
-  if (channelIds) {
-    try {
-      const res = await fetch(
-        `https://www.googleapis.com/youtube/v3/channels?key=${process.env.YOUTUBE_API_KEY}&id=${channelIds}&part=snippet`,
-        { next: { revalidate: 3600 } }
-      )
-      const json = await res.json()
-      console.log('YouTube API response:', JSON.stringify(json).slice(0, 500))
-      const avatarMap: Record<string, string> = {}
-      json.items?.forEach((item: any) => {
-        avatarMap[item.id] = item.snippet?.thumbnails?.high?.url
-          || item.snippet?.thumbnails?.default?.url
-          || ''
-      })
-      creators.forEach((c: any) => {
-        if (avatarMap[c.channelId]) c.avatar = avatarMap[c.channelId]
-      })
-    } catch (e) {
-      console.error('YouTube avatar fetch error:', e)
-    }
-  }
-
-  return creators
 }
