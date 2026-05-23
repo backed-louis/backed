@@ -8,15 +8,18 @@ const ICONS: Record<string, string> = {
   'food-courses': '🍕', food: '🍕',
   'tech-gaming': '🎮',
   voyage: '✈️',
-  animaux: '🐾',
+  animaux: '🐶',
   ecommerce: '🛍️',
   finance: '💰',
   sante: '💪',
   education: '📚',
   auto: '🚗',
-  decoration: '🏠',
+  decoration: '🖼️',
   divertissement: '🎬',
   mode: '👗',
+  sport: '🏋️',
+  rencontres: '💕',
+  beaute: '💄',
 }
 
 export default async function CategoriesPage() {
@@ -25,7 +28,6 @@ export default async function CategoriesPage() {
     getAllOffers(),
   ])
 
-  // Calcul du vrai nombre d'offres actives par catégorie
   const offerCounts: Record<string, number> = {}
   allOffers.forEach(offer => {
     if (offer.category) {
