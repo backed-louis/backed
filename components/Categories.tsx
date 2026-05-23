@@ -5,15 +5,18 @@ const ICONS: Record<string, string> = {
   'food-courses': '🍕', food: '🍕',
   'tech-gaming': '🎮',
   voyage: '✈️',
-  animaux: '🐾',
+  animaux: '🐶',
   ecommerce: '🛍️',
   finance: '💰',
   sante: '💪',
   education: '📚',
   auto: '🚗',
-  decoration: '🏠',
+  decoration: '🖼️',
   divertissement: '🎬',
   mode: '👗',
+  sport: '🏋️',
+  rencontres: '💕',
+  beaute: '💄',
 }
 
 export default async function Categories({ offerCounts = {} }: { offerCounts?: Record<string, number> }) {
