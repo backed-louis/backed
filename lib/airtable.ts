@@ -8,7 +8,7 @@ async function fetchTable(table: string, params: Record<string, string> = {}) {
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${API_KEY}` },
-    next: { revalidate: 3600 }, // 1h au lieu de 60s
+    next: { revalidate: 3600 },
   })
 
   if (!res.ok) {
@@ -23,6 +23,7 @@ export interface Offer {
   brand: string
   brandDescription: string
   brandLogo: string | null
+  brandWebsite: string | null
   creator: string
   category: string
   code: string
@@ -47,6 +48,7 @@ export interface Creator {
   slug: string
   platforms: string[]
   channelId: string
+  avatar: string | null
 }
 
 async function buildMaps() {
@@ -70,13 +72,24 @@ async function buildMaps() {
     })
   })
 
-  const brandsMap: Record<string, { name: string; description: string; logo: string | null; category: string }> = {}
+  const brandsMap: Record<string, { name: string; description: string; logo: string | null; website: string | null; category: string }> = {}
   brandsRaw.records.forEach((r: any) => {
     const categoryId = r.fields['Category']?.[0]
+    const website = r.fields['Website'] || ''
+
+    let logo: string | null = null
+    if (website) {
+      try {
+        const domain = new URL(website).hostname
+        logo = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+      } catch {}
+    }
+
     brandsMap[r.id] = {
       name: r.fields['Name'] || '',
       description: r.fields['Description'] || '',
-      logo: r.fields['Logo']?.[0]?.url || null,
+      logo,
+      website: website || null,
       category: categoriesMap[categoryId] || '',
     }
   })
@@ -92,13 +105,14 @@ async function buildMaps() {
 function mapOffer(r: any, brandsMap: any, creatorsMap: any): Offer {
   const brandId = r.fields['Brand']?.[0]
   const creatorId = r.fields['Creator']?.[0]
-  const brand = brandsMap[brandId] ?? { name: '', description: '', logo: null, category: '' }
+  const brand = brandsMap[brandId] ?? { name: '', description: '', logo: null, website: null, category: '' }
 
   return {
     id: r.id,
     brand: brand.name,
     brandDescription: brand.description,
     brandLogo: brand.logo,
+    brandWebsite: brand.website,
     creator: creatorsMap[creatorId] || '',
     category: brand.category,
     code: r.fields['Code'] || '',
@@ -144,11 +158,38 @@ export async function getAllCreators(): Promise<Creator[]> {
     'sort[0][direction]': 'asc',
   })
 
-  return data.records.map((r: any) => ({
+  const creators = data.records.map((r: any) => ({
     id: r.id,
     name: r.fields['Name'] || '',
-    slug: (r.fields['Name'] || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+    slug: r.fields['Slug'] || '',
     platforms: r.fields['Platforms'] || [],
     channelId: r.fields['Channel ID'] || '',
+    avatar: null as string | null,
   }))
+
+  // Batch fetch avatars YouTube en un seul appel
+  const channelIds = creators.map((c: any) => c.channelId).filter(Boolean).join(',')
+  if (channelIds) {
+    try {
+      const res = await fetch(
+        `https://www.googleapis.com/youtube/v3/channels?key=${process.env.YOUTUBE_API_KEY}&id=${channelIds}&part=snippet`,
+        { next: { revalidate: 3600 } }
+      )
+      const json = await res.json()
+      console.log('YouTube API response:', JSON.stringify(json).slice(0, 500))
+      const avatarMap: Record<string, string> = {}
+      json.items?.forEach((item: any) => {
+        avatarMap[item.id] = item.snippet?.thumbnails?.high?.url
+          || item.snippet?.thumbnails?.default?.url
+          || ''
+      })
+      creators.forEach((c: any) => {
+        if (avatarMap[c.channelId]) c.avatar = avatarMap[c.channelId]
+      })
+    } catch (e) {
+      console.error('YouTube avatar fetch error:', e)
+    }
+  }
+
+  return creators
 }
