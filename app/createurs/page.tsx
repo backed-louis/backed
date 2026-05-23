@@ -2,7 +2,7 @@ import { getAllCreators, getAllOffers } from '@/lib/airtable'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 
-export const revalidate = 3600
+export const dynamic = 'force-dynamic'
 
 export default async function CreateursPage() {
   const [creators, allOffers] = await Promise.all([
@@ -49,13 +49,26 @@ export default async function CreateursPage() {
                 <Link key={creator.id} href={`/createur/${creator.slug}`} className="creator-card">
                   <div style={{
                     width: 48, height: 48, borderRadius: '50%',
-                    background: 'var(--accent-subtle)',
+                    overflow: 'hidden',
                     border: '1px solid var(--accent-border)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'var(--font-syne)',
-                    fontSize: 18, fontWeight: 800, color: 'var(--accent-text)',
+                    background: 'var(--accent-subtle)',
+                    flexShrink: 0,
                   }}>
-                    {creator.name.charAt(0).toUpperCase()}
+                    {creator.avatar ? (
+                      <img
+                        src={creator.avatar}
+                        alt={creator.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <span style={{
+                        fontFamily: 'var(--font-syne)',
+                        fontSize: 18, fontWeight: 800, color: 'var(--accent-text)',
+                      }}>
+                        {creator.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <div>
                     <div style={{
