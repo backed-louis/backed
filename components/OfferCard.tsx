@@ -61,7 +61,7 @@ export default function OfferCard({ offer }: { offer: Offer }) {
         </p>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
         {offer.code && (
           <button
             onClick={handleCopy}
@@ -74,7 +74,6 @@ export default function OfferCard({ offer }: { offer: Offer }) {
               padding: '6px 12px', borderRadius: 'var(--r-md)',
               cursor: 'pointer',
               transition: 'all 0.2s',
-              flexShrink: 0,
             }}
           >
             {copied ? '✓ Copié !' : offer.code}
@@ -87,10 +86,8 @@ export default function OfferCard({ offer }: { offer: Offer }) {
             background: 'rgba(52,199,89,0.1)',
             border: '1px solid rgba(52,199,89,0.18)',
             padding: '4px 10px', borderRadius: 'var(--r-sm)',
-            whiteSpace: 'nowrap' as const,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            minWidth: 0,
+            lineHeight: 1.4,
+            display: 'block',
           }}>
             {offer.benefit}
           </span>
