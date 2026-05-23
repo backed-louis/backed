@@ -3,21 +3,24 @@ import { notFound } from 'next/navigation'
 import OfferCard from '@/components/OfferCard'
 import Navbar from '@/components/Navbar'
 
-export const revalidate = 3600
+export const dynamic = 'force-dynamic'
 
 const ICONS: Record<string, string> = {
   'food-courses': '🍕', food: '🍕',
   'tech-gaming': '🎮',
   voyage: '✈️',
-  animaux: '🐾',
+  animaux: '🐶',
   ecommerce: '🛍️',
   finance: '💰',
   sante: '💪',
   education: '📚',
   auto: '🚗',
-  decoration: '🏠',
+  decoration: '🖼️',
   divertissement: '🎬',
   mode: '👗',
+  sport: '🏋️',
+  rencontres: '💕',
+  beaute: '💄',
 }
 
 export async function generateStaticParams() {
