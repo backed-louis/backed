@@ -2,13 +2,13 @@ const BASE_ID = process.env.AIRTABLE_BASE_ID
 const API_KEY = process.env.AIRTABLE_API_KEY
 const API_URL = `https://api.airtable.com/v0/${BASE_ID}`
 
-async function fetchTable(table: string, params: Record<string, string> = {}) {
+async function fetchTable(table: string, params: Record<string, string> = {}, noCache = false) {
   const url = new URL(`${API_URL}/${encodeURIComponent(table)}`)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${API_KEY}` },
-    next: { revalidate: 3600 },
+    ...(noCache ? { cache: 'no-store' } : { next: { revalidate: 3600 } }),
   })
 
   if (!res.ok) {
@@ -153,10 +153,11 @@ export async function getAllOffers(): Promise<Offer[]> {
 }
 
 export async function getAllCreators(): Promise<Creator[]> {
+  // noCache = true pour toujours avoir les données fraîches (Avatar inclus)
   const data = await fetchTable('Creators', {
     'sort[0][field]': 'Name',
     'sort[0][direction]': 'asc',
-  })
+  }, true)
 
   return data.records.map((r: any) => ({
     id: r.id,
