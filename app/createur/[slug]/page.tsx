@@ -22,17 +22,30 @@ export default async function CreateurPage({ params }: { params: { slug: string 
       <main style={{ paddingTop: 96, minHeight: '100vh' }}>
         <div className="container">
           <div style={{ paddingTop: 32, marginBottom: 56 }}>
+
             {/* Avatar */}
             <div style={{
               width: 72, height: 72, borderRadius: '50%',
-              background: 'var(--accent-subtle)',
-              border: '1px solid var(--accent-border)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'var(--font-syne)',
-              fontSize: 28, fontWeight: 800, color: 'var(--accent-text)',
+              overflow: 'hidden',
+              border: '2px solid var(--accent-border)',
               marginBottom: 20,
+              background: 'var(--accent-subtle)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              {creator.name.charAt(0).toUpperCase()}
+              {creator.avatar ? (
+                <img
+                  src={creator.avatar}
+                  alt={creator.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span style={{
+                  fontFamily: 'var(--font-syne)',
+                  fontSize: 28, fontWeight: 800, color: 'var(--accent-text)',
+                }}>
+                  {creator.name.charAt(0).toUpperCase()}
+                </span>
+              )}
             </div>
 
             <div className="section-label">
