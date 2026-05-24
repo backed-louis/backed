@@ -5,12 +5,15 @@ import Categories from '@/components/Categories'
 import HowItWorks from '@/components/HowItWorks'
 import EmailAlert from '@/components/EmailAlert'
 import Footer from '@/components/Footer'
-import { getAllOffers } from '@/lib/airtable'
+import { getAllOffers, getAllCreators } from '@/lib/airtable'
 
-export const revalidate = 3600
+export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
-  const allOffers = await getAllOffers()
+  const [allOffers, allCreators] = await Promise.all([
+    getAllOffers(),
+    getAllCreators(),
+  ])
 
   const offerCounts: Record<string, number> = {}
   allOffers.forEach(offer => {
@@ -23,7 +26,7 @@ export default async function HomePage() {
     <>
       <Navbar />
       <main>
-        <Hero />
+        <Hero offerCount={allOffers.length} creatorCount={allCreators.length} />
         <FeaturedOffers />
         <Categories offerCounts={offerCounts} />
         <HowItWorks />
