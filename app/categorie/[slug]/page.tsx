@@ -23,18 +23,15 @@ const ICONS: Record<string, string> = {
   beaute: '💄',
 }
 
-export async function generateStaticParams() {
-  const categories = await getCategories()
-  return categories.map(c => ({ slug: c.slug }))
-}
+export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
 
-export default async function CategoryPage({ params }: { params: { slug: string } }) {
   const [allOffers, categories] = await Promise.all([
     getAllOffers(),
     getCategories(),
   ])
 
-  const category = categories.find(c => c.slug === params.slug)
+  const category = categories.find(c => c.slug === slug)
   if (!category) notFound()
 
   const offers = allOffers
