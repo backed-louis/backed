@@ -5,13 +5,15 @@ import Navbar from '@/components/Navbar'
 
 export const dynamic = 'force-dynamic'
 
-export default async function CreateurPage({ params }: { params: { slug: string } }) {
+export default async function CreateurPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+
   const [creators, allOffers] = await Promise.all([
     getAllCreators(),
     getAllOffers(),
   ])
 
-  const creator = creators.find(c => c.slug === params.slug)
+  const creator = creators.find(c => c.slug === slug)
   if (!creator) notFound()
 
   const offers = allOffers.filter(o => o.creator === creator.name)
