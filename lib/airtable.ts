@@ -3,19 +3,30 @@ const API_KEY = process.env.AIRTABLE_API_KEY
 const API_URL = `https://api.airtable.com/v0/${BASE_ID}`
 
 async function fetchTable(table: string, params: Record<string, string> = {}, noCache = false) {
-  const url = new URL(`${API_URL}/${encodeURIComponent(table)}`)
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
+  const allRecords: any[] = []
+  let offset: string | undefined
 
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${API_KEY}` },
-    ...(noCache ? { cache: 'no-store' } : { next: { revalidate: 3600 } }),
-  })
+  do {
+    const url = new URL(`${API_URL}/${encodeURIComponent(table)}`)
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
+    if (offset) url.searchParams.set('offset', offset)
 
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Airtable [${table}] ${res.status}: ${err}`)
-  }
-  return res.json()
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${API_KEY}` },
+      ...(noCache ? { cache: 'no-store' } : { next: { revalidate: 3600 } }),
+    })
+
+    if (!res.ok) {
+      const err = await res.text()
+      throw new Error(`Airtable [${table}] ${res.status}: ${err}`)
+    }
+
+    const data = await res.json()
+    allRecords.push(...(data.records || []))
+    offset = data.offset
+  } while (offset)
+
+  return { records: allRecords }
 }
 
 export interface Offer {
@@ -153,7 +164,6 @@ export async function getAllOffers(): Promise<Offer[]> {
 }
 
 export async function getAllCreators(): Promise<Creator[]> {
-  // noCache = true pour toujours avoir les données fraîches (Avatar inclus)
   const data = await fetchTable('Creators', {
     'sort[0][field]': 'Name',
     'sort[0][direction]': 'asc',
