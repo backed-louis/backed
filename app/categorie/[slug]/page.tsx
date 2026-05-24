@@ -37,7 +37,14 @@ export default async function CategoryPage({ params }: { params: { slug: string 
   const category = categories.find(c => c.slug === params.slug)
   if (!category) notFound()
 
-  const offers = allOffers.filter(o => o.category === category.name)
+  const offers = allOffers
+    .filter(o => o.category === category.name)
+    .sort((a, b) => {
+      const aHasCode = a.code && a.code !== 'lien affilié' ? 0 : 1
+      const bHasCode = b.code && b.code !== 'lien affilié' ? 0 : 1
+      if (aHasCode !== bHasCode) return aHasCode - bHasCode
+      return a.brand.localeCompare(b.brand)
+    })
 
   return (
     <>
