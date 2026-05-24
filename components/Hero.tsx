@@ -1,7 +1,12 @@
 'use client'
 import Link from 'next/link'
 
-export default function Hero() {
+interface HeroProps {
+  offerCount: number
+  creatorCount: number
+}
+
+export default function Hero({ offerCount, creatorCount }: HeroProps) {
   return (
     <section style={{
       minHeight: '100vh',
@@ -35,7 +40,7 @@ export default function Hero() {
           marginBottom: 36,
         }}>
           <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.03em', color: 'var(--accent-text)' }}>
-            🔥 +1 200 offres actives · +350 créateurs soutenus
+            🔥 +{offerCount} offres actives · +{creatorCount} créateurs soutenus
           </span>
         </div>
 
