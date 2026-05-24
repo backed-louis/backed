@@ -40,10 +40,9 @@ export default async function CategoryPage({ params }: { params: { slug: string 
   const offers = allOffers
     .filter(o => o.category === category.name)
     .sort((a, b) => {
-      const aHasCode = a.code && a.code !== 'lien affilié' ? 0 : 1
-      const bHasCode = b.code && b.code !== 'lien affilié' ? 0 : 1
-      if (aHasCode !== bHasCode) return aHasCode - bHasCode
-      return a.brand.localeCompare(b.brand)
+      const brandCompare = a.brand.localeCompare(b.brand, 'fr')
+      if (brandCompare !== 0) return brandCompare
+      return a.creator.localeCompare(b.creator, 'fr')
     })
 
   return (
