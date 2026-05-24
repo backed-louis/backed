@@ -139,7 +139,7 @@ export async function getFeaturedOffers(): Promise<Offer[]> {
   const { brandsMap, creatorsMap } = await buildMaps()
 
   const offersRaw = await fetchTable('Offers', {
-    filterByFormula: `AND({Status}="Active", {Homepage Position}>=1)`,
+    filterByFormula: 'AND({Status}="Active", {Homepage Position}>=1)',
     'sort[0][field]': 'Homepage Position',
     'sort[0][direction]': 'asc',
     'maxRecords': '6',
@@ -157,7 +157,7 @@ export async function getAllOffers(): Promise<Offer[]> {
   const { brandsMap, creatorsMap } = await buildMaps()
 
   const offersRaw = await fetchTable('Offers', {
-    filterByFormula: `{Status}="Active"`,
+    filterByFormula: '{Status}="Active"',
   })
 
   return offersRaw.records.map((r: any) => mapOffer(r, brandsMap, creatorsMap))
