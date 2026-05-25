@@ -102,7 +102,7 @@ export default function Footer() {
         </div>
 
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-4)' }}>© 2026 Backed. Tous droits réservés.</span>
+<span style={{ fontSize: 12, color: 'var(--text-4)' }}>© 2026 Backed · <a href="https://backed.fr" style={{ color: 'var(--text-4)', textDecoration: 'none' }}>backed.fr</a> · Tous droits réservés.</span>
           <span style={{ fontSize: 12, color: 'var(--text-4)' }}>Fait avec ❤️ pour les communautés créateurs</span>
         </div>
       </div>
