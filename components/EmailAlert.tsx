@@ -8,48 +8,32 @@ function WhatsAppIcon() {
   )
 }
 
+const ctaStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 10,
+  background: '#25D366',
+  color: '#fff',
+  fontSize: 15,
+  fontWeight: 600,
+  padding: '13px 28px',
+  borderRadius: '12px',
+  letterSpacing: '-0.01em',
+  textDecoration: 'none',
+}
+
 export default function EmailAlert() {
   return (
-    <section style={{
-      padding: '96px 24px',
-      background: 'var(--bg-surface)',
-      borderTop: '1px solid var(--border)',
-    }}>
+    <section style={{ padding: '96px 24px', background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
       <div style={{ maxWidth: 540, margin: '0 auto', textAlign: 'center' }}>
         <div style={{ fontSize: 40, marginBottom: 16 }}>💬</div>
-        <h2 style={{
-          fontFamily: 'var(--font-syne)',
-          fontSize: 'clamp(22px, 4vw, 32px)',
-          fontWeight: 800,
-          letterSpacing: '-0.02em',
-          lineHeight: 1.15,
-          marginBottom: 14,
-        }}>
-          Reçois les nouveaux codes<br />avant tout le monde
+        <h2 style={{ fontFamily: 'var(--font-syne)', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15, marginBottom: 14 }}>
+          Reçois les nouveaux codes avant tout le monde
         </h2>
         <p style={{ fontSize: 15, color: 'var(--text-2)', marginBottom: 36 }}>
           Rejoins la chaîne WhatsApp Backed — on t'alerte dès qu'un nouveau code arrive.
         </p>
-        
-          href="https://whatsapp.com/channel/0029VbCzNIoGehEN4EMwe70h"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 10,
-            background: '#25D366',
-            color: '#fff',
-            fontSize: 15, fontWeight: 600,
-            padding: '13px 28px',
-            borderRadius: 'var(--r-md)',
-            letterSpacing: '-0.01em',
-            transition: 'background 0.15s',
-            textDecoration: 'none',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#1ebe5d')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#25D366')}
-        >
+        <a href="https://whatsapp.com/channel/0029VbCzNIoGehEN4EMwe70h" target="_blank" rel="noopener noreferrer" style={ctaStyle}>
           <WhatsAppIcon />
           Rejoindre la chaîne Backed
         </a>
