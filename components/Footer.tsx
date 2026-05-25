@@ -44,8 +44,8 @@ export default function Footer() {
       { label: 'Catégories', href: '/categories' },
     ],
     Légal: [
-      { label: 'CGU', href: '#' },
-      { label: 'Confidentialité', href: '#' },
+{ label: 'CGU', href: '/cgu' },
+{ label: 'Confidentialité', href: '/confidentialite' },
       { label: 'Contact', href: 'mailto:hello.backedfr@gmail.com' },
     ],
   }
