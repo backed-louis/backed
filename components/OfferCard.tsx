@@ -1,10 +1,15 @@
 'use client'
 import { Offer } from '@/lib/airtable'
 import { useState } from 'react'
+import Link from 'next/link'
+
+function toSlug(name: string) {
+  return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+}
 
 export default function OfferCard({ offer }: { offer: Offer }) {
   const [copied, setCopied] = useState(false)
-
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (!offer.code) return
@@ -12,20 +17,23 @@ export default function OfferCard({ offer }: { offer: Offer }) {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
-
   return (
     <div
       className="offer-card"
       onClick={() => offer.sourceUrl && window.open(offer.sourceUrl, '_blank')}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: 10,
-          background: 'var(--bg-elevated)',
-          border: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          overflow: 'hidden', flexShrink: 0,
-        }}>
+        <Link
+          href={`/marque/${toSlug(offer.brand)}`}
+          onClick={e => e.stopPropagation()}
+          style={{
+            width: 44, height: 44, borderRadius: 10,
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden', flexShrink: 0,
+          }}
+        >
           {offer.brandLogo ? (
             <img src={offer.brandLogo} alt={offer.brand}
               style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
@@ -34,7 +42,7 @@ export default function OfferCard({ offer }: { offer: Offer }) {
               {offer.brand.slice(0, 2).toUpperCase()}
             </span>
           )}
-        </div>
+        </Link>
         {offer.category && (
           <span style={{
             fontSize: 11, fontWeight: 600, letterSpacing: '0.04em',
@@ -47,20 +55,25 @@ export default function OfferCard({ offer }: { offer: Offer }) {
           </span>
         )}
       </div>
-
       <div style={{ flex: 1 }}>
-        <h3 style={{
-          fontFamily: 'var(--font-syne)',
-          fontSize: 18, fontWeight: 800,
-          letterSpacing: '-0.01em', marginBottom: 6,
-        }}>
-          {offer.brand}
-        </h3>
+        <Link
+          href={`/marque/${toSlug(offer.brand)}`}
+          onClick={e => e.stopPropagation()}
+          style={{ textDecoration: 'none' }}
+        >
+          <h3 style={{
+            fontFamily: 'var(--font-syne)',
+            fontSize: 18, fontWeight: 800,
+            letterSpacing: '-0.01em', marginBottom: 6,
+            color: 'var(--text-1)',
+          }}>
+            {offer.brand}
+          </h3>
+        </Link>
         <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>
           {offer.brandDescription}
         </p>
       </div>
-
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
         {offer.code && (
           <button
@@ -93,7 +106,6 @@ export default function OfferCard({ offer }: { offer: Offer }) {
           </span>
         )}
       </div>
-
       {offer.creator && (
         <div style={{
           borderTop: '1px solid var(--border)',
