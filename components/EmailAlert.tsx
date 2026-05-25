@@ -27,10 +27,10 @@ export default function EmailAlert() {
     <section style={{ padding: '96px 24px', background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
       <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
         <div style={{ fontSize: 40, marginBottom: 20 }}>💬</div>
-        <h2 style={{ fontFamily: 'var(--font-syne)', fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 16 }}>
-          Les meilleurs codes,{' '}
-          <span style={{ color: 'var(--accent)' }}>avant tout le monde.</span>
-        </h2>
+<h2 style={{ fontFamily: 'var(--font-syne)', fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 16 }}>
+  Les meilleurs codes,<br />
+  <span style={{ color: 'var(--accent)' }}>avant tout le monde.</span>
+</h2>
         <p style={{ fontSize: 15, color: 'var(--text-2)', marginBottom: 36, lineHeight: 1.6 }}>
           Rejoins la chaîne WhatsApp Backed et reçois une alerte dès qu'un nouveau code promo est disponible.
         </p>
