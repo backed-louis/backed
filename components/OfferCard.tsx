@@ -10,17 +10,29 @@ function toSlug(name: string) {
 
 export default function OfferCard({ offer }: { offer: Offer }) {
   const [copied, setCopied] = useState(false)
+
+  const trackAndOpen = (e?: React.MouseEvent) => {
+    if (offer.slug) {
+      fetch(`/api/track/${offer.slug}`).catch(() => {})
+    }
+    if (offer.sourceUrl) window.open(offer.sourceUrl, '_blank')
+  }
+
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (!offer.code) return
     navigator.clipboard.writeText(offer.code)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+    if (offer.slug) {
+      fetch(`/api/track/${offer.slug}`).catch(() => {})
+    }
   }
+
   return (
     <div
       className="offer-card"
-      onClick={() => offer.sourceUrl && window.open(offer.sourceUrl, '_blank')}
+      onClick={trackAndOpen}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link
