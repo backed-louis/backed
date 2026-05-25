@@ -12,7 +12,7 @@ const ctaStyle: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: 10,
-  background: '#25D366',
+  background: '#5B21B6',
   color: '#fff',
   fontSize: 15,
   fontWeight: 600,
