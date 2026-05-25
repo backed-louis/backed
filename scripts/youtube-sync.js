@@ -73,19 +73,43 @@ async function getBrandId(brandName) {
   return records[0]?.id || null
 }
 
-async function offerExists(code, creatorId) {
-  const records = await base('Offers').select({ filterByFormula: `AND({Code} = "${code}", FIND("${creatorId}", ARRAYJOIN({Creator})))`, maxRecords: 1 }).firstPage()
-  return records.length > 0
+async function offerExists(code, brand, creatorId) {
+  if (code) {
+    // Vérifie par code + créateur
+    const records = await base('Offers').select({
+      filterByFormula: `AND({Code} = "${code}", FIND("${creatorId}", ARRAYJOIN({Creator})))`,
+      maxRecords: 1
+    }).firstPage()
+    return records.length > 0
+  } else {
+    // Pour les liens affiliés : vérifie brand + créateur
+    const brandId = await getBrandId(brand)
+    if (!brandId) return false
+    const records = await base('Offers').select({
+      filterByFormula: `AND(FIND("${brandId}", ARRAYJOIN({Brand})), FIND("${creatorId}", ARRAYJOIN({Creator})), {Code} = "")`,
+      maxRecords: 1
+    }).firstPage()
+    return records.length > 0
+  }
 }
 
 async function createOffer(code, brand, benefit, sourceUrl, creatorId, creatorName) {
   if (!code && !benefit) return
+
   const key = `${code || 'null'}|${brand}|${creatorId}`
-  if (createdOffers.has(key)) { console.log(`  ⏭️  Doublon ignoré : ${code || 'lien affilié'} (${brand})`); return }
-  if (code && code !== 'lien affilié') {
-    const exists = await offerExists(code, creatorId)
-    if (exists) { console.log(`  ⏭️  Doublon ignoré : ${code} (${brand})`); return }
+  if (createdOffers.has(key)) {
+    console.log(`  ⏭️  Doublon ignoré : ${code || 'lien affilié'} (${brand})`)
+    return
   }
+
+  // Vérifie toujours dans Airtable — codes ET liens affiliés
+  const exists = await offerExists(code, brand, creatorId)
+  if (exists) {
+    console.log(`  ⏭️  Doublon ignoré : ${code || 'lien affilié'} (${brand})`)
+    createdOffers.add(key)
+    return
+  }
+
   createdOffers.add(key)
   const brandId = await getBrandId(brand)
   const slug = `${(brand || 'unknown').toLowerCase().replace(/\s+/g, '-')}-${creatorName.toLowerCase().replace(/\s+/g, '-')}`
