@@ -112,7 +112,15 @@ export default function OfferCard({ offer }: { offer: Offer }) {
           paddingTop: 12, fontSize: 12, color: 'var(--text-3)',
         }}>
           Partagé par{' '}
-          <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>{offer.creator}</span>
+          <Link
+            href={`/createur/${toSlug(offer.creator)}`}
+            onClick={e => e.stopPropagation()}
+            style={{ color: 'var(--text-2)', fontWeight: 500, textDecoration: 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
+          >
+            {offer.creator}
+          </Link>
         </div>
       )}
     </div>
