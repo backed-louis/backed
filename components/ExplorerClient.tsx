@@ -14,15 +14,17 @@ export default function ExplorerClient({
   const [activeCategory, setActiveCategory] = useState('Toutes')
 
   const filtered = useMemo(() => {
-    return offers.filter(o => {
-      const matchCat = activeCategory === 'Toutes' || o.category === activeCategory
-      const matchSearch =
-        search === '' ||
-        o.brand.toLowerCase().includes(search.toLowerCase()) ||
-        o.creator.toLowerCase().includes(search.toLowerCase()) ||
-        o.code.toLowerCase().includes(search.toLowerCase())
-      return matchCat && matchSearch
-    })
+    return offers
+      .filter(o => {
+        const matchCat = activeCategory === 'Toutes' || o.category === activeCategory
+        const matchSearch =
+          search === '' ||
+          o.brand.toLowerCase().includes(search.toLowerCase()) ||
+          o.creator.toLowerCase().includes(search.toLowerCase()) ||
+          o.code.toLowerCase().includes(search.toLowerCase())
+        return matchCat && matchSearch
+      })
+      .sort((a, b) => a.brand.localeCompare(b.brand, 'fr'))
   }, [offers, search, activeCategory])
 
   return (
