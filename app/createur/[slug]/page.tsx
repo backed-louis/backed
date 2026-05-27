@@ -3,29 +3,23 @@ import { notFound } from 'next/navigation'
 import OfferCard from '@/components/OfferCard'
 import Navbar from '@/components/Navbar'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 export default async function CreateurPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-
   const [creators, allOffers] = await Promise.all([
     getAllCreators(),
     getAllOffers(),
   ])
-
   const creator = creators.find(c => c.slug === slug)
   if (!creator) notFound()
-
   const offers = allOffers.filter(o => o.creator === creator.name)
-
   return (
     <>
       <Navbar />
       <main style={{ paddingTop: 96, minHeight: '100vh' }}>
         <div className="container">
           <div style={{ paddingTop: 32, marginBottom: 56 }}>
-
-            {/* Avatar */}
             <div style={{
               width: 72, height: 72, borderRadius: '50%',
               overflow: 'hidden',
@@ -49,7 +43,6 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
                 </span>
               )}
             </div>
-
             <div className="section-label">
               {offers.length} offre{offers.length !== 1 ? 's' : ''} active{offers.length !== 1 ? 's' : ''}
             </div>
@@ -60,8 +53,6 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
             }}>
               {creator.name}
             </h1>
-
-            {/* Platforms */}
             <div style={{ display: 'flex', gap: 8 }}>
               {creator.platforms.map(p => (
                 <span key={p} style={{
@@ -76,7 +67,6 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
               ))}
             </div>
           </div>
-
           {offers.length === 0 ? (
             <p style={{ color: 'var(--text-3)' }}>Aucune offre active pour ce créateur.</p>
           ) : (
