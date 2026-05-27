@@ -1,10 +1,8 @@
 import Link from 'next/link'
 import OfferCard from './OfferCard'
-import { getFeaturedOffers } from '@/lib/airtable'
+import { type Offer } from '@/lib/airtable'
 
-export default async function FeaturedOffers() {
-  const offers = await getFeaturedOffers()
-
+export default function FeaturedOffers({ offers }: { offers: Offer[] }) {
   return (
     <section className="section" style={{ borderTop: '1px solid var(--border)' }}>
       <div className="container">
@@ -17,7 +15,6 @@ export default async function FeaturedOffers() {
             Voir tout →
           </Link>
         </div>
-
         {offers.length === 0 ? (
           <p style={{ color: 'var(--text-3)', fontSize: 14 }}>
             Aucune offre à la une pour le moment.
