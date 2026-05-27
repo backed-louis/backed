@@ -2,23 +2,20 @@ import { getAllCreators, getAllOffers } from '@/lib/airtable'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 export default async function CreateursPage() {
   const [creators, allOffers] = await Promise.all([
     getAllCreators(),
     getAllOffers(),
   ])
-
   const offerCounts: Record<string, number> = {}
   allOffers.forEach(offer => {
     if (offer.creator) {
       offerCounts[offer.creator] = (offerCounts[offer.creator] || 0) + 1
     }
   })
-
   const creatorsWithOffers = creators.filter(c => offerCounts[c.name] > 0)
-
   return (
     <>
       <Navbar />
@@ -37,7 +34,6 @@ export default async function CreateursPage() {
               {creatorsWithOffers.length} créateurs · codes vérifiés
             </p>
           </div>
-
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
