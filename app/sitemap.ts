@@ -1,18 +1,17 @@
 import { MetadataRoute } from 'next'
-import { getAllCreators, getCategories, getAllOffers } from '@/lib/airtable'
+import { getAllCreators, getCategories, getAllBrands } from '@/lib/airtable'
 
 const BASE_URL = 'https://www.backed.fr'
 
 export const revalidate = 3600
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [creators, categories, offers] = await Promise.all([
+  const [creators, categories, brands] = await Promise.all([
     getAllCreators(),
     getCategories(),
-    getAllOffers(),
+    getAllBrands(),
   ])
 
-  // Pages statiques
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
     { url: `${BASE_URL}/explorer`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
@@ -22,7 +21,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/confidentialite`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
   ]
 
-  // Pages créateurs
   const creatorRoutes: MetadataRoute.Sitemap = creators
     .filter(c => c.slug)
     .map(creator => ({
@@ -32,7 +30,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }))
 
-  // Pages catégories
   const categoryRoutes: MetadataRoute.Sitemap = categories
     .filter(c => c.slug)
     .map(category => ({
@@ -42,23 +39,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }))
 
-  // Pages marques (slugs uniques extraits des offres)
-  const brandSlugs = Array.from(new Set(
-    offers
-      .filter(o => o.slug)
-      .map(o => {
-        const parts = o.slug.split('-')
-        return parts.slice(0, -1).join('-')
-      })
-      .filter(Boolean)
-  ))
-
-  const brandRoutes: MetadataRoute.Sitemap = brandSlugs.map(slug => ({
-    url: `${BASE_URL}/marque/${slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.6,
-  }))
+  const brandRoutes: MetadataRoute.Sitemap = brands
+    .filter(b => b.slug)
+    .map(brand => ({
+      url: `${BASE_URL}/marque/${brand.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }))
 
   return [...staticRoutes, ...creatorRoutes, ...categoryRoutes, ...brandRoutes]
 }
