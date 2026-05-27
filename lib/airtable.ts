@@ -62,7 +62,20 @@ export interface Creator {
   avatar: string | null
 }
 
-async function buildMaps() {
+// ─── Cache en mémoire pour buildMaps ─────────────────────────────────────────
+
+type MapsResult = {
+  brandsMap: Record<string, { name: string; description: string; logo: string | null; website: string | null; category: string }>
+  creatorsMap: Record<string, string>
+  categoriesMap: Record<string, string>
+  categoriesList: Category[]
+}
+
+let mapsCache: MapsResult | null = null
+let mapsCacheTime = 0
+const CACHE_TTL = 3600 * 1000 // 1h
+
+async function _buildMaps(): Promise<MapsResult> {
   const [brandsRaw, creatorsRaw, categoriesRaw] = await Promise.all([
     fetchTable('Brands'),
     fetchTable('Creators'),
@@ -113,6 +126,16 @@ async function buildMaps() {
   return { brandsMap, creatorsMap, categoriesMap, categoriesList }
 }
 
+async function buildMaps(): Promise<MapsResult> {
+  const now = Date.now()
+  if (mapsCache && now - mapsCacheTime < CACHE_TTL) return mapsCache
+  mapsCache = await _buildMaps()
+  mapsCacheTime = now
+  return mapsCache
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function mapOffer(r: any, brandsMap: any, creatorsMap: any): Offer {
   const brandId = r.fields['Brand']?.[0]
   const creatorId = r.fields['Creator']?.[0]
@@ -134,6 +157,8 @@ function mapOffer(r: any, brandsMap: any, creatorsMap: any): Offer {
     slug: r.fields['Slug'] || '',
   }
 }
+
+// ─── Exports ──────────────────────────────────────────────────────────────────
 
 export async function getFeaturedOffers(): Promise<Offer[]> {
   const { brandsMap, creatorsMap } = await buildMaps()
