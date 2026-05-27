@@ -43,16 +43,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
 
   // Pages marques (slugs uniques extraits des offres)
-  const brandSlugs = [...new Set(
+  const brandSlugs = Array.from(new Set(
     offers
       .filter(o => o.slug)
       .map(o => {
-        // Le slug d'une offre est du type "marque-createur", on extrait la partie marque
         const parts = o.slug.split('-')
         return parts.slice(0, -1).join('-')
       })
       .filter(Boolean)
-  )]
+  ))
 
   const brandRoutes: MetadataRoute.Sitemap = brandSlugs.map(slug => ({
     url: `${BASE_URL}/marque/${slug}`,
