@@ -43,6 +43,7 @@ export interface Offer {
   homepagePosition: number | null
   sourceUrl: string
   slug: string
+  clicks: number
 }
 
 export interface Category {
@@ -79,7 +80,7 @@ type MapsResult = {
 
 let mapsCache: MapsResult | null = null
 let mapsCacheTime = 0
-const CACHE_TTL = 3600 * 1000 // 1h
+const CACHE_TTL = 3600 * 1000
 
 async function _buildMaps(): Promise<MapsResult> {
   const [brandsRaw, creatorsRaw, categoriesRaw] = await Promise.all([
@@ -161,6 +162,7 @@ function mapOffer(r: any, brandsMap: any, creatorsMap: any): Offer {
     homepagePosition: r.fields['Homepage Position'] ?? null,
     sourceUrl: r.fields['Source URL'] || '',
     slug: r.fields['Slug'] || '',
+    clicks: r.fields['Clicks'] || 0,
   }
 }
 

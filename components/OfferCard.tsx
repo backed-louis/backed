@@ -8,7 +8,7 @@ function toSlug(name: string) {
     .toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
 }
 
-export default function OfferCard({ offer }: { offer: Offer }) {
+export default function OfferCard({ offer, isPopular = false }: { offer: Offer; isPopular?: boolean }) {
   const [copied, setCopied] = useState(false)
 
   const trackAndOpen = (e?: React.MouseEvent) => {
@@ -30,10 +30,7 @@ export default function OfferCard({ offer }: { offer: Offer }) {
   }
 
   return (
-    <div
-      className="offer-card"
-      onClick={trackAndOpen}
-    >
+    <div className="offer-card" onClick={trackAndOpen}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link
           href={`/marque/${toSlug(offer.brand)}`}
@@ -55,18 +52,34 @@ export default function OfferCard({ offer }: { offer: Offer }) {
             </span>
           )}
         </Link>
-        {offer.category && (
-          <span style={{
-            fontSize: 11, fontWeight: 600, letterSpacing: '0.04em',
-            color: 'var(--accent-text)',
-            background: 'var(--accent-subtle)',
-            border: '1px solid var(--accent-border)',
-            padding: '3px 9px', borderRadius: 'var(--r-sm)',
-          }}>
-            {offer.category}
-          </span>
-        )}
+
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {isPopular && (
+            <span style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: '0.04em',
+              color: '#FF6B35',
+              background: 'rgba(255,107,53,0.12)',
+              border: '1px solid rgba(255,107,53,0.25)',
+              padding: '3px 9px', borderRadius: 'var(--r-sm)',
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}>
+              🔥 Populaire
+            </span>
+          )}
+          {offer.category && (
+            <span style={{
+              fontSize: 11, fontWeight: 600, letterSpacing: '0.04em',
+              color: 'var(--accent-text)',
+              background: 'var(--accent-subtle)',
+              border: '1px solid var(--accent-border)',
+              padding: '3px 9px', borderRadius: 'var(--r-sm)',
+            }}>
+              {offer.category}
+            </span>
+          )}
+        </div>
       </div>
+
       <div style={{ flex: 1 }}>
         <Link
           href={`/marque/${toSlug(offer.brand)}`}
@@ -86,6 +99,7 @@ export default function OfferCard({ offer }: { offer: Offer }) {
           {offer.brandDescription}
         </p>
       </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
         {offer.code && (
           <button
@@ -118,6 +132,7 @@ export default function OfferCard({ offer }: { offer: Offer }) {
           </span>
         )}
       </div>
+
       {offer.creator && (
         <div style={{
           borderTop: '1px solid var(--border)',

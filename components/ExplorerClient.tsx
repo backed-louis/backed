@@ -3,6 +3,14 @@ import { useState, useMemo } from 'react'
 import { Offer, Category } from '@/lib/airtable'
 import OfferCard from './OfferCard'
 
+function getPopularThreshold(offers: Offer[]): number {
+  const clicks = offers.map(o => o.clicks || 0).filter(c => c > 0)
+  if (clicks.length === 0) return Infinity
+  const sorted = [...clicks].sort((a, b) => a - b)
+  const idx = Math.floor(sorted.length * 0.9)
+  return sorted[idx]
+}
+
 export default function ExplorerClient({
   offers,
   categories,
@@ -12,6 +20,8 @@ export default function ExplorerClient({
 }) {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('Toutes')
+
+  const popularThreshold = useMemo(() => getPopularThreshold(offers), [offers])
 
   const filtered = useMemo(() => {
     return offers
@@ -30,8 +40,6 @@ export default function ExplorerClient({
   return (
     <main style={{ paddingTop: 96, minHeight: '100vh' }}>
       <div className="container">
-
-        {/* Header */}
         <div style={{ marginBottom: 48 }}>
           <div className="section-label">Catalogue</div>
           <h1 style={{
@@ -48,7 +56,6 @@ export default function ExplorerClient({
           </p>
         </div>
 
-        {/* Barre de recherche */}
         <input
           type="text"
           placeholder="Rechercher une marque, un créateur, un code..."
@@ -71,10 +78,7 @@ export default function ExplorerClient({
           onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
         />
 
-        {/* Filtres catégories */}
-        <div style={{
-          display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 40,
-        }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 40 }}>
           {['Toutes', ...categories.map(c => c.name)].map(cat => (
             <button
               key={cat}
@@ -99,14 +103,12 @@ export default function ExplorerClient({
           ))}
         </div>
 
-        {/* Résultats */}
         <div style={{ marginBottom: 24, fontSize: 13, color: 'var(--text-3)' }}>
           {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
           {activeCategory !== 'Toutes' && ` dans ${activeCategory}`}
           {search && ` pour "${search}"`}
         </div>
 
-        {/* Grille */}
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-3)' }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>🔍</div>
@@ -123,7 +125,11 @@ export default function ExplorerClient({
             paddingBottom: 96,
           }}>
             {filtered.map(offer => (
-              <OfferCard key={offer.id} offer={offer} />
+              <OfferCard
+                key={offer.id}
+                offer={offer}
+                isPopular={(offer.clicks || 0) >= popularThreshold && popularThreshold < Infinity}
+              />
             ))}
           </div>
         )}
