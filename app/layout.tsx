@@ -20,6 +20,31 @@ export const metadata: Metadata = {
   title: 'Backed — Les meilleures offres des créateurs',
   description:
     'Codes promo vérifiés, partagés par vos créateurs préférés. Accès immédiat, sans création de compte.',
+  metadataBase: new URL('https://www.backed.fr'),
+  openGraph: {
+    title: 'Backed — Les meilleures offres des créateurs',
+    description:
+      'Codes promo vérifiés, partagés par vos créateurs préférés. Accès immédiat, sans création de compte.',
+    url: 'https://www.backed.fr',
+    siteName: 'Backed',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Backed — Les meilleures offres des créateurs',
+      },
+    ],
+    locale: 'fr_FR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Backed — Les meilleures offres des créateurs',
+    description:
+      'Codes promo vérifiés, partagés par vos créateurs préférés. Accès immédiat, sans création de compte.',
+    images: ['/og-image.png'],
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
