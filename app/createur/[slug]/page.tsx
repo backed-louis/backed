@@ -2,6 +2,7 @@ import { getAllCreators, getAllOffers } from '@/lib/airtable'
 import { notFound } from 'next/navigation'
 import OfferCard from '@/components/OfferCard'
 import Navbar from '@/components/Navbar'
+import { getPopularThreshold, isPopularOffer } from '@/lib/popularUtils'
 
 export const revalidate = 3600
 
@@ -13,7 +14,10 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
   ])
   const creator = creators.find(c => c.slug === slug)
   if (!creator) notFound()
+
   const offers = allOffers.filter(o => o.creator === creator.name)
+  const popularThreshold = getPopularThreshold(allOffers)
+
   return (
     <>
       <Navbar />
@@ -76,7 +80,11 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
               gap: 16, paddingBottom: 96,
             }}>
               {offers.map(offer => (
-                <OfferCard key={offer.id} offer={offer} />
+                <OfferCard
+                  key={offer.id}
+                  offer={offer}
+                  isPopular={isPopularOffer(offer, popularThreshold)}
+                />
               ))}
             </div>
           )}

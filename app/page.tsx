@@ -6,6 +6,7 @@ import HowItWorks from '@/components/HowItWorks'
 import EmailAlert from '@/components/EmailAlert'
 import Footer from '@/components/Footer'
 import { getAllOffers, getAllCreators, getFeaturedOffers } from '@/lib/airtable'
+import { getPopularThreshold } from '@/lib/popularUtils'
 
 export const revalidate = 3600
 
@@ -23,12 +24,14 @@ export default async function HomePage() {
     }
   })
 
+  const popularThreshold = getPopularThreshold(allOffers)
+
   return (
     <>
       <Navbar />
       <main>
         <Hero offerCount={allOffers.length} creatorCount={allCreators.length} />
-        <FeaturedOffers offers={featuredOffers} />
+        <FeaturedOffers offers={featuredOffers} popularThreshold={popularThreshold} />
         <Categories offerCounts={offerCounts} />
         <HowItWorks />
         <EmailAlert />

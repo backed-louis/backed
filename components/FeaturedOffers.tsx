@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import OfferCard from './OfferCard'
 import { type Offer } from '@/lib/airtable'
+import { isPopularOffer } from '@/lib/popularUtils'
 
-export default function FeaturedOffers({ offers }: { offers: Offer[] }) {
+export default function FeaturedOffers({ offers, popularThreshold }: { offers: Offer[]; popularThreshold: number }) {
   return (
     <section className="section" style={{ borderTop: '1px solid var(--border)' }}>
       <div className="container">
@@ -26,7 +27,11 @@ export default function FeaturedOffers({ offers }: { offers: Offer[] }) {
             gap: 16,
           }}>
             {offers.map(offer => (
-              <OfferCard key={offer.id} offer={offer} />
+              <OfferCard
+                key={offer.id}
+                offer={offer}
+                isPopular={isPopularOffer(offer, popularThreshold)}
+              />
             ))}
           </div>
         )}
