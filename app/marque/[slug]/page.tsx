@@ -44,8 +44,40 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
 
   const popularThreshold = getPopularThreshold(allOffers)
 
+  // Schema Markup JSON-LD
+  const schemaData = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Codes promo ${brand.name}`,
+    description: brand.description || `Codes promo ${brand.name} partagés par des créateurs`,
+    url: `https://www.backed.fr/marque/${slug}`,
+    numberOfItems: offers.length,
+    itemListElement: offers
+      .filter(o => o.code || o.benefit)
+      .map((offer, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        item: {
+          '@type': 'Offer',
+          name: offer.code ? `Code promo ${brand.name} : ${offer.code}` : `Offre ${brand.name}`,
+          description: offer.benefit || '',
+          url: offer.sourceUrl || `https://www.backed.fr/marque/${slug}`,
+          ...(offer.code && { discount: offer.code }),
+          seller: {
+            '@type': 'Organization',
+            name: brand.name,
+            ...(brand.website && { url: brand.website }),
+          },
+        },
+      })),
+  }
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+      />
       <Navbar />
       <main style={{ paddingTop: 96, minHeight: '100vh' }}>
         <div className="container">
