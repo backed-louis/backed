@@ -75,14 +75,12 @@ async function getBrandId(brandName) {
 
 async function offerExists(code, brand, creatorId) {
   if (code) {
-    // Vérifie par code + créateur
     const records = await base('Offers').select({
       filterByFormula: `AND({Code} = "${code}", FIND("${creatorId}", ARRAYJOIN({Creator})))`,
       maxRecords: 1
     }).firstPage()
     return records.length > 0
   } else {
-    // Pour les liens affiliés : vérifie brand + créateur
     const brandId = await getBrandId(brand)
     if (!brandId) return false
     const records = await base('Offers').select({
@@ -102,7 +100,6 @@ async function createOffer(code, brand, benefit, sourceUrl, creatorId, creatorNa
     return
   }
 
-  // Vérifie toujours dans Airtable — codes ET liens affiliés
   const exists = await offerExists(code, brand, creatorId)
   if (exists) {
     console.log(`  ⏭️  Doublon ignoré : ${code || 'lien affilié'} (${brand})`)
@@ -136,7 +133,16 @@ async function main() {
         if (description === null) { console.log(`  ⏭️  Short ignoré : ${video.title}`); continue }
         const codes = await detectCodesWithClaude(description, creator.name)
         console.log(`  📹 ${video.title} → ${codes.length} code(s) détecté(s)`)
-        await base('Videos Inbox').create([{ fields: { 'Video ID': video.videoId, 'Video URL': video.url, 'Title': video.title, 'Description': description.slice(0, 5000), 'Published At': video.publishedAt ? video.publishedAt.split('T')[0] : null, 'Creator': [creator.id], 'Detected Codes': codes.map(c => c.code).join(', '), 'Processed': false } }])
+        await base('Videos Inbox').create([{ fields: {
+          'Video ID': video.videoId,
+          'Video URL': video.url,
+          'Title': video.title,
+          'Description': description.slice(0, 5000),
+          'Published At': video.publishedAt ? video.publishedAt.split('T')[0] : null,
+          'Creator': [creator.id],
+          'Detected Codes': codes.filter(c => c.code).map(c => c.code).join(', '),
+          'Processed': false
+        } }])
         for (const c of codes) {
           await createOffer(c.code, c.brand, c.benefit, c.url || video.url, creator.id, creator.name)
           totalCodes++
