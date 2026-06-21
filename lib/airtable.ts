@@ -32,6 +32,7 @@ async function fetchTable(table: string, params: Record<string, string> = {}, no
 export interface Offer {
   id: string
   brand: string
+  brandSlug: string
   brandDescription: string
   brandLogo: string | null
   brandWebsite: string | null
@@ -72,7 +73,7 @@ export interface Brand {
 // ─── Cache en mémoire pour buildMaps ─────────────────────────────────────────
 
 type MapsResult = {
-  brandsMap: Record<string, { name: string; description: string; logo: string | null; website: string | null; category: string }>
+  brandsMap: Record<string, { name: string; slug: string; description: string; logo: string | null; website: string | null; category: string }>
   creatorsMap: Record<string, string>
   categoriesMap: Record<string, string>
   categoriesList: Category[]
@@ -103,7 +104,7 @@ async function _buildMaps(): Promise<MapsResult> {
     })
   })
 
-  const brandsMap: Record<string, { name: string; description: string; logo: string | null; website: string | null; category: string }> = {}
+  const brandsMap: Record<string, { name: string; slug: string; description: string; logo: string | null; website: string | null; category: string }> = {}
   brandsRaw.records.forEach((r: any) => {
     const categoryId = r.fields['Category']?.[0]
     const website = r.fields['Website'] || ''
@@ -118,6 +119,7 @@ async function _buildMaps(): Promise<MapsResult> {
 
     brandsMap[r.id] = {
       name: r.fields['Name'] || '',
+      slug: r.fields['slug'] || '',
       description: r.fields['Description'] || '',
       logo,
       website: website || null,
@@ -146,11 +148,12 @@ async function buildMaps(): Promise<MapsResult> {
 function mapOffer(r: any, brandsMap: any, creatorsMap: any): Offer {
   const brandId = r.fields['Brand']?.[0]
   const creatorId = r.fields['Creator']?.[0]
-  const brand = brandsMap[brandId] ?? { name: '', description: '', logo: null, website: null, category: '' }
+  const brand = brandsMap[brandId] ?? { name: '', slug: '', description: '', logo: null, website: null, category: '' }
 
   return {
     id: r.id,
     brand: brand.name,
+    brandSlug: brand.slug,
     brandDescription: brand.description,
     brandLogo: brand.logo,
     brandWebsite: brand.website,
