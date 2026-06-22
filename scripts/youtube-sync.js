@@ -6,6 +6,10 @@ const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY })
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
 
+// Nombre maximum de vidéos remontées par créateur à chaque run.
+// Le bot s'arrête de paginer dès qu'il atteint cette limite.
+const MAX_VIDEOS_PER_CREATOR = 200
+
 const createdOffers = new Set()
 
 async function detectCodesWithClaude(description, creatorName) {
@@ -36,15 +40,37 @@ async function getUploadsPlaylistId(channelId) {
 async function getRecentVideos(channelId) {
   const uploadsId = await getUploadsPlaylistId(channelId)
   if (!uploadsId) return []
-  const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?key=${YOUTUBE_API_KEY}&playlistId=${uploadsId}&part=snippet&maxResults=10`)
-  const data = await res.json()
-  if (!data.items) return []
-  return data.items.map(item => ({
-    videoId: item.snippet.resourceId.videoId,
-    title: item.snippet.title,
-    publishedAt: item.snippet.publishedAt,
-    url: `https://www.youtube.com/watch?v=${item.snippet.resourceId.videoId}`,
-  }))
+
+  const videos = []
+  let pageToken = ''
+
+  // Pagination : on remonte par pages de 50 jusqu'à MAX_VIDEOS_PER_CREATOR
+  // ou jusqu'à épuisement de la playlist.
+  do {
+    const url = `https://www.googleapis.com/youtube/v3/playlistItems` +
+      `?key=${YOUTUBE_API_KEY}` +
+      `&playlistId=${uploadsId}` +
+      `&part=snippet` +
+      `&maxResults=50` +
+      (pageToken ? `&pageToken=${pageToken}` : '')
+
+    const res = await fetch(url)
+    const data = await res.json()
+    if (!data.items) break
+
+    for (const item of data.items) {
+      videos.push({
+        videoId: item.snippet.resourceId.videoId,
+        title: item.snippet.title,
+        publishedAt: item.snippet.publishedAt,
+        url: `https://www.youtube.com/watch?v=${item.snippet.resourceId.videoId}`,
+      })
+    }
+
+    pageToken = data.nextPageToken || ''
+  } while (pageToken && videos.length < MAX_VIDEOS_PER_CREATOR)
+
+  return videos
 }
 
 async function getVideoDescription(videoId) {
@@ -126,6 +152,7 @@ async function main() {
     console.log(`\n👤 ${creator.name}`)
     try {
       const videos = await getRecentVideos(creator.channelId)
+      console.log(`  📺 ${videos.length} vidéos remontées depuis la playlist`)
       for (const video of videos) {
         const exists = await videoExists(video.videoId)
         if (exists) continue
