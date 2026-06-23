@@ -21,7 +21,7 @@ async function detectCodesWithClaude(description, creatorName) {
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       messages: [{ role: 'user', content: `Tu es un expert en marketing d'influence YouTube français. Analyse cette description de vidéo YouTube du créateur "${creatorName}" et extrait les codes promo/liens affiliés.\n\nDescription:\n${description.slice(0, 3000)}\n\nRéponds UNIQUEMENT en JSON avec ce format exact, sans markdown:\n{\n  "codes": [\n    {\n      "code": "CODE_PROMO",\n      "brand": "Nom de la marque",\n      "benefit": "Description de l avantage",\n      "url": "https://lien-ou-null"\n    }\n  ]\n}\n\nRègles:\n- Ne retourne que de vrais codes promo ou liens affiliés avec un vrai avantage chiffré ou concret\n- Ignore les mentions de réseaux sociaux\n- Ignore les mots génériques (YOUTUBE, ABONNE, etc.)\n- Si aucun code trouvé, retourne {"codes": []}\n- Le champ "code" doit être null si c est uniquement un lien affilié sans code\n- Le champ "url" doit être null si pas de lien spécifique` }],
     }),
