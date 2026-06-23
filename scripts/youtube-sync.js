@@ -26,7 +26,11 @@ async function detectCodesWithClaude(description, creatorName) {
       messages: [{ role: 'user', content: `Tu es un expert en marketing d'influence YouTube français. Analyse cette description de vidéo YouTube du créateur "${creatorName}" et extrait les codes promo/liens affiliés.\n\nDescription:\n${description.slice(0, 3000)}\n\nRéponds UNIQUEMENT en JSON avec ce format exact, sans markdown:\n{\n  "codes": [\n    {\n      "code": "CODE_PROMO",\n      "brand": "Nom de la marque",\n      "benefit": "Description de l avantage",\n      "url": "https://lien-ou-null"\n    }\n  ]\n}\n\nRègles:\n- Ne retourne que de vrais codes promo ou liens affiliés avec un vrai avantage chiffré ou concret\n- Ignore les mentions de réseaux sociaux\n- Ignore les mots génériques (YOUTUBE, ABONNE, etc.)\n- Si aucun code trouvé, retourne {"codes": []}\n- Le champ "code" doit être null si c est uniquement un lien affilié sans code\n- Le champ "url" doit être null si pas de lien spécifique` }],
     }),
   })
-  if (!response.ok) throw new Error(`Claude API error: ${response.status}`)
+  if (!response.ok) {
+    const errBody = await response.text()
+    console.error(`🔴 Claude ${response.status} →`, errBody)
+    throw new Error(`Claude API error: ${response.status}`)
+  }
   const data = await response.json()
   try { return JSON.parse(data.content[0].text.trim()).codes || [] } catch { return [] }
 }
