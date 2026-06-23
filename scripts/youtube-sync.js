@@ -7,8 +7,9 @@ const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
 
 // Nombre maximum de vidéos remontées par créateur à chaque run.
-// Le bot s'arrête de paginer dès qu'il atteint cette limite.
-const MAX_VIDEOS_PER_CREATOR = 200
+const MAX_VIDEOS_PER_CREATOR = 15
+// On ignore les vidéos publiées il y a plus de X mois.
+const MAX_AGE_MONTHS = 6
 
 const createdOffers = new Set()
 
@@ -26,11 +27,7 @@ async function detectCodesWithClaude(description, creatorName) {
       messages: [{ role: 'user', content: `Tu es un expert en marketing d'influence YouTube français. Analyse cette description de vidéo YouTube du créateur "${creatorName}" et extrait les codes promo/liens affiliés.\n\nDescription:\n${description.slice(0, 3000)}\n\nRéponds UNIQUEMENT en JSON avec ce format exact, sans markdown:\n{\n  "codes": [\n    {\n      "code": "CODE_PROMO",\n      "brand": "Nom de la marque",\n      "benefit": "Description de l avantage",\n      "url": "https://lien-ou-null"\n    }\n  ]\n}\n\nRègles:\n- Ne retourne que de vrais codes promo ou liens affiliés avec un vrai avantage chiffré ou concret\n- Ignore les mentions de réseaux sociaux\n- Ignore les mots génériques (YOUTUBE, ABONNE, etc.)\n- Si aucun code trouvé, retourne {"codes": []}\n- Le champ "code" doit être null si c est uniquement un lien affilié sans code\n- Le champ "url" doit être null si pas de lien spécifique` }],
     }),
   })
-  if (!response.ok) {
-    const errBody = await response.text()
-    console.error(`🔴 Claude ${response.status} →`, errBody)
-    throw new Error(`Claude API error: ${response.status}`)
-  }
+  if (!response.ok) throw new Error(`Claude API error: ${response.status}`)
   const data = await response.json()
   try { return JSON.parse(data.content[0].text.trim()).codes || [] } catch { return [] }
 }
@@ -45,11 +42,17 @@ async function getRecentVideos(channelId) {
   const uploadsId = await getUploadsPlaylistId(channelId)
   if (!uploadsId) return []
 
+  // Date limite : aujourd'hui moins MAX_AGE_MONTHS mois.
+  const cutoff = new Date()
+  cutoff.setMonth(cutoff.getMonth() - MAX_AGE_MONTHS)
+
   const videos = []
   let pageToken = ''
+  let reachedOld = false
 
-  // Pagination : on remonte par pages de 50 jusqu'à MAX_VIDEOS_PER_CREATOR
-  // ou jusqu'à épuisement de la playlist.
+  // Pagination : on remonte par pages de 50 jusqu'à MAX_VIDEOS_PER_CREATOR,
+  // ou jusqu'à tomber sur une vidéo plus vieille que la date limite
+  // (la playlist uploads est triée du plus récent au plus ancien).
   do {
     const url = `https://www.googleapis.com/youtube/v3/playlistItems` +
       `?key=${YOUTUBE_API_KEY}` +
@@ -63,16 +66,22 @@ async function getRecentVideos(channelId) {
     if (!data.items) break
 
     for (const item of data.items) {
+      const publishedAt = item.snippet.publishedAt
+      if (publishedAt && new Date(publishedAt) < cutoff) {
+        reachedOld = true
+        break
+      }
       videos.push({
         videoId: item.snippet.resourceId.videoId,
         title: item.snippet.title,
-        publishedAt: item.snippet.publishedAt,
+        publishedAt,
         url: `https://www.youtube.com/watch?v=${item.snippet.resourceId.videoId}`,
       })
+      if (videos.length >= MAX_VIDEOS_PER_CREATOR) break
     }
 
     pageToken = data.nextPageToken || ''
-  } while (pageToken && videos.length < MAX_VIDEOS_PER_CREATOR)
+  } while (pageToken && videos.length < MAX_VIDEOS_PER_CREATOR && !reachedOld)
 
   return videos
 }
