@@ -100,10 +100,6 @@ export default function Footer() {
             ))}
           </div>
         </div>
-        
-<!-- TrustBox script -->
-<script type="text/javascript" src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js" async></script>
-<!-- End TrustBox script -->
   
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
 <span style={{ fontSize: 12, color: 'var(--text-4)' }}>© 2026 Backed · <a href="https://backed.fr" style={{ color: 'var(--text-4)', textDecoration: 'none' }}>backed.fr</a> · Tous droits réservés.</span>
