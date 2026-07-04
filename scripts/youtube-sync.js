@@ -10,8 +10,14 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
 const MAX_VIDEOS_PER_CREATOR = 15
 // On ignore les vidéos publiées il y a plus de X mois.
 const MAX_AGE_MONTHS = 6
+// Petit délai (ms) entre deux appels à l'API Claude pour éviter le rate-limit.
+const CLAUDE_DELAY_MS = 200
 
 const createdOffers = new Set()
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
 
 async function detectCodesWithClaude(description, creatorName) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -24,7 +30,7 @@ async function detectCodesWithClaude(description, creatorName) {
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: 1000,
-      messages: [{ role: 'user', content: `Tu es un expert en marketing d'influence YouTube français. Analyse cette description de vidéo YouTube du créateur "${creatorName}" et extrait les codes promo/liens affiliés.\n\nDescription:\n${description.slice(0, 3000)}\n\nRéponds UNIQUEMENT en JSON avec ce format exact, sans markdown:\n{\n  "codes": [\n    {\n      "code": "CODE_PROMO",\n      "brand": "Nom de la marque",\n      "benefit": "Description de l avantage",\n      "url": "https://lien-ou-null"\n    }\n  ]\n}\n\nRègles:\n- Ne retourne que de vrais codes promo ou liens affiliés avec un vrai avantage chiffré ou concret\n- Ignore les mentions de réseaux sociaux\n- Ignore les mots génériques (YOUTUBE, ABONNE, etc.)\n- Si aucun code trouvé, retourne {"codes": []}\n- Le champ "code" doit être null si c est uniquement un lien affilié sans code\n- Le champ "url" doit être null si pas de lien spécifique` }],
+      messages: [{ role: 'user', content: `Tu es un expert en marketing d'influence YouTube français. Analyse cette description de vidéo YouTube du créateur "${creatorName}" et extrait les codes promo/liens affiliés.\n\nDescription:\n${description.slice(0, 3000)}\n\nRéponds UNIQUEMENT en JSON avec ce format exact, sans markdown:\n{\n  "codes": [\n    {\n      "code": "CODE_PROMO",\n      "brand": "Nom de la marque",\n      "benefit": "Description de l avantage",\n      "url": "https://lien-ou-null"\n    }\n  ]\n}\n\nRègles:\n- Ne retourne que de vrais codes promo ou liens affiliés avec un vrai avantage chiffré ou concret\n- Ignore les mentions de réseaux sociaux\n- Ignore les mots génériques (YOUTUBE, ABONNE, etc.)\n- Si aucun code trouvé, retourne {"codes": []}\n- Le champ "code" doit être null si c est uniquement un lien affilié sans code\n- Le champ "url" doit être null si pas de lien spécifique\n- IMPORTANT pour "brand": renvoie TOUJOURS le nom commercial propre de la marque (ex: "NordVPN", "HelloFresh", "Revolut"), JAMAIS un nom de domaine ou une URL (ex: pas "nordvpn.com", pas "hellofresh.fr"). Mets une majuscule initiale et respecte la casse officielle de la marque.` }],
     }),
   })
   if (!response.ok) throw new Error(`Claude API error: ${response.status}`)
@@ -171,7 +177,24 @@ async function main() {
         if (exists) continue
         const description = await getVideoDescription(video.videoId)
         if (description === null) { console.log(`  ⏭️  Short ignoré : ${video.title}`); continue }
+        // Description vide : on n'appelle pas Claude (économie d'API), on enregistre juste la vidéo.
+        if (!description.trim()) {
+          console.log(`  📹 ${video.title} → description vide, pas d'analyse`)
+          await base('Videos Inbox').create([{ fields: {
+            'Video ID': video.videoId,
+            'Video URL': video.url,
+            'Title': video.title,
+            'Description': '',
+            'Published At': video.publishedAt ? video.publishedAt.split('T')[0] : null,
+            'Creator': [creator.id],
+            'Detected Codes': '',
+            'Processed': false
+          } }])
+          totalVideos++
+          continue
+        }
         const codes = await detectCodesWithClaude(description, creator.name)
+        await sleep(CLAUDE_DELAY_MS)
         console.log(`  📹 ${video.title} → ${codes.length} code(s) détecté(s)`)
         await base('Videos Inbox').create([{ fields: {
           'Video ID': video.videoId,
