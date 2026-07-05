@@ -169,6 +169,12 @@ function mapOffer(r: any, brandsMap: any, creatorsMap: any): Offer {
   }
 }
 
+// Garde-fou : une offre n'est valide pour l'affichage que si elle a une marque
+// (nom + slug). Évite d'afficher des cartes sans logo ni nom de marque.
+function hasValidBrand(offer: Offer): boolean {
+  return Boolean(offer.brand && offer.brandSlug)
+}
+
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
 export async function getFeaturedOffers(): Promise<Offer[]> {
@@ -181,7 +187,9 @@ export async function getFeaturedOffers(): Promise<Offer[]> {
     'maxRecords': '6',
   })
 
-  return offersRaw.records.map((r: any) => mapOffer(r, brandsMap, creatorsMap))
+  return offersRaw.records
+    .map((r: any) => mapOffer(r, brandsMap, creatorsMap))
+    .filter(hasValidBrand)
 }
 
 export async function getCategories(): Promise<Category[]> {
@@ -196,7 +204,9 @@ export async function getAllOffers(): Promise<Offer[]> {
     filterByFormula: '{Status}="Active"',
   })
 
-  return offersRaw.records.map((r: any) => mapOffer(r, brandsMap, creatorsMap))
+  return offersRaw.records
+    .map((r: any) => mapOffer(r, brandsMap, creatorsMap))
+    .filter(hasValidBrand)
 }
 
 export async function getAllCreators(): Promise<Creator[]> {
