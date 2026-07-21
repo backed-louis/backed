@@ -1,11 +1,9 @@
 'use client'
 import Link from 'next/link'
-
 interface HeroProps {
   offerCount: number
   creatorCount: number
 }
-
 export default function Hero({ offerCount, creatorCount }: HeroProps) {
   return (
     <section style={{
@@ -27,7 +25,6 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
         background: 'radial-gradient(circle, rgba(139,0,255,0.07) 0%, transparent 65%)',
         pointerEvents: 'none',
       }} />
-
       <div style={{ maxWidth: 760, position: 'relative' }}>
         <div style={{
           display: 'inline-flex',
@@ -43,7 +40,6 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
             🔥 +{offerCount} offres actives · +{creatorCount} créateurs soutenus
           </span>
         </div>
-
         <h1 style={{
           fontFamily: 'var(--font-syne)',
           fontSize: 'clamp(40px, 7vw, 72px)',
@@ -52,12 +48,11 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
           lineHeight: 1.05,
           marginBottom: 24,
         }}>
-          Trouvez les meilleures<br />
+          Ce code promo que tu n'arrives plus à retrouver ?<br />
           <span style={{ color: 'var(--accent)', filter: 'drop-shadow(0 0 24px rgba(139,0,255,0.4))' }}>
-            offres du moment.
+            Il est là.
           </span>
         </h1>
-
         <p style={{
           fontSize: 18,
           color: 'var(--text-2)',
@@ -66,10 +61,9 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
           maxWidth: 500,
           margin: '0 auto 44px',
         }}>
-          Codes promo vérifiés, partagés par vos créateurs préférés.
-          Accès immédiat. Sans création de compte.
+          Tous les codes de tes créateurs préférés, rassemblés et à jour.
+          Cherche par créateur ou par marque. Gratuit, sans inscription.
         </p>
-
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link
             href="/explorer"
