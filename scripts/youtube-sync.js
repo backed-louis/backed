@@ -24,6 +24,7 @@ const NON_BRAND_HOSTS = [
 // ─── État chargé une seule fois au démarrage ─────────────────────────────────
 
 const brandsByKey = new Map()   // nom normalisé -> id de la marque
+const brandNames = []           // noms de marques existantes, transmis à Claude pour éviter les variantes
 const usedBrandSlugs = new Set()
 const knownVideoIds = new Set()
 const knownOfferKeys = new Set()
@@ -92,6 +93,7 @@ async function loadState() {
   for (const r of brands) {
     const key = normKey(r.fields['Name'])
     if (key) brandsByKey.set(key, r.id)
+    if (r.fields['Name']) brandNames.push(r.fields['Name'])
     if (r.fields['slug']) usedBrandSlugs.add(r.fields['slug'])
   }
 
@@ -116,6 +118,7 @@ async function loadState() {
 // ─── Claude ──────────────────────────────────────────────────────────────────
 
 async function detectCodesWithClaude(description, creatorName, publishedDate) {
+  const knownBrands = brandNames.join(', ')
   const prompt = [
     `Tu es un expert en marketing d'influence YouTube français. Analyse cette description de vidéo YouTube du créateur "${creatorName}" et extrait les codes promo/liens affiliés.`,
     ``,
@@ -144,7 +147,8 @@ async function detectCodesWithClaude(description, creatorName, publishedDate) {
     `- Si aucun code trouvé, retourne {"codes": []}`,
     `- Le champ "code" doit être null si c est uniquement un lien affilié sans code`,
     `- Le champ "url" doit être null si pas de lien spécifique`,
-    `- IMPORTANT pour "brand": renvoie TOUJOURS le nom commercial propre de la marque (ex: "NordVPN", "HelloFresh", "Revolut"), JAMAIS un nom de domaine ou une URL (ex: pas "nordvpn.com", pas "hellofresh.fr"). Mets une majuscule initiale et respecte la casse officielle de la marque.`,
+    `- IMPORTANT pour "brand": renvoie le nom commercial propre de l'annonceur (la société ou le service qui propose l'offre), ex: "NordVPN", "HelloFresh", "Revolut". JAMAIS un nom de domaine ou une URL, JAMAIS le nom du créateur, JAMAIS la description d'un produit, JAMAIS de parenthèses. Pour un lien affilié vers un produit, renvoie la marque qui le vend ou le fabrique (ex: "Amazon", "MSI"). Si tu ne peux pas identifier la marque avec certitude, renvoie null.`,
+    `- Marques déjà connues : ${knownBrands}. Si l'annonceur correspond à l'une d'elles (même sous une variante comme "Emma Sleep" pour "Emma" ou "Scuf Gaming" pour "Scuf"), utilise EXACTEMENT son nom de cette liste. N'invente une nouvelle marque que si elle n'est pas dans la liste.`,
     `- "endDate": si la description indique une date de fin ou de validité (ex: "jusqu'au 14 mars", "valable jusqu'à fin 2026"), renvoie-la au format YYYY-MM-DD en déduisant l'année la plus plausible à partir de la date de publication de la vidéo. Sinon renvoie null. N'invente jamais de date.`,
   ].join('\n')
 
@@ -264,7 +268,8 @@ async function getCreators() {
 // (sans marque, une offre n'est pas affichée sur le site).
 async function getOrCreateBrand(name, sourceUrl) {
   const cleanName = String(name || '').trim()
-  if (!cleanName || cleanName.length > 60) return null
+  // Un nom avec parenthèses est presque toujours un produit ou un nom de créateur, pas une marque.
+  if (!cleanName || cleanName.length > 60 || /[()]/.test(cleanName)) return null
 
   const key = normKey(cleanName)
   if (!key) return null
@@ -283,6 +288,7 @@ async function getOrCreateBrand(name, sourceUrl) {
   const brandId = created[0].id
   brandsByKey.set(key, brandId)
   usedBrandSlugs.add(slug)
+  brandNames.push(cleanName)
   createdBrandsCount++
   console.log(`  🏷️  Marque créée : ${cleanName} (${slug})`)
   return brandId
