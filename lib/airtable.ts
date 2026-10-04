@@ -175,19 +175,45 @@ function hasValidBrand(offer: Offer): boolean {
   return Boolean(offer.brand && offer.brandSlug)
 }
 
+// Filtre Airtable : offre active ET non expirée (End Date vide ou >= aujourd'hui)
+const ACTIVE_NOT_EXPIRED =
+  'AND({Status}="Active", OR({End Date}="", IS_AFTER({End Date}, DATEADD(TODAY(), -1, \'days\'))))'
+
+// Garde-fou anti-doublons : une seule offre par (créateur, marque, code ou lien).
+// On garde la plus récente (createdTime), et on conserve l'ordre d'origine des offres.
+function dedupeRecords(records: any[]): any[] {
+  const keyOf = (r: any) => {
+    const creator = r.fields['Creator']?.[0] || ''
+    const brand = r.fields['Brand']?.[0] || ''
+    const code = String(r.fields['Code'] || '').trim().toLowerCase()
+    const url = String(r.fields['Source URL'] || '').split('?')[0].toLowerCase().replace(/\/$/, '')
+    return `${creator}|${brand}|${code || url || r.id}`
+  }
+
+  const newest = new Map<string, any>()
+  for (const r of records) {
+    const k = keyOf(r)
+    const current = newest.get(k)
+    if (!current || String(r.createdTime) > String(current.createdTime)) newest.set(k, r)
+  }
+
+  const keptIds = new Set(Array.from(newest.values()).map((r) => r.id))
+  return records.filter((r) => keptIds.has(r.id))
+}
+
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
 export async function getFeaturedOffers(): Promise<Offer[]> {
   const { brandsMap, creatorsMap } = await buildMaps()
 
   const offersRaw = await fetchTable('Offers', {
-    filterByFormula: 'AND({Status}="Active", {Homepage Position}>=1)',
+    filterByFormula: `AND(${ACTIVE_NOT_EXPIRED}, {Homepage Position}>=1)`,
     'sort[0][field]': 'Homepage Position',
     'sort[0][direction]': 'asc',
     'maxRecords': '6',
   })
 
-  return offersRaw.records
+  return dedupeRecords(offersRaw.records)
     .map((r: any) => mapOffer(r, brandsMap, creatorsMap))
     .filter(hasValidBrand)
 }
@@ -201,10 +227,10 @@ export async function getAllOffers(): Promise<Offer[]> {
   const { brandsMap, creatorsMap } = await buildMaps()
 
   const offersRaw = await fetchTable('Offers', {
-    filterByFormula: '{Status}="Active"',
+    filterByFormula: ACTIVE_NOT_EXPIRED,
   })
 
-  return offersRaw.records
+  return dedupeRecords(offersRaw.records)
     .map((r: any) => mapOffer(r, brandsMap, creatorsMap))
     .filter(hasValidBrand)
 }
