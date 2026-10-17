@@ -68,7 +68,7 @@ export default function Footer() {
               Backed
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-3)', maxWidth: 220, lineHeight: 1.7, marginBottom: 20 }}>
-              Les meilleurs codes promo des créateurs que tu suis. Vérifiés. Toujours actifs.
+              Backed. Paie le bon prix. Les codes promo de tes créateurs, mis à jour chaque nuit.
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
               <a href="https://instagram.com/backedfr" target="_blank" rel="noopener noreferrer" aria-label="Instagram" style={socialStyle} onMouseEnter={handleSocialEnter} onMouseLeave={handleSocialLeave}>

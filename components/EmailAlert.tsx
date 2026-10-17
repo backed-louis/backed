@@ -28,15 +28,15 @@ export default function EmailAlert() {
       <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
         <div style={{ fontSize: 40, marginBottom: 20 }}>💬</div>
 <h2 style={{ fontFamily: 'var(--font-syne)', fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 16 }}>
-  Les meilleurs codes,<br />
-  <span style={{ color: 'var(--accent)' }}>avant tout le monde.</span>
+  1 code par jour,<br />
+  <span style={{ color: 'var(--accent)' }}>sur WhatsApp.</span>
 </h2>
         <p style={{ fontSize: 15, color: 'var(--text-2)', marginBottom: 36, lineHeight: 1.6 }}>
-          Rejoins la chaîne WhatsApp Backed et reçois une alerte dès qu'un nouveau code promo est disponible.
+          Le meilleur code du jour, à 12h15. Rien d'autre.
         </p>
         <a href="https://whatsapp.com/channel/0029VbCzNIoGehEN4EMwe70h" target="_blank" rel="noopener noreferrer" style={ctaStyle}>
           <WhatsAppIcon />
-          Rejoindre la chaîne Backed
+          Rejoindre la chaîne
         </a>
       </div>
     </section>
