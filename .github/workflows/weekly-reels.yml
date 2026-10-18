@@ -1,0 +1,49 @@
+name: Vidéos de la semaine
+
+# Chaque samedi à 8h (heure de Paris en hiver), génère les vidéos et les textes
+# de la semaine suivante (dimanche → samedi) à partir des offres Airtable.
+# Les fichiers sont à télécharger dans l'onglet Actions, en bas du run (« Artifacts »).
+on:
+  schedule:
+    - cron: '0 7 * * 6'
+  workflow_dispatch:
+    inputs:
+      start:
+        description: 'Premier jour de la semaine (AAAA-MM-JJ). Vide = prochain dimanche.'
+        required: false
+        default: ''
+
+jobs:
+  reels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install --quiet Pillow==11.3.0
+      - name: Generate videos
+        env:
+          AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          START: ${{ github.event.inputs.start }}
+        run: |
+          if [ -n "$START" ]; then
+            python3 scripts/reels/generate_week.py --out out/semaine --start "$START"
+          else
+            python3 scripts/reels/generate_week.py --out out/semaine
+          fi
+          cat out/semaine/publications.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload videos
+        uses: actions/upload-artifact@v4
+        with:
+          name: backed-semaine-${{ github.run_number }}
+          path: out/semaine
+          retention-days: 30
