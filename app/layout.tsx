@@ -16,12 +16,12 @@ const syne = Syne({
 export const metadata: Metadata = {
   title: 'Backed — Les codes promo des créateurs, mis à jour chaque nuit',
   description:
-    'Les codes promo de tes créateurs YouTube et Twitch, au même endroit. Mis à jour chaque nuit. Gratuit, sans compte.',
+    'Les codes promo de tes créateurs YouTube, au même endroit. Mis à jour chaque nuit. Gratuit, sans compte.',
   metadataBase: new URL('https://www.backed.fr'),
   openGraph: {
     title: 'Backed — Les codes promo des créateurs, mis à jour chaque nuit',
     description:
-      'Les codes promo de tes créateurs YouTube et Twitch, au même endroit. Mis à jour chaque nuit. Gratuit, sans compte.',
+      'Les codes promo de tes créateurs YouTube, au même endroit. Mis à jour chaque nuit. Gratuit, sans compte.',
     url: 'https://www.backed.fr',
     siteName: 'Backed',
     images: [
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Backed — Les codes promo des créateurs, mis à jour chaque nuit',
     description:
-      'Les codes promo de tes créateurs YouTube et Twitch, au même endroit. Mis à jour chaque nuit. Gratuit, sans compte.',
+      'Les codes promo de tes créateurs YouTube, au même endroit. Mis à jour chaque nuit. Gratuit, sans compte.',
     images: ['/og-image.png'],
   },
 }

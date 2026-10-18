@@ -4,7 +4,7 @@ const STEPS = [
   {
     num: '01',
     title: 'Les créateurs partagent',
-    desc: 'Tes créateurs glissent leurs codes promo dans leurs vidéos YouTube et Twitch.',
+    desc: 'Tes créateurs glissent leurs codes promo dans leurs vidéos YouTube.',
   },
   {
     num: '02',

@@ -32,7 +32,7 @@ export default function EmailAlert() {
   <span style={{ color: 'var(--accent)' }}>sur WhatsApp.</span>
 </h2>
         <p style={{ fontSize: 15, color: 'var(--text-2)', marginBottom: 36, lineHeight: 1.6 }}>
-          Le meilleur code du jour, à 12h15. Rien d'autre.
+          ⚡ Le meilleur code du jour, à 12h15. Rien d'autre.
         </p>
         <a href="https://whatsapp.com/channel/0029VbCzNIoGehEN4EMwe70h" target="_blank" rel="noopener noreferrer" style={ctaStyle}>
           <WhatsAppIcon />

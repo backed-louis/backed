@@ -7,7 +7,7 @@ export default function FeaturedOffers({ offers, popularThreshold }: { offers: O
   return (
     <section className="section" style={{ borderTop: '1px solid var(--border)' }}>
       <div className="container">
-        <div className="section-label">Cette semaine</div>
+        <div className="section-label">🔥 Cette semaine</div>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 48 }}>
           <h2 className="section-title" style={{ fontFamily: 'var(--font-syne)', marginBottom: 0 }}>
             Les codes les plus copiés

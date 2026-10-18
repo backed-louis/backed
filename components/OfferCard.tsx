@@ -63,7 +63,7 @@ export default function OfferCard({ offer, isPopular = false }: { offer: Offer; 
               padding: '3px 9px', borderRadius: 'var(--r-sm)',
               display: 'flex', alignItems: 'center', gap: 4,
             }}>
-              Top 10 %
+              🔥 Top 10 %
             </span>
           )}
           {offer.category && (

@@ -42,7 +42,7 @@ export async function generateMetadata(
   const { brand, offers } = data
   const count = offers.length
   const title = `Code promo ${brand.name} — ${count} offre${count !== 1 ? 's' : ''} vérifiée${count !== 1 ? 's' : ''} | Backed`
-  const description = `Tous les codes promo ${brand.name} partagés par des créateurs YouTube et Twitch. ${count} offre${count !== 1 ? 's' : ''} active${count !== 1 ? 's' : ''} et vérifiée${count !== 1 ? 's' : ''} sur Backed. ${brand.description ? brand.description.slice(0, 100) : ''}`.trim()
+  const description = `Tous les codes promo ${brand.name} partagés par des créateurs YouTube. ${count} offre${count !== 1 ? 's' : ''} active${count !== 1 ? 's' : ''} et vérifiée${count !== 1 ? 's' : ''} sur Backed. ${brand.description ? brand.description.slice(0, 100) : ''}`.trim()
 
   return {
     title,
@@ -100,7 +100,7 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
         name: `Les codes promo ${brand.name} sont-ils vérifiés ?`,
         acceptedAnswer: {
           '@type': 'Answer',
-          text: `Oui. Chaque code ${brand.name} référencé sur Backed provient d'un créateur YouTube ou Twitch partenaire de la marque, et est mis à jour automatiquement chaque jour.`,
+          text: `Oui. Chaque code ${brand.name} référencé sur Backed provient d'un créateur YouTube partenaire de la marque, et est mis à jour automatiquement chaque jour.`,
         },
       },
       {
@@ -193,7 +193,7 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
             </p>
             <p style={{ color: 'var(--text-2)', fontSize: 15, lineHeight: 1.7, marginBottom: 16 }}>
               Tous les codes {brand.name} référencés sur Backed proviennent de créateurs
-              YouTube et Twitch partenaires de la marque. Ils sont actualisés automatiquement
+              YouTube partenaires de la marque. Ils sont actualisés automatiquement
               chaque jour : vous tombez donc sur des offres à jour, sans codes expirés ni
               fausses promesses.
             </p>

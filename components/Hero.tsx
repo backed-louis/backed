@@ -37,7 +37,7 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
           marginBottom: 36,
         }}>
           <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.03em', color: 'var(--accent-text)' }}>
-            {offerCount} codes actifs · {creatorCount} créateurs · Mis à jour cette nuit
+            ⚡ {offerCount} codes actifs · 🔥 {creatorCount} créateurs
           </span>
         </div>
         <h1 style={{
@@ -61,7 +61,7 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
           maxWidth: 500,
           margin: '0 auto 44px',
         }}>
-          {offerCount} codes promo de tes créateurs YouTube et Twitch.
+          {offerCount} codes promo de tes créateurs YouTube.
           Cherche une marque, copie le code. Gratuit, sans compte.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
