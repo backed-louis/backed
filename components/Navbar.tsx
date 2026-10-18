@@ -78,7 +78,7 @@ export default function Navbar() {
             onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-hover)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'var(--accent)')}
           >
-            Accéder aux offres
+            Trouver un code
           </Link>
         </div>
       </nav>

@@ -7,13 +7,13 @@ export default function FeaturedOffers({ offers, popularThreshold }: { offers: O
   return (
     <section className="section" style={{ borderTop: '1px solid var(--border)' }}>
       <div className="container">
-        <div className="section-label">En ce moment 🔥</div>
+        <div className="section-label">Cette semaine</div>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 48 }}>
           <h2 className="section-title" style={{ fontFamily: 'var(--font-syne)', marginBottom: 0 }}>
-            Offres à la une
+            Les codes les plus copiés
           </h2>
           <Link href="/explorer" className="link-muted">
-            Voir tout →
+            Voir tous les codes →
           </Link>
         </div>
         {offers.length === 0 ? (

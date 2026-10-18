@@ -25,11 +25,11 @@ export default async function Categories({ offerCounts = {} }: { offerCounts?: R
   return (
     <section className="section" style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
       <div className="container">
-        <div className="section-label">Parcourir</div>
+        <div className="section-label">Par catégorie</div>
         <h2 className="section-title" style={{ fontFamily: 'var(--font-syne)' }}>
-          Choisis ta catégorie
+          {categories.length} catégories
         </h2>
-        <p className="section-sub">Explore les offres par univers</p>
+        <p className="section-sub">Tech, food, voyage, finance… Trouve le code qu'il te faut.</p>
 
         <div style={{
           display: 'grid',

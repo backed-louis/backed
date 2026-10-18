@@ -4,17 +4,17 @@ const STEPS = [
   {
     num: '01',
     title: 'Les créateurs partagent',
-    desc: 'Vos créateurs préférés diffusent leurs codes promo via leurs contenus YouTube, comme d\'habitude.',
+    desc: 'Tes créateurs glissent leurs codes promo dans leurs vidéos YouTube et Twitch.',
   },
   {
     num: '02',
-    title: 'Backed vérifie',
-    desc: 'Chaque offre est référencée et vérifiée pour garantir qu\'elle soit active et propose les meilleures conditions.',
+    title: 'On met à jour chaque nuit',
+    desc: 'Chaque nuit, on lit leurs descriptions et on met les codes à jour sur Backed.',
   },
   {
     num: '03',
-    title: 'Vous profitez',
-    desc: 'Accès immédiat au code. Sans création de compte. Sans friction.',
+    title: 'Tu paies moins',
+    desc: 'Tu copies le code, tu paies moins, et tu soutiens le créateur. Sans compte.',
   },
 ]
 
@@ -22,11 +22,11 @@ export default function HowItWorks() {
   return (
     <section className="section" style={{ borderTop: '1px solid var(--border)' }}>
       <div className="container">
-        <div className="section-label">Le concept</div>
+        <div className="section-label">En 3 étapes</div>
         <h2 className="section-title" style={{ fontFamily: 'var(--font-syne)' }}>
-          La différence Backed
+          Comment ça marche
         </h2>
-        <p className="section-sub">Des offres vérifiées. Un soutien direct aux créateurs.</p>
+        <p className="section-sub">Le code de ton créateur, au bon prix, en un clic.</p>
 
         <div style={{
           display: 'grid',

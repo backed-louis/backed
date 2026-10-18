@@ -37,7 +37,7 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
           marginBottom: 36,
         }}>
           <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.03em', color: 'var(--accent-text)' }}>
-            🔥 +{offerCount} offres actives · +{creatorCount} créateurs soutenus
+            {offerCount} codes actifs · {creatorCount} créateurs · Mis à jour cette nuit
           </span>
         </div>
         <h1 style={{
@@ -48,9 +48,9 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
           lineHeight: 1.05,
           marginBottom: 24,
         }}>
-          Ce code promo que tu n'arrives plus à retrouver ?<br />
+          Paie le{' '}
           <span style={{ color: 'var(--accent)', filter: 'drop-shadow(0 0 24px rgba(139,0,255,0.4))' }}>
-            Il est là.
+            bon prix.
           </span>
         </h1>
         <p style={{
@@ -61,8 +61,8 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
           maxWidth: 500,
           margin: '0 auto 44px',
         }}>
-          Tous les codes de tes créateurs préférés, rassemblés et à jour.
-          Cherche par créateur ou par marque. Gratuit, sans inscription.
+          {offerCount} codes promo de tes créateurs YouTube et Twitch.
+          Cherche une marque, copie le code. Gratuit, sans compte.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link
@@ -89,7 +89,7 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
               e.currentTarget.style.boxShadow = '0 4px 20px rgba(139,0,255,0.35)'
             }}
           >
-            Accéder aux offres
+            Trouver un code
           </Link>
           <Link
             href="/createurs"
@@ -114,7 +114,7 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
               e.currentTarget.style.transform = 'translateY(0)'
             }}
           >
-            Voir les créateurs
+            Voir les {creatorCount} créateurs
           </Link>
         </div>
       </div>
