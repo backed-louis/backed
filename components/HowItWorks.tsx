@@ -4,12 +4,12 @@ const STEPS = [
   {
     num: '01',
     title: 'Les créateurs partagent',
-    desc: 'Tes créateurs glissent leurs codes promo dans leurs vidéos YouTube et Twitch.',
+    desc: 'Tes créateurs glissent leurs codes promo dans leurs vidéos YouTube.',
   },
   {
     num: '02',
-    title: 'On met à jour chaque nuit',
-    desc: 'Chaque nuit, on lit leurs descriptions et on met les codes à jour sur Backed.',
+    title: 'On les rassemble',
+    desc: 'On lit leurs descriptions et on rassemble tous les codes sur Backed.',
   },
   {
     num: '03',
