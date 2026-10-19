@@ -213,9 +213,25 @@ export async function getFeaturedOffers(): Promise<Offer[]> {
     'maxRecords': '6',
   })
 
-  return dedupeRecords(offersRaw.records)
+  const curated = dedupeRecords(offersRaw.records)
     .map((r: any) => mapOffer(r, brandsMap, creatorsMap))
     .filter(hasValidBrand)
+  if (curated.length >= 6) return curated
+
+  // Complément automatique : les offres actives les plus cliquées, avec un code,
+  // une seule par marque, pour que la section ne soit jamais vide.
+  const usedBrands = new Set(curated.map((o) => o.brandSlug))
+  const filler = (await getAllOffers())
+    .filter((o) => o.code && !usedBrands.has(o.brandSlug))
+    .sort((a, b) => b.clicks - a.clicks)
+  const picked: Offer[] = []
+  for (const o of filler) {
+    if (curated.length + picked.length >= 6) break
+    if (usedBrands.has(o.brandSlug)) continue
+    usedBrands.add(o.brandSlug)
+    picked.push(o)
+  }
+  return [...curated, ...picked]
 }
 
 export async function getCategories(): Promise<Category[]> {
