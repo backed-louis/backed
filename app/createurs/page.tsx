@@ -31,7 +31,7 @@ export default async function CreateursPage() {
               Les créateurs
             </h1>
             <p style={{ color: 'var(--text-2)', fontSize: 16 }}>
-              {creatorsWithOffers.length} créateurs · codes vérifiés
+              {creatorsWithOffers.length} créateurs actifs
             </p>
           </div>
           <div style={{

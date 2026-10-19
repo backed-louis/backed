@@ -37,7 +37,7 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
           marginBottom: 36,
         }}>
           <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.03em', color: 'var(--accent-text)' }}>
-            ⚡ {offerCount} codes actifs · 🔥 {creatorCount} créateurs
+            ⚡ {offerCount} codes actifs · 🔥 {creatorCount} créateurs soutenus
           </span>
         </div>
         <h1 style={{
@@ -114,7 +114,7 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
               e.currentTarget.style.transform = 'translateY(0)'
             }}
           >
-            Voir les {creatorCount} créateurs
+            Voir les créateurs
           </Link>
         </div>
       </div>
