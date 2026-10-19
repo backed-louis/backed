@@ -28,7 +28,8 @@ async function main() {
 
   do {
     const url = new URL(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}`)
-    url.searchParams.set('filterByFormula', '{Status}="Active"')
+    // Les offres mises à la une à la main (Homepage Position) ne sont jamais désactivées automatiquement.
+    url.searchParams.set('filterByFormula', 'AND({Status}="Active", {Homepage Position}=BLANK())')
     url.searchParams.set('fields[]', 'Status')
     url.searchParams.append('fields[]', 'Code')
     url.searchParams.append('fields[]', 'Slug')
