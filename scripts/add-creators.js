@@ -10,7 +10,7 @@
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
 const BASE = process.env.AIRTABLE_BASE_ID || 'appzPhfC7ZdsjlPNa'
-const MIN_SUBSCRIBERS = 50000
+const MIN_SUBSCRIBERS = Number(process.env.MIN_SUBSCRIBERS || 40000)
 const SUMMARY = process.env.GITHUB_STEP_SUMMARY
 
 const slugify = (s) =>
