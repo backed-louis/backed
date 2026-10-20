@@ -23,6 +23,9 @@ Pour lancer à la main : **Actions → Vidéos de la semaine → Run workflow**
 - Offres `Active` et non expirées, avec un code et une marque (nom + slug), comme sur le site.
 - Les plus cliquées d'abord (champ `Clicks`), puis les plus récentes.
 - Une seule offre par marque.
+- Seulement les offres valables jusqu'à la fin de la semaine (date de fin vide ou après le samedi).
+- Le nombre de nouvelles offres par jour ne change rien : toujours 1 vidéo par jour. S'il manque des offres, le jour est marqué « pas de nouvelle vidéo » dans `publications.md`.
+- Aucun compteur (nombre de codes, de créateurs) dans les vidéos, puisqu'elles sont préparées pour toute la semaine.
 - Si le texte de l'offre contient un pourcentage (5 à 90 %), la vidéo s'ouvre sur un prix barré
   sur un panier d'exemple de 100 €, affiché comme tel. Sinon, elle s'ouvre sur le texte de l'offre.
   Les « jusqu'à -X % » ne sont pas traités comme un pourcentage garanti.

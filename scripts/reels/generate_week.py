@@ -50,7 +50,7 @@ def load_from_airtable():
 
 
 # ------------------------------------------------------------------ sélection
-def pick_offers(data, n_daily=6, n_top=3):
+def pick_offers(data, n_daily=6, n_top=3, valid_until=None):
     brands = {r["id"]: r["fields"] for r in data["brands"]}
     creators = {r["id"]: r["fields"].get("Name", "") for r in data["creators"]}
     offers = []
@@ -60,6 +60,9 @@ def pick_offers(data, n_daily=6, n_top=3):
         name, slug = b.get("Name", ""), b.get("slug", "")
         code = str(f.get("Code") or "").strip()
         if not (name and slug and code):  # même garde-fou que le site + on ne montre que des codes
+            continue
+        end = str(f.get("End Date") or "")
+        if end and valid_until and end < valid_until:  # l'offre doit tenir jusqu'à la fin de la semaine
             continue
         benefit = str(f.get("Benefit") or "").strip()
         pct = render.percent_of(benefit)
@@ -130,16 +133,19 @@ def main():
     a = ap.parse_args()
 
     data = json.load(open(a.fixture, encoding="utf-8")) if a.fixture else load_from_airtable()
-    daily, top, n_offers, n_creators = pick_offers(data)
+    start = dt.date.fromisoformat(a.start) if a.start else next_sunday(dt.date.today())
+    week_end = (start + dt.timedelta(days=6)).isoformat()
+    daily, top, n_offers, n_creators = pick_offers(data, valid_until=week_end)
     if not daily:
         sys.exit("Aucune offre active avec code et marque : rien à générer.")
-    proof = f"{n_offers} codes · {n_creators} créateurs YouTube"
-    start = dt.date.fromisoformat(a.start) if a.start else next_sunday(dt.date.today())
+    # Pas de chiffre qui bouge chaque jour dans les vidéos : elles sont générées le samedi pour toute la semaine.
+    proof = "Les codes promo de tes créateurs YouTube"
     os.makedirs(a.out, exist_ok=True)
 
     md = [f"# Publications Backed — semaine du {date_fr(start)}\n",
           f"Généré automatiquement depuis Airtable le {dt.date.today().isoformat()} : {n_offers} offres actives, "
-          "les plus cliquées en premier, une par marque. Vérifie les codes avant de poster.\n"]
+          "les plus cliquées en premier, une par marque, et seulement celles valables jusqu'à la fin de la semaine. "
+          "Le nombre de nouvelles offres par jour n'a pas d'importance : 1 vidéo par jour, toujours.\n"]
     for i, o in enumerate(daily):
         day = start + dt.timedelta(days=i)
         name = f"{i + 1:02d}-{day.isoformat()}-{o['slug']}.mp4"
@@ -147,9 +153,13 @@ def main():
             dur = render.encode(render.offer_shots(o, proof), os.path.join(a.out, name), variante=i % 4)
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
         md.append(block(f"{date_fr(day)} — {o['brand']}", name, *texts_offer(o, day.weekday())))
+    for i in range(len(daily), 6):  # pas assez d'offres valables toute la semaine
+        day = start + dt.timedelta(days=i)
+        md.append(f"## {date_fr(day)} — pas de nouvelle vidéo\n\nPas assez d'offres valables toute la semaine : "
+                  "republie la vidéo qui a le mieux marché, ou saute ce jour.\n")
     if len(top) >= 2:
-        day = start + dt.timedelta(days=len(daily))
-        name = f"{len(daily) + 1:02d}-{day.isoformat()}-top{len(top)}.mp4"
+        day = start + dt.timedelta(days=6)  # le top 3 reste toujours le samedi
+        name = f"07-{day.isoformat()}-top{len(top)}.mp4"
         if not a.no_video:
             dur = render.encode(render.top_shots(top, proof), os.path.join(a.out, name), variante=len(daily) % 4)
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
