@@ -14,6 +14,10 @@ on:
         description: 'Vidéos publiées depuis combien de jours'
         required: false
         default: '45'
+      pays:
+        description: 'Pays acceptés, codes séparés par des virgules (FR, ou FR,BE,CH,CA pour la francophonie)'
+        required: false
+        default: 'FR'
       avec_liste:
         description: 'Noter aussi les créateurs de scripts/creators/candidats.txt (true/false)'
         required: false
@@ -41,6 +45,7 @@ jobs:
           MIN_SUBSCRIBERS: ${{ github.event.inputs.min_abonnes }}
           DAYS: ${{ github.event.inputs.jours }}
           WITH_CANDIDATES: ${{ github.event.inputs.avec_liste }}
+          COUNTRIES: ${{ github.event.inputs.pays }}
         run: node scripts/discover-creators.js
       - name: Classement à télécharger
         uses: actions/upload-artifact@v4
