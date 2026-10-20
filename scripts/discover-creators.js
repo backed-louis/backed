@@ -23,6 +23,9 @@ const DAYS = Number(process.env.DAYS || 45)
 const WITH_CANDIDATES = process.env.WITH_CANDIDATES !== 'false'
 const OUT_DIR = process.env.OUT_DIR || 'out/decouverte'
 const RECENT_VIDEOS = 15
+// Pays acceptés (code ISO déclaré par la chaîne). Une chaîne sans pays déclaré est gardée
+// seulement si ses textes sont en français.
+const COUNTRIES = (process.env.COUNTRIES || 'FR').split(',').map((c) => c.trim().toUpperCase()).filter(Boolean)
 
 // Recherches YouTube (2 pages de 50 vidéos chacune).
 const QUERIES = ['code promo', 'avec mon code', 'code promo lien en description', 'partenaire de cette vidéo code']
@@ -33,6 +36,16 @@ const CODE_RE = /(?:code(?:\s+(?:promo|créateur|createur))?|avec\s+le\s+code|ut
 const NOT_CODES = new Set(['promo', 'pour', 'dans', 'avec', 'sur', 'est', 'qui', 'les', 'des', 'une', 'and', 'the', 'source', 'lien', 'ici', 'suivant', 'personnel', 'exclusif'])
 
 let quotaUsed = 0
+
+// Texte plutôt français que anglais (mots outils les plus fréquents).
+const FR_WORDS = /\b(le|la|les|des|du|et|pour|avec|sur|dans|une|est|vous|ton|ta|tes|mon|ma|mes|abonne|vidéo)\b/gi
+const EN_WORDS = /\b(the|and|with|for|your|you|this|subscribe|video|check|out)\b/gi
+function looksFrench(text) {
+  const t = String(text || '')
+  const fr = (t.match(FR_WORDS) || []).length
+  const en = (t.match(EN_WORDS) || []).length
+  return fr >= 5 && fr > en * 1.5
+}
 
 async function yt(endpoint, params, cost = 1) {
   const q = new URLSearchParams({ ...params, key: YOUTUBE_API_KEY })
@@ -86,14 +99,16 @@ async function recentCampaigns(channel) {
   const vids = await yt('videos', { part: 'snippet', id: ids.join(',') })
   let withCode = 0
   const codes = []
+  const texts = []
   for (const v of vids.items || []) {
+    texts.push(v.snippet?.title || '', v.snippet?.description || '')
     const c = codesIn(v.snippet?.description)
     if (c.length) {
       withCode++
       codes.push(...c)
     }
   }
-  return { checked: (vids.items || []).length, withCode, codes: [...new Set(codes)] }
+  return { checked: (vids.items || []).length, withCode, codes: [...new Set(codes)], french: looksFrench(texts.join(' ')) }
 }
 
 function readCandidates() {
@@ -171,12 +186,17 @@ async function main() {
     const subs = Number(ch.statistics?.subscriberCount || 0)
     const fromList = [...pool.get(ch.id).via].some((v) => v.startsWith('liste'))
     if (subs < MIN_SUBSCRIBERS && !fromList) continue
+    const country = (ch.snippet.country || '').toUpperCase()
+    // Pays déclaré hors liste : écarté sans dépenser de quota.
+    if (country && !COUNTRIES.includes(country) && !fromList) continue
     let camp = { checked: 0, withCode: 0, codes: [] }
     try {
       camp = await recentCampaigns(ch)
     } catch (err) {
       console.error(`⚠️  ${ch.snippet.title} : ${err.message}`)
     }
+    // Pas de pays déclaré : on garde seulement si les vidéos sont en français.
+    if (!country && !camp.french && !fromList) continue
     const share = camp.checked ? camp.withCode / camp.checked : 0
     rows.push({
       title: ch.snippet.title,
@@ -199,7 +219,7 @@ async function main() {
   const md = [
     `# Créateurs à découvrir`,
     ``,
-    `Chaînes absentes de Backed, classées par campagnes récurrentes (vidéos avec code promo parmi les ${RECENT_VIDEOS} dernières) puis par audience. Recherche sur les ${DAYS} derniers jours, seuil ${fmt(MIN_SUBSCRIBERS)} abonnés (sauf pour la liste). Quota YouTube utilisé : ${fmt(quotaUsed)} unités.`,
+    `Chaînes absentes de Backed, classées par campagnes récurrentes (vidéos avec code promo parmi les ${RECENT_VIDEOS} dernières) puis par audience. Chaînes françaises uniquement (pays ${COUNTRIES.join(', ')}, ou sans pays mais vidéos en français). Recherche sur les ${DAYS} derniers jours, seuil ${fmt(MIN_SUBSCRIBERS)} abonnés (sauf pour la liste). Quota YouTube utilisé : ${fmt(quotaUsed)} unités.`,
     ``,
     `| # | Chaîne | Abonnés | Vidéos avec code | Exemples de codes | Pays | Trouvée via |`,
     `| --- | --- | --- | --- | --- | --- | --- |`,
