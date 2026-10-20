@@ -1,16 +1,18 @@
 import { MetadataRoute } from 'next'
-import { getAllCreators, getCategories, getAllBrands } from '@/lib/airtable'
+import { getAllCreators, getCategories, getAllOffers } from '@/lib/airtable'
 
 const BASE_URL = 'https://www.backed.fr'
 
 export const revalidate = 3600
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [creators, categories, brands] = await Promise.all([
+  const [creators, categories, offers] = await Promise.all([
     getAllCreators(),
     getCategories(),
-    getAllBrands(),
+    getAllOffers(),
   ])
+  // Seules les marques qui ont au moins un code affiché ont une page.
+  const brandSlugs = Array.from(new Set(offers.map(o => o.brandSlug).filter(Boolean)))
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
@@ -39,10 +41,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }))
 
-  const brandRoutes: MetadataRoute.Sitemap = brands
-    .filter(b => b.slug)
-    .map(brand => ({
-      url: `${BASE_URL}/marque/${brand.slug}`,
+  const brandRoutes: MetadataRoute.Sitemap = brandSlugs
+    .map(slug => ({
+      url: `${BASE_URL}/marque/${slug}`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.6,

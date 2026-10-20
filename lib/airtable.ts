@@ -169,10 +169,10 @@ function mapOffer(r: any, brandsMap: any, creatorsMap: any): Offer {
   }
 }
 
-// Garde-fou : une offre n'est valide pour l'affichage que si elle a une marque
-// (nom + slug). Évite d'afficher des cartes sans logo ni nom de marque.
+// Garde-fou : une offre n'est affichée que si elle a une marque (nom + slug)
+// et un code promo. Les simples liens affiliés, sans code, ne sont jamais affichés.
 function hasValidBrand(offer: Offer): boolean {
-  return Boolean(offer.brand && offer.brandSlug)
+  return Boolean(offer.brand && offer.brandSlug && offer.code.trim())
 }
 
 // Filtre Airtable : offre active ET non expirée (End Date vide ou >= aujourd'hui)
