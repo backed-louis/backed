@@ -1,0 +1,47 @@
+name: Découvrir des créateurs
+
+# Actions → Découvrir des créateurs → Run workflow.
+# Le classement s'affiche dans le résumé du run et se télécharge en bas (Artifacts, .md et .csv).
+# Coût : ~1 000 unités de quota YouTube + 100 par nom de scripts/creators/candidats.txt.
+on:
+  workflow_dispatch:
+    inputs:
+      min_abonnes:
+        description: "Nombre minimum d'abonnés"
+        required: false
+        default: '40000'
+      jours:
+        description: 'Vidéos publiées depuis combien de jours'
+        required: false
+        default: '45'
+      avec_liste:
+        description: 'Noter aussi les créateurs de scripts/creators/candidats.txt (true/false)'
+        required: false
+        default: 'true'
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Découvrir
+        env:
+          AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          MIN_SUBSCRIBERS: ${{ github.event.inputs.min_abonnes }}
+          DAYS: ${{ github.event.inputs.jours }}
+          WITH_CANDIDATES: ${{ github.event.inputs.avec_liste }}
+        run: node scripts/discover-creators.js
+      - name: Classement à télécharger
+        uses: actions/upload-artifact@v4
+        with:
+          name: decouverte-createurs-${{ github.run_number }}
+          path: out/decouverte
+          retention-days: 30
