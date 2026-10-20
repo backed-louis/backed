@@ -19,6 +19,9 @@ on:
         required: false
         default: 'true'
 
+permissions:
+  contents: write
+
 jobs:
   discover:
     runs-on: ubuntu-latest
@@ -45,3 +48,16 @@ jobs:
           name: decouverte-createurs-${{ github.run_number }}
           path: out/decouverte
           retention-days: 30
+      - name: Garder le classement dans le dépôt (branche decouverte-resultats)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          cp -r out/decouverte /tmp/decouverte
+          git fetch origin decouverte-resultats || true
+          git checkout -B decouverte-resultats
+          git rm -rq --cached . > /dev/null
+          rm -rf ./*
+          cp /tmp/decouverte/* .
+          git add createurs.md createurs.csv
+          git commit -qm "Classement du $(date -u +%F)"
+          git push -f origin decouverte-resultats
