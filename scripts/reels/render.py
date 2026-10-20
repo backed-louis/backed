@@ -1,6 +1,6 @@
 """Moteur de rendu des vidéos Backed (DA « Chiffres et preuves »), 1080x1920, 30 fps.
 
-Aucune dépendance hors Pillow + ffmpeg. Les polices sont dans scripts/reels/fonts (licence OFL).
+Dépendances : Pillow + ffmpeg (et numpy + scipy pour la musique, voir musique.py). Les polices sont dans scripts/reels/fonts (licence OFL).
 """
 import math
 import os
@@ -312,14 +312,29 @@ def render(shots, t):
     return img.convert("RGB").resize((W, H), Image.BILINEAR, box=((W - cw) / 2, (H - ch) / 2, (W + cw) / 2, (H + ch) / 2))
 
 
-def encode(shots, path):
+def encode(shots, path, variante=None):
+    """Encode la vidéo. Avec `variante` (0 à 3), ajoute la musique Backed et la signature sonore (musique.py)."""
     dur = sum(d for d, _ in shots)
+    video_path = path if variante is None else path + ".video.mp4"
     p = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
                           "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p",
-                          "-crf", "20", "-preset", "fast", "-movflags", "+faststart", path], stdin=subprocess.PIPE)
+                          "-crf", "20", "-preset", "fast", "-movflags", "+faststart", video_path], stdin=subprocess.PIPE)
     for i in range(int(dur * FPS)):
         p.stdin.write(render(shots, i / FPS).tobytes())
     p.stdin.close()
     if p.wait() != 0:
         raise RuntimeError(f"ffmpeg a échoué pour {path}")
+    if variante is not None:
+        import itertools
+        import musique  # numpy + scipy, seulement si on ajoute le son
+        cuts = list(itertools.accumulate(d for d, _ in shots))[:-1]
+        wav = path + ".wav"
+        musique.make_music(wav, dur, cuts, variante)
+        r = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", video_path, "-i", wav, "-map", "0:v", "-map", "1:a",
+                            "-c:v", "copy", "-af", "loudnorm=I=-14:TP=-1.5:LRA=7", "-c:a", "aac", "-b:a", "192k",
+                            "-ar", "44100", "-shortest", "-movflags", "+faststart", path])
+        os.remove(video_path)
+        os.remove(wav)
+        if r.returncode != 0:
+            raise RuntimeError(f"ffmpeg (son) a échoué pour {path}")
     return dur

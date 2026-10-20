@@ -144,14 +144,14 @@ def main():
         day = start + dt.timedelta(days=i)
         name = f"{i + 1:02d}-{day.isoformat()}-{o['slug']}.mp4"
         if not a.no_video:
-            dur = render.encode(render.offer_shots(o, proof), os.path.join(a.out, name))
+            dur = render.encode(render.offer_shots(o, proof), os.path.join(a.out, name), variante=i % 4)
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
         md.append(block(f"{date_fr(day)} — {o['brand']}", name, *texts_offer(o, day.weekday())))
     if len(top) >= 2:
         day = start + dt.timedelta(days=len(daily))
         name = f"{len(daily) + 1:02d}-{day.isoformat()}-top{len(top)}.mp4"
         if not a.no_video:
-            dur = render.encode(render.top_shots(top, proof), os.path.join(a.out, name))
+            dur = render.encode(render.top_shots(top, proof), os.path.join(a.out, name), variante=len(daily) % 4)
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
         md.append(block(f"{date_fr(day)} — Top {len(top)}", name, *texts_top(top)))
 

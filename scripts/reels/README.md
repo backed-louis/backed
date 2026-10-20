@@ -30,10 +30,14 @@ Pour lancer à la main : **Actions → Vidéos de la semaine → Run workflow**
 ## En local
 
 ```bash
-pip install Pillow   # + ffmpeg installé
+pip install Pillow numpy scipy   # + ffmpeg installé
 AIRTABLE_API_KEY=... AIRTABLE_BASE_ID=... python3 scripts/reels/generate_week.py --out out/semaine
 # test sans Airtable :
 python3 scripts/reels/generate_week.py --fixture scripts/reels/fixture.json --out out/test
 ```
+
+## Musique
+
+Chaque vidéo a une musique originale synthétisée par `musique.py` (aucun sample, pas de droits d'auteur) : 4 variantes de fond qui tournent d'une vidéo à l'autre, et la même signature sonore sur le logo de fin. Le volume est normalisé pour les réseaux (-14 LUFS).
 
 Polices : Syne, Inter et JetBrains Mono (licence SIL Open Font License, voir `fonts/`).
