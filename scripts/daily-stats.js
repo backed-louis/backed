@@ -70,7 +70,8 @@ async function main() {
 
   const brandOk = new Map(brands.map((b) => [b.id, Boolean(b.fields['Name'] && b.fields['slug'])]))
   const creatorName = new Map(creators.map((c) => [c.id, c.fields['Name'] || '']))
-  const offers = dedupe(active).filter((r) => brandOk.get(r.fields['Brand']?.[0]))
+  // Comme le site : marque valide et code promo obligatoire (pas de simples liens affiliés).
+  const offers = dedupe(active).filter((r) => brandOk.get(r.fields['Brand']?.[0]) && String(r.fields['Code'] || '').trim())
 
   const activeCreators = new Set(offers.map((r) => creatorName.get(r.fields['Creator']?.[0])).filter(Boolean))
   const clicks = {}

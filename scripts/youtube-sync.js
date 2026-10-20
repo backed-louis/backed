@@ -296,7 +296,13 @@ async function getOrCreateBrand(name, sourceUrl) {
 
 async function createOffer(code, brand, benefit, sourceUrl, endDate, creatorId, creatorName) {
   const label = code || 'lien affilié'
-  if (!code && !benefit) return
+  // Backed n'affiche que des codes promo : un simple lien affilié n'est pas enregistré
+  // (et ne crée donc pas de marque).
+  if (!code) {
+    console.log(`  ⏭️  Lien sans code ignoré (${brand})`)
+    skippedOffersCount++
+    return
+  }
 
   const end = parseEndDate(endDate)
   if (end && end < todayString()) {
