@@ -274,6 +274,7 @@ def s_end(proof):
             text_c(d, 1185, "backed.fr", F("inter", 60, "Bold"), OFF, alpha=p)
         rise(d, lt, 0.8, 1380, proof, fit(d, proof, W - 140, 38, "inter", "Medium"), GREY, dist=15)
         rise(d, lt, 0.9, 1440, "Gratuit · sans compte", F("inter", 38, "Medium"), GREY, dist=15)
+        rise(d, lt, 0.6, 1600, "Abonne-toi : un code chaque jour.", fit(d, "Abonne-toi : un code chaque jour.", W - 140, 52, "inter", "Bold"), OFF, dist=15)
     return fn
 
 
@@ -287,11 +288,11 @@ def offer_shots(o, proof):
     else:
         opening = (1.6, s_benefit(o.get("benefit") or o["brand"]))
         title = f"Le code de {o['creator']}." if o.get("creator") else f"Code {o['brand']}."
-    return [opening, (2.4, s_card(o, title)), (2.2, s_end(proof))]
+    return [opening, (2.4, s_card(o, title)), (2.6, s_end(proof))]
 
 
 def top_shots(items, proof):
-    return [(3.0, s_top(items)), (2.2, s_end(proof))]
+    return [(3.0, s_top(items)), (2.6, s_end(proof))]
 
 
 def render(shots, t):
