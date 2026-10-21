@@ -3,3 +3,7 @@ node_modules/
 .env.local
 *.pack
 .DS_Store
+
+# Python
+__pycache__/
+*.pyc
