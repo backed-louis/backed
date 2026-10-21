@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import OfferCard from '@/components/OfferCard'
 import Navbar from '@/components/Navbar'
+import WhatsAppBanner from '@/components/WhatsAppBanner'
 
 export const revalidate = 3600
 
@@ -170,12 +171,14 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: 16, paddingBottom: 64,
+            gap: 16, paddingBottom: 32,
           }}>
             {offers.map(offer => (
               <OfferCard key={offer.id} offer={offer} />
             ))}
           </div>
+
+          <WhatsAppBanner context={brand.name} />
 
           {/* ─── Bloc contenu SEO ─── */}
           <section style={{ maxWidth: 720, paddingBottom: 96 }}>
