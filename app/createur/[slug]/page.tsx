@@ -1,6 +1,7 @@
 import { getAllCreators, getAllOffers } from '@/lib/airtable'
 import { notFound } from 'next/navigation'
 import OfferCard from '@/components/OfferCard'
+import WhatsAppBanner from '@/components/WhatsAppBanner'
 import Navbar from '@/components/Navbar'
 import { getPopularThreshold, isPopularOffer } from '@/lib/popularUtils'
 
@@ -77,7 +78,7 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: 16, paddingBottom: 96,
+              gap: 16, paddingBottom: 32,
             }}>
               {offers.map(offer => (
                 <OfferCard
@@ -88,6 +89,7 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
               ))}
             </div>
           )}
+          <WhatsAppBanner />
         </div>
       </main>
     </>

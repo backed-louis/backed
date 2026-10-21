@@ -1,5 +1,7 @@
 'use client'
 import Link from 'next/link'
+import { WhatsAppIcon } from '@/components/WhatsAppBanner'
+import { WHATSAPP_CHANNEL_URL } from '@/lib/links'
 interface HeroProps {
   offerCount: number
   creatorCount: number
@@ -117,6 +119,19 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
             Voir les créateurs
           </Link>
         </div>
+        <a
+          href={WHATSAPP_CHANNEL_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            marginTop: 28, fontSize: 14, color: 'var(--text-2)',
+          }}
+        >
+          <span style={{ color: '#25D366', display: 'inline-flex' }}><WhatsAppIcon size={16} /></span>
+          1 code par jour sur WhatsApp
+          <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>Rejoindre →</span>
+        </a>
       </div>
     </section>
   )
