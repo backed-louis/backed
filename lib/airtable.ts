@@ -85,6 +85,7 @@ export interface Offer {
   sourceUrl: string
   slug: string
   clicks: number
+  endDate: string | null
 }
 
 export interface Category {
@@ -243,17 +244,35 @@ function mapOffer(r: any, brandsMap: any, creatorsMap: any): Offer {
     sourceUrl: r.fields['Source URL'] || '',
     slug: r.fields['Slug'] || '',
     clicks: r.fields['Clicks'] || 0,
+    endDate: r.fields['End Date'] || null,
   }
 }
 
+// Avantage concret et chiffré : « 20 € offerts », « -15 % », « 4 mois offerts », « 7 jours gratuits »…
+const ADVANTAGE = /\d+([.,]\d+)?\s?(%|€|euros?\b|mois\b|jours?\b|ans?\b|go\b)|offert|gratuit|essai/i
+
+// Offre « lien » : pas de code, mais un lien personnel du créateur (ex. get.revolut.com/…/SQueezie)
+// avec un avantage chiffré. Les liens sans avantage, ou qui renvoient juste à la vidéo, restent masqués.
+export function isLinkOffer(offer: Pick<Offer, 'code' | 'sourceUrl' | 'benefit'>): boolean {
+  if (offer.code.trim()) return false
+  let host = ''
+  try {
+    host = new URL(offer.sourceUrl).hostname.replace(/^www\./, '').toLowerCase()
+  } catch {
+    return false
+  }
+  if (/(^|\.)(youtube\.com|youtu\.be)$/.test(host)) return false
+  return ADVANTAGE.test(offer.benefit) && !/newsletter/i.test(offer.benefit)
+}
+
 // Garde-fou : une offre n'est affichée que si
-// - elle a un code promo (les simples liens affiliés ne sont jamais affichés) ;
+// - elle a un code promo, ou un lien personnel du créateur avec un avantage chiffré ;
 // - sa marque a une fiche complète (nom, slug, description, catégorie), pour que
-//   chaque page marque soit propre. Les fiches sont complétées chaque nuit par
-//   scripts/complete-brands.js.
+//   chaque page marque soit propre (fiches complétées par scripts/complete-brands.js).
+// Les offres dont la date de fin est passée sont déjà exclues par ACTIVE_NOT_EXPIRED.
 function hasValidBrand(offer: Offer): boolean {
   return Boolean(
-    offer.code.trim() &&
+    (offer.code.trim() || isLinkOffer(offer)) &&
     offer.brand && offer.brandSlug &&
     offer.brandDescription?.trim() && offer.category
   )

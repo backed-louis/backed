@@ -1,4 +1,5 @@
 const Airtable = require('airtable')
+const { isLinkOffer, endDateFromText } = require('./lib/offres')
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY })
   .base(process.env.AIRTABLE_BASE_ID)
@@ -27,11 +28,12 @@ const brandsByKey = new Map()   // nom normalisé -> id de la marque
 const brandNames = []           // noms de marques existantes, transmis à Claude pour éviter les variantes
 const usedBrandSlugs = new Set()
 const knownVideoIds = new Set()
-const knownOfferKeys = new Set()
+const knownOffers = new Map()   // clé d'offre -> offre existante la plus récente { id, active, seen, end }
 
 let errorCount = 0
 let createdOffersCount = 0
 let skippedOffersCount = 0
+let refreshedOffersCount = 0
 let createdBrandsCount = 0
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -97,14 +99,25 @@ async function loadState() {
     if (r.fields['slug']) usedBrandSlugs.add(r.fields['slug'])
   }
 
-  // Toutes les offres, actives ET inactives : une offre désactivée ne doit pas être recréée.
+  // Toutes les offres, actives ET inactives : une offre déjà connue n'est jamais recréée.
+  // Si le créateur la repartage dans une nouvelle vidéo, on la met à jour (« Vu le », réactivation).
   // Attention : via l'API, un champ lié renvoie des IDs d'enregistrements (pas des noms).
-  const offers = await base('Offers').select({ fields: ['Code', 'Brand', 'Creator', 'Source URL'] }).all()
+  const offers = await base('Offers').select({ fields: ['Code', 'Brand', 'Creator', 'Source URL', 'Status', 'Vu le', 'End Date', 'Created time'] }).all()
   for (const r of offers) {
     const creatorId = r.fields['Creator']?.[0]
     if (!creatorId) continue
     const brandId = r.fields['Brand']?.[0] || ''
-    knownOfferKeys.add(offerKey(creatorId, brandId, r.fields['Code'], r.fields['Source URL']))
+    const key = offerKey(creatorId, brandId, r.fields['Code'], r.fields['Source URL'])
+    const created = r.fields['Created time'] || ''
+    const current = knownOffers.get(key)
+    if (current && current.created > created) continue
+    knownOffers.set(key, {
+      id: r.id,
+      created,
+      active: r.fields['Status'] === 'Active',
+      seen: r.fields['Vu le'] || null,
+      end: r.fields['End Date'] || null,
+    })
   }
 
   const videos = await base('Videos Inbox').select({ fields: ['Video ID'] }).all()
@@ -112,7 +125,7 @@ async function loadState() {
     if (r.fields['Video ID']) knownVideoIds.add(r.fields['Video ID'])
   }
 
-  console.log(`🗂️  État chargé : ${brandsByKey.size} marques, ${knownOfferKeys.size} offres, ${knownVideoIds.size} vidéos déjà vues`)
+  console.log(`🗂️  État chargé : ${brandsByKey.size} marques, ${knownOffers.size} offres, ${knownVideoIds.size} vidéos déjà vues`)
 }
 
 // ─── Claude ──────────────────────────────────────────────────────────────────
@@ -145,11 +158,11 @@ async function detectCodesWithClaude(description, creatorName, publishedDate) {
     `- Ignore les mentions de réseaux sociaux`,
     `- Ignore les mots génériques (YOUTUBE, ABONNE, etc.)`,
     `- Si aucun code trouvé, retourne {"codes": []}`,
-    `- Le champ "code" doit être null si c est uniquement un lien affilié sans code`,
+    `- Le champ "code" doit être null si c est uniquement un lien affilié sans code (ex: "Téléchargez Revolut avec ce lien … 20 € offerts" → code null, url = le lien, benefit = "20 € offerts …")`,
     `- Le champ "url" doit être null si pas de lien spécifique`,
     `- IMPORTANT pour "brand": renvoie le nom commercial propre de l'annonceur (la société ou le service qui propose l'offre), ex: "NordVPN", "HelloFresh", "Revolut". JAMAIS un nom de domaine ou une URL, JAMAIS le nom du créateur, JAMAIS la description d'un produit, JAMAIS de parenthèses. Pour un lien affilié vers un produit, renvoie la marque qui le vend ou le fabrique (ex: "Amazon", "MSI"). Si tu ne peux pas identifier la marque avec certitude, renvoie null.`,
     `- Marques déjà connues : ${knownBrands}. Si l'annonceur correspond à l'une d'elles (même sous une variante comme "Emma Sleep" pour "Emma" ou "Scuf Gaming" pour "Scuf"), utilise EXACTEMENT son nom de cette liste. N'invente une nouvelle marque que si elle n'est pas dans la liste.`,
-    `- "endDate": si la description indique une date de fin ou de validité (ex: "jusqu'au 14 mars", "valable jusqu'à fin 2026"), renvoie-la au format YYYY-MM-DD en déduisant l'année la plus plausible à partir de la date de publication de la vidéo. Sinon renvoie null. N'invente jamais de date.`,
+    `- "endDate": si la description indique une date de fin ou de validité, même dans une phrase séparée du lien (ex: "jusqu'au 14 mars", "valable jusqu'à fin 2026", "L'offre se termine le 30/09/2026"), renvoie-la au format YYYY-MM-DD en déduisant l'année la plus plausible à partir de la date de publication de la vidéo. Sinon renvoie null. N'invente jamais de date.`,
   ].join('\n')
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -294,12 +307,13 @@ async function getOrCreateBrand(name, sourceUrl) {
   return brandId
 }
 
-async function createOffer(code, brand, benefit, sourceUrl, endDate, creatorId, creatorName) {
-  const label = code || 'lien affilié'
-  // Backed n'affiche que des codes promo : un simple lien affilié n'est pas enregistré
-  // (et ne crée donc pas de marque).
-  if (!code) {
-    console.log(`  ⏭️  Lien sans code ignoré (${brand})`)
+async function createOffer(code, brand, benefit, sourceUrl, endDate, creatorId, creatorName, seenDate) {
+  const label = code || 'lien'
+  // Backed affiche les codes promo, et les liens personnels du créateur avec un avantage chiffré
+  // (ex. Revolut : « 20 € offerts » via get.revolut.com/…/SQueezie). Un lien sans avantage, ou
+  // sans lien propre à l'offre, n'est pas enregistré (et ne crée donc pas de marque).
+  if (!code && !isLinkOffer({ code, sourceUrl, benefit })) {
+    console.log(`  ⏭️  Lien sans avantage chiffré ignoré (${brand})`)
     skippedOffersCount++
     return
   }
@@ -319,12 +333,26 @@ async function createOffer(code, brand, benefit, sourceUrl, endDate, creatorId, 
   }
 
   const key = offerKey(creatorId, brandId, code, sourceUrl)
-  if (knownOfferKeys.has(key)) {
-    console.log(`  ⏭️  Doublon ignoré : ${label} (${brand})`)
-    skippedOffersCount++
+  const seen = seenDate || todayString()
+  const existing = knownOffers.get(key)
+  if (existing) {
+    // Offre déjà connue, repartagée dans une nouvelle vidéo : elle est toujours d'actualité.
+    const fields = {}
+    if (!existing.seen || seen > existing.seen) fields['Vu le'] = seen
+    if (end && end !== existing.end) fields['End Date'] = end
+    else if (!end && existing.end && existing.end < todayString()) fields['End Date'] = null // nouvelle campagne sans date
+    if (!existing.active) fields['Status'] = 'Active'
+    if (Object.keys(fields).length) {
+      await base('Offers').update([{ id: existing.id, fields }])
+      Object.assign(existing, { active: true, seen: fields['Vu le'] || existing.seen, end: 'End Date' in fields ? fields['End Date'] : existing.end })
+      refreshedOffersCount++
+      console.log(`  🔄 Offre repartagée, mise à jour : ${label} (${brand}) — ${Object.keys(fields).join(', ')}`)
+    } else {
+      console.log(`  ⏭️  Doublon ignoré : ${label} (${brand})`)
+      skippedOffersCount++
+    }
     return
   }
-  knownOfferKeys.add(key)
 
   const slug = `${(brand || 'unknown').toLowerCase().replace(/\s+/g, '-')}-${creatorName.toLowerCase().replace(/\s+/g, '-')}`
   const fields = {
@@ -335,10 +363,12 @@ async function createOffer(code, brand, benefit, sourceUrl, endDate, creatorId, 
     'Creator': [creatorId],
     'Brand': [brandId],
     'Slug': slug,
+    'Vu le': seen,
   }
   if (end) fields['End Date'] = end
 
-  await base('Offers').create([{ fields }])
+  const created = await base('Offers').create([{ fields }])
+  knownOffers.set(key, { id: created[0].id, created: new Date().toISOString(), active: true, seen, end: end || null })
   createdOffersCount++
   console.log(`  ✅ Offre créée : ${label} (${brand}) — ${benefit}${end ? ` — fin ${end}` : ''}`)
 }
@@ -418,7 +448,9 @@ async function main() {
         knownVideoIds.add(video.videoId)
 
         for (const c of codes) {
-          await createOffer(c.code, c.brand, c.benefit, c.url || video.url, c.endDate, creator.id, creator.name)
+          // Date de fin : celle lue par Claude, sinon celle écrite près de l'offre dans la description.
+          const endDate = c.endDate || endDateFromText(description, [c.code, c.url], publishedDate)
+          await createOffer(c.code, c.brand, c.benefit, c.url || video.url, endDate, creator.id, creator.name, publishedDate)
           totalCodes++
         }
         totalVideos++
@@ -436,7 +468,7 @@ async function main() {
     console.error('❌ Expiration des offres :', err.message)
   }
 
-  console.log(`\n✅ Sync terminé : ${totalVideos} vidéos, ${totalCodes} codes détectés, ${createdOffersCount} offres créées, ${skippedOffersCount} ignorées, ${createdBrandsCount} marques créées, ${errorCount} erreur(s)`)
+  console.log(`\n✅ Sync terminé : ${totalVideos} vidéos, ${totalCodes} codes détectés, ${createdOffersCount} offres créées, ${refreshedOffersCount} repartagées, ${skippedOffersCount} ignorées, ${createdBrandsCount} marques créées, ${errorCount} erreur(s)`)
 
   // Si au moins la moitié des créateurs échouent (quota YouTube, crédits Claude, clé invalide...),
   // le job GitHub passe en rouge au lieu de rester vert sans rien faire.

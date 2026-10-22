@@ -1,5 +1,5 @@
 /**
- * Backed – Nettoyage des offres expirées (> 3 mois)
+ * Backed – Nettoyage des offres expirées (pas repartagées depuis plus de 3 mois)
  * Usage: AIRTABLE_API_KEY=xxx node scripts/cleanup-expired-offers.js
  */
 
@@ -8,8 +8,12 @@ const AIRTABLE_BASE = 'appzPhfC7ZdsjlPNa'
 const TABLE = 'Offers'
 const MONTHS = 3
 
-function isExpired(createdTime) {
-  const created = new Date(createdTime)
+// Une offre expire 3 mois après sa création, ou après la dernière vidéo qui l'a repartagée
+// (« Vu le ») si c'est plus récent : un code que le créateur repartage reste en ligne.
+function isExpired(r) {
+  const seen = r.fields['Vu le'] ? new Date(`${r.fields['Vu le']}T00:00:00Z`) : null
+  const createdAt = new Date(r.createdTime)
+  const created = seen && seen > createdAt ? seen : createdAt
   const cutoff = new Date()
   cutoff.setMonth(cutoff.getMonth() - MONTHS)
   return created < cutoff
@@ -33,6 +37,7 @@ async function main() {
     url.searchParams.set('fields[]', 'Status')
     url.searchParams.append('fields[]', 'Code')
     url.searchParams.append('fields[]', 'Slug')
+    url.searchParams.append('fields[]', 'Vu le')
     if (offset) url.searchParams.set('offset', offset)
 
     const res = await fetch(url, {
@@ -45,7 +50,7 @@ async function main() {
 
   console.log(`📋 ${records.length} offres actives trouvées`)
 
-  const expired = records.filter(r => isExpired(r.createdTime))
+  const expired = records.filter(r => isExpired(r))
   console.log(`⏰ ${expired.length} offres expirées (> ${MONTHS} mois)\n`)
 
   if (expired.length === 0) {
@@ -57,7 +62,7 @@ async function main() {
     const code = r.fields['Code'] || 'sans code'
     const slug = r.fields['Slug'] || ''
     const created = new Date(r.createdTime).toLocaleDateString('fr-FR')
-    console.log(`  ⚠️  ${slug} (${code}) — créée le ${created}`)
+    console.log(`  ⚠️  ${slug} (${code}) — créée le ${created}${r.fields['Vu le'] ? `, vue le ${r.fields['Vu le']}` : ''}`)
   })
 
   console.log('\nDésactivation en cours...')

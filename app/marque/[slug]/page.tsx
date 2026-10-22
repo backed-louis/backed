@@ -43,7 +43,7 @@ export async function generateMetadata(
 
   const { brand, offers } = data
   const count = offers.length
-  const title = `Code promo ${brand.name} — ${count} code${count !== 1 ? 's' : ''} actif${count !== 1 ? 's' : ''} | Backed`
+  const title = `Code promo ${brand.name} — ${count} offre${count !== 1 ? 's' : ''} active${count !== 1 ? 's' : ''} | Backed`
   const description = `Tous les codes promo ${brand.name} partagés par des créateurs YouTube. ${count} code${count !== 1 ? 's' : ''} actif${count !== 1 ? 's' : ''} sur Backed. ${brand.description ? brand.description.slice(0, 100) : ''}`.trim()
 
   return {

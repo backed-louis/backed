@@ -8,6 +8,8 @@
  * - les clics cumulés de chaque offre, pour calculer les clics jour par jour.
  */
 
+const { isDisplayable } = require('./lib/offres')
+
 const API_KEY = process.env.AIRTABLE_API_KEY
 const BASE = process.env.AIRTABLE_BASE_ID || 'appzPhfC7ZdsjlPNa'
 const STATS_TABLE = 'Suivi quotidien'
@@ -63,15 +65,16 @@ async function main() {
     fetchAll('Creators', { 'fields[]': ['Name'] }),
     fetchAll('Offers', {
       filterByFormula: ACTIVE_NOT_EXPIRED,
-      'fields[]': ['Code', 'Brand', 'Creator', 'Source URL'],
+      'fields[]': ['Code', 'Brand', 'Creator', 'Source URL', 'Benefit'],
     }),
     fetchAll('Offers', { filterByFormula: '{Clicks}>0', 'fields[]': ['Clicks'] }),
   ])
 
   const brandOk = new Map(brands.map((b) => [b.id, Boolean(b.fields['Name'] && b.fields['slug'])]))
   const creatorName = new Map(creators.map((c) => [c.id, c.fields['Name'] || '']))
-  // Comme le site : marque valide et code promo obligatoire (pas de simples liens affiliés).
-  const offers = dedupe(active).filter((r) => brandOk.get(r.fields['Brand']?.[0]) && String(r.fields['Code'] || '').trim())
+  // Comme le site : marque valide, et un code promo ou un lien perso du créateur avec un avantage chiffré.
+  const offers = dedupe(active).filter((r) => brandOk.get(r.fields['Brand']?.[0]) &&
+    isDisplayable({ code: r.fields['Code'], sourceUrl: r.fields['Source URL'], benefit: r.fields['Benefit'] }))
 
   const activeCreators = new Set(offers.map((r) => creatorName.get(r.fields['Creator']?.[0])).filter(Boolean))
   const clicks = {}
