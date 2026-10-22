@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 import { getAllCreators, getCategories, getAllOffers } from '@/lib/airtable'
 
-const BASE_URL = 'https://www.backed.fr'
+import { SITE_URL as BASE_URL } from '@/lib/links'
 
 export const revalidate = 3600
 
@@ -23,8 +23,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/confidentialite`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
   ]
 
+  // Seuls les créateurs qui ont au moins un code affiché ont une page utile.
+  const activeCreators = new Set(offers.map(o => o.creator))
   const creatorRoutes: MetadataRoute.Sitemap = creators
-    .filter(c => c.slug)
+    .filter(c => c.slug && activeCreators.has(c.name))
     .map(creator => ({
       url: `${BASE_URL}/createur/${creator.slug}`,
       lastModified: new Date(),

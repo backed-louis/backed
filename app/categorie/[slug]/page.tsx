@@ -1,3 +1,4 @@
+import { SITE_URL } from '@/lib/links'
 import { getAllOffers, getCategories } from '@/lib/airtable'
 import { notFound } from 'next/navigation'
 import OfferCard from '@/components/OfferCard'
@@ -32,7 +33,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!category) return {}
   return {
     title: `Codes promo ${category.name} — Backed`,
-    description: `Découvrez les meilleurs codes promo ${category.name} partagés par vos créateurs préférés. Offres vérifiées et toujours actives sur Backed.`,
+    description: `Les codes promo ${category.name} partagés par vos créateurs YouTube préférés, au même endroit. Gratuit, sans compte.`,
+    alternates: { canonical: `${SITE_URL}/categorie/${category.slug}` },
     openGraph: {
       title: `Codes promo ${category.name} — Backed`,
       description: `Découvrez les meilleurs codes promo ${category.name} partagés par vos créateurs préférés.`,
