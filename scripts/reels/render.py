@@ -7,7 +7,7 @@ import os
 import re
 import subprocess
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 W, H, FPS = 1080, 1920, 30
 NIGHT = (7, 8, 15)
@@ -226,7 +226,7 @@ def draw_card(img, lt, start, o, yc, copy_at=None):
         sc *= 1 + 0.03 * math.exp(-(lt - copy_at) * 10)
     c = c.resize((int(cw * sc), int(ch * sc)), Image.BICUBIC)
     c.putalpha(c.getchannel("A").point(lambda v: int(v * p)))
-    img.alpha_composite(c, (int(W / 2 - c.width / 2), int(yc - c.height / 2 + 60 * (1 - p))))
+    img.paste(c, (int(W / 2 - c.width / 2), int(yc - c.height / 2 + 60 * (1 - p))), c)
 
 
 def s_card(o, title):
@@ -278,6 +278,176 @@ def s_end(proof):
     return fn
 
 
+# ------------------------------------------------------------------ nouveau format (accroche dès la 1re image)
+def eob(x, k=1.8):
+    """Arrivée avec léger rebond."""
+    return 1 + (k + 1) * (x - 1) ** 3 + k * (x - 1) ** 2
+
+
+def s_hook(o):
+    """1re image pleine et lisible tout de suite : le créateur, le gain, la marque. Aucun fondu d'entrée."""
+    who = f"Le code de {o['creator']}" if o.get("creator") else f"Code promo {o['brand']}"
+    gain = f"{o['disc']} chez {o['brand']}" if o.get("disc") else first_clause(o.get("benefit") or o["brand"], 34)
+
+    def fn(img, d, lt):
+        bg(d)
+        text_c(d, 520, "CODE DU JOUR", F("inter", 40, "Bold"), GREY)
+        fw = fit(d, who, W - 140, 120)
+        lines = wrap(d, who, F("syne", 112), W - 140) if tsize(d, who, F("syne", 112))[1] > W - 140 else [who]
+        fw = fit(d, max(lines, key=len), W - 140, 112)
+        y = 720
+        for ln in lines:
+            text_c(d, y, ln, fw, OFF)
+            y += int(fw.size * 1.1)
+        fg = fit(d, gain, W - 140, 104)
+        text_c(d, y + 70, gain, fg, LILAS)
+        # soulignement qui se trace sous le gain
+        gw = tsize(d, gain, fg)[1]
+        u = eo(prog(lt, 0.15, 0.45))
+        d.rounded_rectangle((W / 2 - gw / 2, y + 150, W / 2 - gw / 2 + gw * u, y + 162), radius=6, fill=VIO)
+        if o.get("detail") and o.get("disc"):
+            det = short(o["detail"], 44)
+            text_c(d, y + 240, det, fit(d, det, W - 160, 44, "inter", "SemiBold"), GREY)
+        a = 0.55 + 0.45 * abs(math.sin(lt * 4))
+        text_c(d, 1560, "Le code arrive ↓", F("inter", 46, "Bold"), OFF, alpha=a)
+    return fn
+
+
+def s_code(o):
+    """La carte du code, copiée tout de suite."""
+    title = short(o.get("detail") or o.get("benefit") or o["brand"], 40)
+
+    def fn(img, d, lt):
+        bg(d)
+        text_c(d, 420, title, fit(d, title, W - 140, 72, "syne", "Bold"), OFF)
+        draw_card(img, lt, 0.0, o, 960, copy_at=0.9)
+        if lt > 0.9:
+            rise(d, lt, 0.95, 1420, "Copié. Tu paies le bon prix.", F("inter", 46, "SemiBold"), GREEN, dist=20)
+    return fn
+
+
+def s_top_hook(items):
+    def fn(img, d, lt):
+        bg(d)
+        text_c(d, 520, "LA SÉLECTION DE LA SEMAINE", F("inter", 40, "Bold"), GREY)
+        text_c(d, 760, f"{len(items)} codes", F("syne", 190), OFF)
+        text_c(d, 950, "à garder.", fit(d, "à garder.", W - 160, 130), LILAS)
+        names = " · ".join(o["brand"] for o in items)
+        text_c(d, 1160, names, fit(d, names, W - 160, 58, "inter", "Bold"), OFF)
+        a = 0.55 + 0.45 * abs(math.sin(lt * 4))
+        text_c(d, 1560, "Enregistre pour plus tard ↓", F("inter", 46, "Bold"), OFF, alpha=a)
+    return fn
+
+
+# ------------------------------------------------------------------ outro : le logo se tape dans la barre de recherche
+OUTRO_DUR = 3.4
+TYPE_T0, TYPE_DT = 0.20, 0.085          # frappe : une lettre toutes les 85 ms
+DOT_T = TYPE_T0 + 6 * TYPE_DT + 0.06    # point violet = 1re note de la signature sonore
+PULSE_T = DOT_T + 0.17                  # le point respire = 2e note
+TXT_T = PULSE_T + 0.45                  # les textes n'arrivent qu'après l'animation du logo
+LOGO_Y = 860
+_glow = None
+
+
+def _glow_layer():
+    global _glow
+    if _glow is None:
+        g = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(g).ellipse((W / 2 - 520, LOGO_Y - 300, W / 2 + 520, LOGO_Y + 300), fill=VIO + (150,))
+        _glow = g.filter(ImageFilter.GaussianBlur(140))
+    return _glow
+
+
+def s_outro():
+    def fn(img, d, lt):
+        bg(d)
+        pulse = 0.35 + 0.25 * eo(prog(lt, 0.0, 0.6)) + 0.4 * eo(prog(lt, DOT_T, 0.15)) * (1 - prog(lt, DOT_T + 0.15, 0.8))
+        gl = _glow_layer().copy()
+        gl.putalpha(gl.getchannel("A").point(lambda v: int(v * clamp(pulse))))
+        img.paste(gl, (0, 0), gl)
+        # rectangle de la barre de recherche
+        a_in = eob(prog(lt, 0.0, 0.32))
+        yc = LOGO_Y + 120 * (1 - clamp(a_in))
+        sc = 0.92 + 0.08 * a_in
+        x0, x1 = W / 2 - (W / 2 - 90) * sc, W / 2 + (W / 2 - 90) * sc
+        y0, y1 = yc - 115 * sc, yc + 115 * sc
+        A = int(255 * clamp(a_in))
+        d.rounded_rectangle((x0, y0, x1, y1), radius=int(70 * sc), fill=SLATE + (A,), outline=VIO + (A,), width=5)
+        mx, my, mr = x0 + 95 * sc, yc - 8, 30 * sc
+        d.ellipse((mx - mr, my - mr, mx + mr, my + mr), outline=GREY + (A,), width=int(8 * sc))
+        d.line((mx + mr * 0.7, my + mr * 0.7, mx + mr * 1.5, my + mr * 1.5), fill=GREY + (A,), width=int(9 * sc))
+        # « Backed » se tape, lettre par lettre
+        f = fit(d, "Backed.", (W - 180) - 330, 170)
+        word = "Backed"
+        tx = x0 + 165 * sc
+        for i, ch in enumerate(word):
+            p = prog(lt, TYPE_T0 + i * TYPE_DT, 0.12)
+            if p <= 0:
+                break
+            pre = word[:i]
+            bx = tx + (tsize(d, pre, f)[1] if pre else 0)
+            fl = F("syne", f.size * (1.35 - 0.35 * eo(p)))
+            b, w, h = tsize(d, ch, fl)
+            d.text((bx - b[0] - (w - tsize(d, ch, f)[1]) / 2, yc - h / 2 - b[1] - 6), ch, font=fl, fill=OFF + (int(255 * clamp(p * 1.5)),))
+        wfull = tsize(d, word, f)[1]
+        r = f.size * 0.105
+        dx, dy = tx + wfull + f.size * 0.03 + r, yc + tsize(d, "B", f)[2] / 2 - r * 1.05 - 6
+        pd = prog(lt, DOT_T, 0.3)
+        if pd > 0.001:
+            rr = r * eob(pd, 2.4) * (1 + 0.22 * math.sin(math.pi * prog(lt, PULSE_T, 0.25)))
+            d.ellipse((dx - rr, dy - rr, dx + rr, dy + rr), fill=VIO + (255,))
+            for t_, amp in ((DOT_T, 5.0), (PULSE_T, 3.2)):
+                rp = prog(lt, t_, 0.45)
+                if 0 < rp < 1:
+                    R = r * (1 + amp * eo(rp))
+                    d.ellipse((dx - R, dy - R, dx + R, dy + R), outline=LILAS + (int(220 * (1 - rp)),), width=6)
+            sp = prog(lt, DOT_T, 0.4)
+            if 0 < sp < 1:
+                for k in range(10):
+                    ang = k * 2 * math.pi / 10 + 0.3
+                    dist = r * (1.5 + 6 * eo(sp))
+                    q = 9 * (1 - sp)
+                    cx, cy = dx + math.cos(ang) * dist, dy + math.sin(ang) * dist
+                    d.rectangle((cx - q, cy - q, cx + q, cy + q), fill=(LILAS if k % 2 else VIO) + (int(255 * (1 - sp)),))
+        if lt > TYPE_T0 - 0.05:
+            n = min(6, int(max(0, lt - TYPE_T0) / TYPE_DT) + 1)
+            cx = tx + (tsize(d, word[:n], f)[1] if lt < DOT_T else wfull + f.size * 0.03 + 2 * r) + 16
+            ca = 1 - prog(lt, PULSE_T + 0.15, 0.2)
+            if ca > 0 and (lt < DOT_T or int(lt * 3.2) % 2 == 0):
+                d.rounded_rectangle((cx, yc - 62, cx + 10, yc + 50), radius=4, fill=VIO + (int(A * ca),))
+        # textes, après le logo
+        pc = eob(prog(lt, TXT_T, 0.3))
+        if pc > 0.02:
+            lab = "✓ Code appliqué"
+            fc = F("inter", 44, "Bold")
+            b, w, h = tsize(d, lab, fc)
+            cw = (w + 70) * clamp(pc, 0, 1.2)
+            cy = y1 + 95
+            d.rounded_rectangle((W / 2 - cw / 2, cy - 46, W / 2 + cw / 2, cy + 46), radius=46, fill=(16, 52, 33), outline=GREEN, width=3)
+            if pc > 0.6:
+                text_c(d, cy, lab, fc, GREEN, alpha=prog(lt, TXT_T + 0.1, 0.15))
+        t0 = TXT_T + 0.25
+        rise(d, lt, t0, 1215, "Paie le bon prix.", fit(d, "Paie le bon prix.", W - 160, 96), LILAS, dist=30, dur=0.35)
+        p = eob(prog(lt, t0 + 0.2, 0.35))
+        if p > 0.02:
+            pw = 290 * clamp(p, 0, 1.15)
+            pill = (W / 2 - pw, 1300, W / 2 + pw, 1420)
+            d.rounded_rectangle(pill, radius=60, fill=VIO)
+            text_c(d, 1360, "backed.fr", F("inter", 58, "Bold"), OFF, alpha=prog(lt, t0 + 0.3, 0.15))
+            sh = prog(lt, t0 + 0.55, 0.5)
+            if 0 < sh < 1:
+                layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+                bx = pill[0] - 120 + (pill[2] - pill[0] + 240) * sh
+                ImageDraw.Draw(layer).polygon([(bx, 1300), (bx + 60, 1300), (bx + 10, 1420), (bx - 50, 1420)], fill=(255, 255, 255, 90))
+                mask = Image.new("L", (W, H), 0)
+                ImageDraw.Draw(mask).rounded_rectangle(pill, radius=60, fill=255)
+                layer.putalpha(Image.composite(layer.getchannel("A"), Image.new("L", (W, H), 0), mask))
+                img.paste(layer, (0, 0), layer)
+        cta = "Abonne-toi : un code chaque jour."
+        rise(d, lt, t0 + 0.45, 1600, cta, fit(d, cta, W - 160, 54, "inter", "Bold"), OFF, dist=20, dur=0.35)
+    return fn
+
+
 # ------------------------------------------------------------------ montage
 def offer_shots(o, proof):
     """Une vidéo « Code du jour » pour une offre."""
@@ -288,15 +458,16 @@ def offer_shots(o, proof):
     else:
         opening = (1.6, s_benefit(o.get("benefit") or o["brand"]))
         title = f"Le code de {o['creator']}." if o.get("creator") else f"Code {o['brand']}."
-    return [opening, (2.4, s_card(o, title)), (2.6, s_end(proof))]
+    # Nouveau format (oct. 2026) : accroche pleine dès la 1re image, carte du code, outro logo.
+    return [(1.6, s_hook(o)), (2.2, s_code(o)), (OUTRO_DUR, s_outro())]
 
 
 def top_shots(items, proof):
-    return [(3.0, s_top(items)), (2.6, s_end(proof))]
+    return [(1.5, s_top_hook(items)), (2.8, s_top(items)), (OUTRO_DUR, s_outro())]
 
 
 def render(shots, t):
-    img = Image.new("RGBA", (W, H), NIGHT + (255,))
+    img = Image.new("RGB", (W, H), NIGHT)
     d = ImageDraw.Draw(img, "RGBA")
     t0, cut = 0.0, 9
     for dur, fn in shots:
@@ -329,8 +500,10 @@ def encode(shots, path, variante=None):
         import itertools
         import musique  # numpy + scipy, seulement si on ajoute le son
         cuts = list(itertools.accumulate(d for d, _ in shots))[:-1]
+        outro_start = cuts[-1] if cuts else 0
         wav = path + ".wav"
-        musique.make_music(wav, dur, cuts, variante)
+        musique.make_music(wav, dur, cuts, variante, sig_at=outro_start + DOT_T,
+                           clicks=[outro_start + TYPE_T0 + i * TYPE_DT for i in range(6)])
         r = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", video_path, "-i", wav, "-map", "0:v", "-map", "1:a",
                             "-c:v", "copy", "-af", "loudnorm=I=-14:TP=-1.5:LRA=7", "-c:a", "aac", "-b:a", "192k",
                             "-ar", "44100", "-shortest", "-movflags", "+faststart", path])

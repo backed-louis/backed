@@ -121,7 +121,7 @@ def signature():
     return out + shimmer
 
 
-def make_music(path, dur, cuts, variante=0, seed=7):
+def make_music(path, dur, cuts, variante=0, seed=7, sig_at=None, clicks=()):
     rng = np.random.default_rng(seed)
     bpm, prog, sixteenth_hats, bass_offs = VARIANTES[variante % len(VARIANTES)]
     beat = 60 / bpm
@@ -172,7 +172,11 @@ def make_music(path, dur, cuts, variante=0, seed=7):
     if cuts:
         _add(fx, _whoosh(rng) * 0.8, end_start - 0.45)
         _add(fx, _impact(rng, 0.45), end_start)
-        _add(fx, signature(), end_start + 0.12)
+        _add(fx, signature(), (sig_at if sig_at is not None else end_start + 0.1) + 0.02)
+    # clics de clavier (outro : le logo qui se tape)
+    for c in clicks:
+        t = _t(0.018)
+        _add(fx, _hp(rng.standard_normal(len(t)), 2500) * np.exp(-t * 260) * 0.25, c)
 
     end = int(dur * SR)
     mix = (drums * 0.9 + bass * duck + pad * (0.55 + 0.45 * duck) + fx)[:end]
