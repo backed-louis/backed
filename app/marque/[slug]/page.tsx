@@ -43,8 +43,8 @@ export async function generateMetadata(
 
   const { brand, offers } = data
   const count = offers.length
-  const title = `Code promo ${brand.name} — ${count} code${count !== 1 ? 's' : ''} actif${count !== 1 ? 's' : ''} | Backed`
-  const description = `Tous les codes promo ${brand.name} partagés par des créateurs YouTube. ${count} code${count !== 1 ? 's' : ''} actif${count !== 1 ? 's' : ''} sur Backed. ${brand.description ? brand.description.slice(0, 100) : ''}`.trim()
+  const title = `Code promo ${brand.name} — ${count} offre${count !== 1 ? 's' : ''} active${count !== 1 ? 's' : ''} | Backed`
+  const description = `Tous les codes promo et offres ${brand.name} partagés par des créateurs YouTube. ${count} offre${count !== 1 ? 's' : ''} active${count !== 1 ? 's' : ''} sur Backed. ${brand.description ? brand.description.slice(0, 100) : ''}`.trim()
 
   return {
     title,
@@ -66,6 +66,14 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
 
   const { brand, offers } = data
   const count = offers.length
+  const site = brand.website ? brand.website.replace(/^https?:\/\//, '') : `le site ${brand.name}`
+  const withCode = offers.filter(o => o.code.trim()).length
+  // Mode d'emploi selon les offres : codes à copier, liens des créateurs, ou les deux.
+  const howTo = withCode === 0
+    ? `Cliquez sur « Profiter de l'offre » : vous arrivez sur ${site} via le lien du créateur, et l'avantage s'applique sans code à saisir.`
+    : withCode === count
+      ? `Copiez l'un des codes ci-dessus, rendez-vous sur ${site}, ajoutez vos articles au panier, puis collez le code dans le champ « code promo » au moment de finaliser votre commande. La réduction s'applique immédiatement.`
+      : `Copiez l'un des codes ci-dessus et collez-le dans le champ « code promo » sur ${site} au moment de payer. Pour les offres sans code, cliquez sur « Profiter de l'offre » : l'avantage s'applique via le lien du créateur.`
 
   // ─── Schema Markup : ItemList des offres + FAQPage ───
   const itemListSchema = {
@@ -94,7 +102,7 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
         name: `Comment utiliser un code promo ${brand.name} ?`,
         acceptedAnswer: {
           '@type': 'Answer',
-          text: `Copiez le code affiché sur Backed, rendez-vous sur ${brand.website ? brand.website.replace(/^https?:\/\//, '') : `le site ${brand.name}`}, puis collez le code dans le champ prévu au moment du paiement pour activer la réduction.`,
+          text: howTo,
         },
       },
       {
@@ -190,16 +198,13 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
               Comment utiliser un code promo {brand.name} ?
             </h2>
             <p style={{ color: 'var(--text-2)', fontSize: 15, lineHeight: 1.7, marginBottom: 16 }}>
-              Pour profiter d'une réduction {brand.name}, copiez l'un des codes ci-dessus,
-              rendez-vous sur {brand.website ? brand.website.replace(/^https?:\/\//, '') : `le site ${brand.name}`},
-              ajoutez vos articles au panier, puis collez le code dans le champ « code promo »
-              au moment de finaliser votre commande. La réduction s'applique immédiatement.
+              {howTo}
             </p>
             <p style={{ color: 'var(--text-2)', fontSize: 15, lineHeight: 1.7, marginBottom: 16 }}>
-              Tous les codes {brand.name} référencés sur Backed proviennent de créateurs
+              Toutes les offres {brand.name} référencées sur Backed proviennent de créateurs
               YouTube partenaires de la marque, qui les partagent dans la description de
-              leurs vidéos. En utilisant le code d'un créateur, vous soutenez directement
-              son travail.
+              leurs vidéos. En utilisant le code ou le lien d'un créateur, vous soutenez
+              directement son travail.
             </p>
 
             <h2 style={{

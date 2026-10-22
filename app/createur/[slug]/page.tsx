@@ -21,9 +21,9 @@ export async function generateMetadata(
   const count = offers.length
   const brands = Array.from(new Set(offers.map(o => o.brand)))
   const shown = brands.slice(0, 3)
-  const title = `Codes promo de ${creator.name} — ${count} code${count !== 1 ? 's' : ''} actif${count !== 1 ? 's' : ''} | Backed`
+  const title = `Codes promo de ${creator.name} — ${count} offre${count !== 1 ? 's' : ''} active${count !== 1 ? 's' : ''} | Backed`
   const description = count
-    ? `Les codes promo partagés par ${creator.name} sur YouTube : ${shown.join(', ')}${brands.length > shown.length ? '…' : ''}. Copie le code et soutiens ${creator.name}. Gratuit, sans compte.`
+    ? `Les codes promo partagés par ${creator.name} sur YouTube : ${shown.join(', ')}${brands.length > shown.length ? '…' : ''}. Profite de ses offres et soutiens ${creator.name}. Gratuit, sans compte.`
     : `Les codes promo partagés par ${creator.name} sur YouTube, au même endroit sur Backed.`
   const url = `${SITE_URL}/createur/${creator.slug}`
 
@@ -32,7 +32,7 @@ export async function generateMetadata(
     description,
     alternates: { canonical: url },
     openGraph: { title, description, url, type: 'profile' },
-    // Sans code actif, la page reste accessible mais n'est pas proposée à Google (page vide).
+    // Sans offre active, la page reste accessible mais n'est pas proposée à Google (page vide).
     ...(count === 0 ? { robots: { index: false, follow: true } } : {}),
   }
 }
