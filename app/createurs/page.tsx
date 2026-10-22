@@ -1,6 +1,16 @@
+import type { Metadata } from 'next'
+import { SITE_URL } from '@/lib/links'
 import { getAllCreators, getAllOffers } from '@/lib/airtable'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
+
+export const metadata: Metadata = {
+  title: "Les créateurs YouTube et leurs codes promo | Backed",
+  description: "Retrouve les codes promo de tes créateurs YouTube préférés : Squeezie, Inoxtag, Mcfly et Carlito et bien d'autres.",
+  alternates: { canonical: `${SITE_URL}/createurs` },
+  openGraph: { title: "Les créateurs YouTube et leurs codes promo | Backed", description: "Retrouve les codes promo de tes créateurs YouTube préférés : Squeezie, Inoxtag, Mcfly et Carlito et bien d'autres.", url: `${SITE_URL}/createurs` },
+}
+
 
 export const revalidate = 3600
 

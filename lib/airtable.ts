@@ -11,10 +11,18 @@ async function fetchTable(table: string, params: Record<string, string> = {}, no
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
     if (offset) url.searchParams.set('offset', offset)
 
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${API_KEY}` },
-      ...(noCache ? { cache: 'no-store' } : { next: { revalidate: 3600 } }),
-    })
+    // Airtable limite à 5 requêtes par seconde : en cas de 429 ou d'erreur serveur,
+    // on réessaie (1 s, 2 s, 4 s) au lieu de renvoyer une page en erreur 500.
+    let res: Response | undefined
+    for (let attempt = 0; attempt < 4; attempt++) {
+      res = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${API_KEY}` },
+        ...(noCache ? { cache: 'no-store' } : { next: { revalidate: 3600 } }),
+      })
+      if (res.status !== 429 && res.status < 500) break
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt))
+    }
+    if (!res) throw new Error(`Airtable [${table}] : pas de réponse`)
 
     if (!res.ok) {
       const err = await res.text()

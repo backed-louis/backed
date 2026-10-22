@@ -1,6 +1,16 @@
+import type { Metadata } from 'next'
+import { SITE_URL } from '@/lib/links'
 import { getAllOffers, getCategories } from '@/lib/airtable'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
+
+export const metadata: Metadata = {
+  title: "Codes promo par catégorie | Backed",
+  description: "Les codes promo des créateurs YouTube classés par catégorie : tech et gaming, food, voyage, finance, beauté…",
+  alternates: { canonical: `${SITE_URL}/categories` },
+  openGraph: { title: "Codes promo par catégorie | Backed", description: "Les codes promo des créateurs YouTube classés par catégorie : tech et gaming, food, voyage, finance, beauté…", url: `${SITE_URL}/categories` },
+}
+
 
 export const dynamic = 'force-dynamic'
 

@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import OfferCard from '@/components/OfferCard'
 import Navbar from '@/components/Navbar'
 import WhatsAppBanner from '@/components/WhatsAppBanner'
+import { SITE_URL } from '@/lib/links'
 
 export const revalidate = 3600
 
@@ -42,17 +43,17 @@ export async function generateMetadata(
 
   const { brand, offers } = data
   const count = offers.length
-  const title = `Code promo ${brand.name} — ${count} offre${count !== 1 ? 's' : ''} vérifiée${count !== 1 ? 's' : ''} | Backed`
-  const description = `Tous les codes promo ${brand.name} partagés par des créateurs YouTube. ${count} offre${count !== 1 ? 's' : ''} active${count !== 1 ? 's' : ''} et vérifiée${count !== 1 ? 's' : ''} sur Backed. ${brand.description ? brand.description.slice(0, 100) : ''}`.trim()
+  const title = `Code promo ${brand.name} — ${count} code${count !== 1 ? 's' : ''} actif${count !== 1 ? 's' : ''} | Backed`
+  const description = `Tous les codes promo ${brand.name} partagés par des créateurs YouTube. ${count} code${count !== 1 ? 's' : ''} actif${count !== 1 ? 's' : ''} sur Backed. ${brand.description ? brand.description.slice(0, 100) : ''}`.trim()
 
   return {
     title,
     description,
-    alternates: { canonical: `https://backed.fr/marque/${brand.slug}` },
+    alternates: { canonical: `${SITE_URL}/marque/${brand.slug}` },
     openGraph: {
       title,
       description,
-      url: `https://backed.fr/marque/${brand.slug}`,
+      url: `${SITE_URL}/marque/${brand.slug}`,
       type: 'website',
     },
   }
@@ -98,10 +99,10 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
       },
       {
         '@type': 'Question',
-        name: `Les codes promo ${brand.name} sont-ils vérifiés ?`,
+        name: `D'où viennent les codes promo ${brand.name} ?`,
         acceptedAnswer: {
           '@type': 'Answer',
-          text: `Oui. Chaque code ${brand.name} référencé sur Backed provient d'un créateur YouTube partenaire de la marque, et est mis à jour automatiquement chaque jour.`,
+          text: `Chaque code ${brand.name} référencé sur Backed est partagé par un créateur YouTube partenaire de la marque, dans la description de ses vidéos. Un code ne fonctionne plus ? Signalez-le : Backed est en bêta.`,
         },
       },
       {
@@ -196,9 +197,9 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
             </p>
             <p style={{ color: 'var(--text-2)', fontSize: 15, lineHeight: 1.7, marginBottom: 16 }}>
               Tous les codes {brand.name} référencés sur Backed proviennent de créateurs
-              YouTube partenaires de la marque. Ils sont actualisés automatiquement
-              chaque jour : vous tombez donc sur des offres à jour, sans codes expirés ni
-              fausses promesses.
+              YouTube partenaires de la marque, qui les partagent dans la description de
+              leurs vidéos. En utilisant le code d'un créateur, vous soutenez directement
+              son travail.
             </p>
 
             <h2 style={{
@@ -209,11 +210,12 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
             </h2>
             <div style={{ marginBottom: 12 }}>
               <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
-                Les codes promo {brand.name} sont-ils vérifiés ?
+                D'où viennent les codes promo {brand.name} ?
               </h3>
               <p style={{ color: 'var(--text-2)', fontSize: 15, lineHeight: 1.7, marginBottom: 16 }}>
-                Oui. Chaque code provient d'un créateur partenaire et est mis à jour
-                quotidiennement par notre système.
+                Chaque code est partagé par un créateur YouTube partenaire de la marque,
+                dans la description de ses vidéos. Un code ne fonctionne plus ? Signalez-le :
+                Backed est en bêta.
               </p>
               <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
                 Combien d'offres {brand.name} sont disponibles ?
