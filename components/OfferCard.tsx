@@ -8,6 +8,11 @@ function toSlug(name: string) {
     .toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
 }
 
+function formatDate(iso: string) {
+  const [y, m, d] = iso.split('-')
+  return d && m && y ? `${d}/${m}/${y}` : iso
+}
+
 export default function OfferCard({ offer, isPopular = false }: { offer: Offer; isPopular?: boolean }) {
   const [copied, setCopied] = useState(false)
 
@@ -118,6 +123,21 @@ export default function OfferCard({ offer, isPopular = false }: { offer: Offer; 
             {copied ? '✓ Copié !' : offer.code}
           </button>
         )}
+        {!offer.code && offer.sourceUrl && (
+          <button
+            onClick={e => { e.stopPropagation(); trackAndOpen() }}
+            style={{
+              fontSize: 13, fontWeight: 700,
+              background: 'var(--accent-subtle)',
+              border: '1px solid var(--accent-border)',
+              color: 'var(--accent-text)',
+              padding: '6px 12px', borderRadius: 'var(--r-md)',
+              cursor: 'pointer',
+            }}
+          >
+            Profiter de l'offre ↗
+          </button>
+        )}
         {offer.benefit && (
           <span style={{
             fontSize: 13, fontWeight: 600,
@@ -129,6 +149,11 @@ export default function OfferCard({ offer, isPopular = false }: { offer: Offer; 
             display: 'block',
           }}>
             {offer.benefit}
+          </span>
+        )}
+        {offer.endDate && (
+          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+            Jusqu'au {formatDate(offer.endDate)}
           </span>
         )}
       </div>
