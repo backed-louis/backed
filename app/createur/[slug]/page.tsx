@@ -23,7 +23,7 @@ export async function generateMetadata(
   const shown = brands.slice(0, 3)
   const title = `Codes promo de ${creator.name} — ${count} offre${count !== 1 ? 's' : ''} active${count !== 1 ? 's' : ''} | Backed`
   const description = count
-    ? `Les codes promo partagés par ${creator.name} sur YouTube : ${shown.join(', ')}${brands.length > shown.length ? '…' : ''}. Copie le code et soutiens ${creator.name}. Gratuit, sans compte.`
+    ? `Les codes promo partagés par ${creator.name} sur YouTube : ${shown.join(', ')}${brands.length > shown.length ? '…' : ''}. Profite de ses offres et soutiens ${creator.name}. Gratuit, sans compte.`
     : `Les codes promo partagés par ${creator.name} sur YouTube, au même endroit sur Backed.`
   const url = `${SITE_URL}/createur/${creator.slug}`
 

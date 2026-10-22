@@ -138,7 +138,7 @@ async function fetchAll(): Promise<RawData> {
 // Une seule entrée de cache partagée par toutes les pages et toutes les fonctions
 // Vercel, renouvelée au plus une fois par heure (comme l'ISR du site). Tant que le
 // renouvellement échoue, Next continue de servir la dernière version réussie.
-const cachedFetchAll = unstable_cache(fetchAll, ['airtable-data-v1'], { revalidate: 3600, tags: ['airtable'] })
+const cachedFetchAll = unstable_cache(fetchAll, ['airtable-data-v2'], { revalidate: 3600, tags: ['airtable'] })
 
 // En plus, dans chaque instance : une seule lecture en cours à la fois, et la
 // dernière lecture réussie en secours si Airtable ne répond pas.
