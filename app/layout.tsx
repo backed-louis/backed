@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, Syne } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import SaisonDecor from '@/components/SaisonDecor'
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" className={`${inter.variable} ${syne.variable}`}>
       <body style={{ fontFamily: 'var(--font-inter)' }}>
         {children}
+        <SaisonDecor />
         <Analytics />
       </body>
     </html>

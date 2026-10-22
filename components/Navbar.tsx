@@ -42,7 +42,7 @@ export default function Navbar() {
             fontSize: 20, fontWeight: 800,
             letterSpacing: '-0.02em',
             marginRight: 'auto',
-            display: 'inline-flex', alignItems: 'center',
+            display: 'inline-flex', alignItems: 'center', position: 'relative',
           }}>
             Backed
             <SaisonMark />

@@ -36,7 +36,7 @@ export const SAISONS: Saison[] = [
     nom: 'Octobre rose',
     couleur: '#FF5FA2',
     message: 'Octobre rose : dès 50 ans, le dépistage du cancer du sein, c’est tous les 2 ans.',
-    lien: { href: 'https://jefaismondepistage.cancer.fr/cancers-du-sein/', label: 'S’informer' },
+    lien: { href: 'https://www.ameli.fr/assure/sante/themes/cancer-sein/depistage-gratuit-50-74-ans', label: 'S’informer' },
     priorite: 1,
     active: (d) => d.mois === 10,
   },
