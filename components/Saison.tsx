@@ -71,3 +71,18 @@ export function SaisonNote() {
     </p>
   )
 }
+
+// Chapeau de saison posé sur une photo (créateurs) : bonnet de Père Noël ou chapeau de sorcière.
+export function SaisonChapeau({ size = 48 }: { size?: number }) {
+  const s = useSaisons().find((x) => x.id === 'noel' || x.id === 'halloween')
+  if (!s) return null
+  return (
+    <span aria-hidden style={{
+      position: 'absolute', top: -size * 0.46, left: -size * 0.2, transform: 'rotate(-22deg)',
+      pointerEvents: 'none', zIndex: 1, animation: 'saisonHat 0.6s ease-out both',
+    }}>
+      {s.id === 'noel' ? <SantaHat size={size} /> : <WitchHat size={size * 1.08} />}
+      <style>{`@keyframes saisonHat { from { opacity: 0; transform: translateY(-10px) rotate(-30deg); } to { opacity: 1; transform: rotate(-22deg); } }`}</style>
+    </span>
+  )
+}

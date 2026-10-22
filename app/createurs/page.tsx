@@ -3,6 +3,7 @@ import { SITE_URL } from '@/lib/links'
 import { getAllCreators, getAllOffers } from '@/lib/airtable'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
+import { SaisonChapeau } from '@/components/Saison'
 
 export const metadata: Metadata = {
   title: "Les créateurs YouTube et leurs codes promo | Backed",
@@ -53,6 +54,8 @@ export default async function CreateursPage() {
               const count = offerCounts[creator.name] || 0
               return (
                 <Link key={creator.id} href={`/createur/${creator.slug}`} className="creator-card">
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <SaisonChapeau size={34} />
                   <div style={{
                     width: 48, height: 48, borderRadius: '50%',
                     overflow: 'hidden',
@@ -75,6 +78,7 @@ export default async function CreateursPage() {
                         {creator.name.charAt(0).toUpperCase()}
                       </span>
                     )}
+                  </div>
                   </div>
                   <div>
                     <div style={{
