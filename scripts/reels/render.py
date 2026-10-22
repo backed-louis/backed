@@ -237,11 +237,10 @@ def s_card(o, title):
     return fn
 
 
-def s_top(items):
+def s_top(items, sub="La sélection de la semaine."):
     def fn(img, d, lt):
         bg(d)
         rise(d, lt, 0.0, 260, f"{len(items)} codes.", F("syne", 120), OFF)
-        sub = "Les plus copiés cette semaine."
         rise(d, lt, 0.12, 390, sub, fit(d, sub, W - 160, 60, "syne", "Bold"), LILAS)
         for i, o in enumerate(items):
             y = 640 + i * 360
@@ -286,16 +285,20 @@ def eob(x, k=1.8):
 
 def s_hook(o):
     """1re image pleine et lisible tout de suite : le créateur, le gain, la marque. Aucun fondu d'entrée."""
-    who = f"Le code de {o['creator']}" if o.get("creator") else f"Code promo {o['brand']}"
+    if o.get("creator"):
+        c = o["creator"]
+        who = ["Le code", f"d'{c}" if c[:1].lower() in "aeiouyhéèêàâîôû" else f"de {c}"]
+    else:
+        who = ["Code promo", o["brand"]]
     gain = f"{o['disc']} chez {o['brand']}" if o.get("disc") else first_clause(o.get("benefit") or o["brand"], 34)
 
     def fn(img, d, lt):
         bg(d)
         text_c(d, 520, "CODE DU JOUR", F("inter", 40, "Bold"), GREY)
-        fw = fit(d, who, W - 140, 120)
-        lines = wrap(d, who, F("syne", 112), W - 140) if tsize(d, who, F("syne", 112))[1] > W - 140 else [who]
-        fw = fit(d, max(lines, key=len), W - 140, 112)
-        y = 720
+        # deux lignes de même taille : « Le code » / « de Micode »
+        lines = who
+        fw = F("syne", min(fit(d, ln, W - 140, 130).size for ln in lines))
+        y = 700
         for ln in lines:
             text_c(d, y, ln, fw, OFF)
             y += int(fw.size * 1.1)
@@ -315,7 +318,7 @@ def s_hook(o):
 
 def s_code(o):
     """La carte du code, copiée tout de suite."""
-    title = short(o.get("detail") or o.get("benefit") or o["brand"], 40)
+    title = "Le code à copier"
 
     def fn(img, d, lt):
         bg(d)
@@ -330,7 +333,8 @@ def s_top_hook(items):
     def fn(img, d, lt):
         bg(d)
         text_c(d, 520, "LA SÉLECTION DE LA SEMAINE", F("inter", 40, "Bold"), GREY)
-        text_c(d, 760, f"{len(items)} codes", F("syne", 190), OFF)
+        big = f"{len(items)} codes"
+        text_c(d, 760, big, fit(d, big, W - 160, 190), OFF)
         text_c(d, 950, "à garder.", fit(d, "à garder.", W - 160, 130), LILAS)
         names = " · ".join(o["brand"] for o in items)
         text_c(d, 1160, names, fit(d, names, W - 160, 58, "inter", "Bold"), OFF)
@@ -462,8 +466,8 @@ def offer_shots(o, proof):
     return [(1.6, s_hook(o)), (2.2, s_code(o)), (OUTRO_DUR, s_outro())]
 
 
-def top_shots(items, proof):
-    return [(1.5, s_top_hook(items)), (2.8, s_top(items)), (OUTRO_DUR, s_outro())]
+def top_shots(items, proof, sub="La sélection de la semaine."):
+    return [(1.5, s_top_hook(items)), (2.8, s_top(items, sub)), (OUTRO_DUR, s_outro())]
 
 
 def render(shots, t):

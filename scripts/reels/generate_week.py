@@ -107,9 +107,9 @@ def texts_offer(o, weekday):
 
 def texts_top(items):
     lines = "\n".join(f"{i + 1}. {o['brand']} — {o['code']}" for i, o in enumerate(items))
-    tiktok = f"Les {len(items)} codes les plus copiés cette semaine. 🔥\nEnregistre pour plus tard.\n\n#codepromo #bonplan #youtube"
+    tiktok = f"Les {len(items)} codes les plus copiés sur Backed. 🔥\nEnregistre pour plus tard.\n\n#codepromo #bonplan #youtube"
     insta = f"Top {len(items)} de la semaine 🔥\n{lines}\n\nEnregistre ce post. Tous les codes → lien en bio\n\n#codepromo #bonplan #youtube"
-    wa = f"Les {len(items)} codes les plus copiés cette semaine 🔥\n{lines}\nTous sur backed.fr"
+    wa = f"Les {len(items)} codes les plus copiés sur Backed 🔥\n{lines}\nTous sur backed.fr"
     return tiktok, insta, wa, "10h"
 
 
@@ -161,7 +161,7 @@ def main():
         day = start + dt.timedelta(days=6)  # le top 3 reste toujours le samedi
         name = f"07-{day.isoformat()}-top{len(top)}.mp4"
         if not a.no_video:
-            dur = render.encode(render.top_shots(top, proof), os.path.join(a.out, name), variante=len(daily) % 4)
+            dur = render.encode(render.top_shots(top, proof, sub="Les plus copiés sur Backed."), os.path.join(a.out, name), variante=len(daily) % 4)
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
         md.append(block(f"{date_fr(day)} — Top {len(top)}", name, *texts_top(top)))
 
