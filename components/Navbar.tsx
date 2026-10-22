@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { SaisonMark } from '@/components/Saison'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -41,8 +42,10 @@ export default function Navbar() {
             fontSize: 20, fontWeight: 800,
             letterSpacing: '-0.02em',
             marginRight: 'auto',
+            display: 'inline-flex', alignItems: 'center',
           }}>
             Backed
+            <SaisonMark />
           </Link>
 
           <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
