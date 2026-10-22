@@ -1,8 +1,27 @@
+import { unstable_cache } from 'next/cache'
+
 const BASE_ID = process.env.AIRTABLE_BASE_ID
 const API_KEY = process.env.AIRTABLE_API_KEY
 const API_URL = `https://api.airtable.com/v0/${BASE_ID}`
 
-async function fetchTable(table: string, params: Record<string, string> = {}, noCache = false) {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+// Airtable accepte 5 requêtes par seconde et par base. Au-delà, il répond 429 et
+// bloque la base pendant 30 secondes : toutes les pages rendues à ce moment-là
+// tombaient en erreur (« This page couldn't load »). On espace donc les requêtes
+// d'au moins 250 ms (4 par seconde), et en cas de 429 on attend la fin du blocage.
+let nextSlot = 0
+async function waitTurn() {
+  const now = Date.now()
+  const at = Math.max(now, nextSlot)
+  nextSlot = at + 250
+  if (at > now) await sleep(at - now)
+}
+
+const RETRY_429 = [5000, 10000, 20000] // 35 s au total : couvre le blocage de 30 s
+const RETRY_5XX = [1000, 2000, 4000]
+
+async function fetchTable(table: string, params: Record<string, string> = {}) {
   const allRecords: any[] = []
   let offset: string | undefined
 
@@ -11,22 +30,35 @@ async function fetchTable(table: string, params: Record<string, string> = {}, no
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
     if (offset) url.searchParams.set('offset', offset)
 
-    // Airtable limite à 5 requêtes par seconde : en cas de 429 ou d'erreur serveur,
-    // on réessaie (1 s, 2 s, 4 s) au lieu de renvoyer une page en erreur 500.
     let res: Response | undefined
-    for (let attempt = 0; attempt < 4; attempt++) {
-      res = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${API_KEY}` },
-        ...(noCache ? { cache: 'no-store' } : { next: { revalidate: 3600 } }),
-      })
-      if (res.status !== 429 && res.status < 500) break
-      if (attempt < 3) await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt))
+    for (let attempt = 0; ; attempt++) {
+      await waitTurn()
+      let failure: unknown = null
+      try {
+        // Pas de cache par requête ici : c'est le jeu de données entier qui est mis
+        // en cache (voir loadData), une seule fois pour tout le site.
+        // Le signal neuf à chaque essai empêche Next de « mémoriser » la requête :
+        // sans lui, chaque nouvel essai renvoyait la même réponse 429 sans rappeler Airtable.
+        res = await fetch(url.toString(), {
+          headers: { Authorization: `Bearer ${API_KEY}` },
+          cache: 'no-store',
+          signal: AbortSignal.timeout(15000),
+        })
+      } catch (err) {
+        failure = err // réseau coupé ou Airtable trop lent : on réessaie comme une erreur serveur
+      }
+      const status = failure ? 0 : res!.status
+      const delays = status === 429 ? RETRY_429 : status === 0 || status >= 500 ? RETRY_5XX : []
+      if (attempt >= delays.length) {
+        if (failure) throw failure
+        break
+      }
+      await sleep(delays[attempt])
     }
-    if (!res) throw new Error(`Airtable [${table}] : pas de réponse`)
 
-    if (!res.ok) {
-      const err = await res.text()
-      throw new Error(`Airtable [${table}] ${res.status}: ${err}`)
+    if (!res || !res.ok) {
+      const err = res ? await res.text() : ''
+      throw new Error(`Airtable [${table}] ${res?.status}: ${err}`)
     }
 
     const data = await res.json()
@@ -78,7 +110,9 @@ export interface Brand {
   slug: string
 }
 
-// ─── Cache en mémoire pour buildMaps ─────────────────────────────────────────
+// ─── Données Airtable, mises en cache une fois pour tout le site ─────────────
+
+type RawData = { offers: any[]; brands: any[]; creators: any[]; categories: any[] }
 
 type MapsResult = {
   brandsMap: Record<string, { name: string; slug: string; description: string; logo: string | null; website: string | null; category: string }>
@@ -87,21 +121,60 @@ type MapsResult = {
   categoriesList: Category[]
 }
 
-let mapsCache: MapsResult | null = null
-let mapsCacheTime = 0
-const CACHE_TTL = 3600 * 1000
+// Filtre Airtable : offre active ET non expirée (End Date vide ou >= aujourd'hui)
+const ACTIVE_NOT_EXPIRED =
+  'AND({Status}="Active", OR({End Date}="", IS_AFTER({End Date}, DATEADD(TODAY(), -1, \'days\'))))'
 
-async function _buildMaps(): Promise<MapsResult> {
-  const [brandsRaw, creatorsRaw, categoriesRaw] = await Promise.all([
-    fetchTable('Brands'),
-    fetchTable('Creators'),
-    fetchTable('Categories'),
-  ])
+async function fetchAll(): Promise<RawData> {
+  // Requêtes l'une après l'autre (et espacées par waitTurn) pour rester sous la limite.
+  const offers = (await fetchTable('Offers', { filterByFormula: ACTIVE_NOT_EXPIRED })).records
+  const brands = (await fetchTable('Brands')).records
+  const creators = (await fetchTable('Creators')).records
+  const categories = (await fetchTable('Categories')).records
+  return { offers, brands, creators, categories }
+}
 
+// Une seule entrée de cache partagée par toutes les pages et toutes les fonctions
+// Vercel, renouvelée au plus une fois par heure (comme l'ISR du site). Tant que le
+// renouvellement échoue, Next continue de servir la dernière version réussie.
+const cachedFetchAll = unstable_cache(fetchAll, ['airtable-data-v1'], { revalidate: 3600, tags: ['airtable'] })
+
+// En plus, dans chaque instance : une seule lecture en cours à la fois, et la
+// dernière lecture réussie en secours si Airtable ne répond pas.
+let inflight: Promise<RawData> | null = null
+let lastGood: RawData | null = null
+let lastFailure: { at: number; err: unknown } | null = null
+
+async function loadData(): Promise<RawData> {
+  if (!inflight) {
+    // Échec il y a moins de 30 s et rien en secours : inutile de refaire 35 s d'essais
+    // dans la même page (métadonnées puis contenu), on affiche tout de suite l'erreur.
+    if (!lastGood && lastFailure && Date.now() - lastFailure.at < 30_000) throw lastFailure.err
+    inflight = cachedFetchAll()
+      .then((d) => {
+        lastFailure = null
+        return (lastGood = d)
+      })
+      .catch((err) => {
+        if (lastGood) {
+          console.error('Airtable indisponible, dernière version utilisée :', err)
+          return lastGood
+        }
+        lastFailure = { at: Date.now(), err }
+        throw err
+      })
+      .finally(() => {
+        inflight = null
+      })
+  }
+  return inflight
+}
+
+function buildMapsFrom(data: RawData): MapsResult {
   const categoriesMap: Record<string, string> = {}
   const categoriesList: Category[] = []
 
-  categoriesRaw.records.forEach((r: any) => {
+  data.categories.forEach((r: any) => {
     categoriesMap[r.id] = r.fields['Name'] || ''
     categoriesList.push({
       id: r.id,
@@ -112,8 +185,8 @@ async function _buildMaps(): Promise<MapsResult> {
     })
   })
 
-  const brandsMap: Record<string, { name: string; slug: string; description: string; logo: string | null; website: string | null; category: string }> = {}
-  brandsRaw.records.forEach((r: any) => {
+  const brandsMap: MapsResult['brandsMap'] = {}
+  data.brands.forEach((r: any) => {
     const categoryId = r.fields['Category']?.[0]
     const website = r.fields['Website'] || ''
 
@@ -136,7 +209,7 @@ async function _buildMaps(): Promise<MapsResult> {
   })
 
   const creatorsMap: Record<string, string> = {}
-  creatorsRaw.records.forEach((r: any) => {
+  data.creators.forEach((r: any) => {
     creatorsMap[r.id] = r.fields['Name'] || ''
   })
 
@@ -144,11 +217,7 @@ async function _buildMaps(): Promise<MapsResult> {
 }
 
 async function buildMaps(): Promise<MapsResult> {
-  const now = Date.now()
-  if (mapsCache && now - mapsCacheTime < CACHE_TTL) return mapsCache
-  mapsCache = await _buildMaps()
-  mapsCacheTime = now
-  return mapsCache
+  return buildMapsFrom(await loadData())
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -190,10 +259,6 @@ function hasValidBrand(offer: Offer): boolean {
   )
 }
 
-// Filtre Airtable : offre active ET non expirée (End Date vide ou >= aujourd'hui)
-const ACTIVE_NOT_EXPIRED =
-  'AND({Status}="Active", OR({End Date}="", IS_AFTER({End Date}, DATEADD(TODAY(), -1, \'days\'))))'
-
 // Garde-fou anti-doublons : une seule offre par (créateur, marque, code ou lien).
 // On garde la plus récente (createdTime), et on conserve l'ordre d'origine des offres.
 function dedupeRecords(records: any[]): any[] {
@@ -219,16 +284,15 @@ function dedupeRecords(records: any[]): any[] {
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
 export async function getFeaturedOffers(): Promise<Offer[]> {
-  const { brandsMap, creatorsMap } = await buildMaps()
+  const data = await loadData()
+  const { brandsMap, creatorsMap } = buildMapsFrom(data)
 
-  const offersRaw = await fetchTable('Offers', {
-    filterByFormula: `AND(${ACTIVE_NOT_EXPIRED}, {Homepage Position}>=1)`,
-    'sort[0][field]': 'Homepage Position',
-    'sort[0][direction]': 'asc',
-    'maxRecords': '6',
-  })
+  const positioned = data.offers
+    .filter((r: any) => (r.fields['Homepage Position'] ?? 0) >= 1)
+    .sort((a: any, b: any) => a.fields['Homepage Position'] - b.fields['Homepage Position'])
+    .slice(0, 6)
 
-  const curated = dedupeRecords(offersRaw.records)
+  const curated = dedupeRecords(positioned)
     .map((r: any) => mapOffer(r, brandsMap, creatorsMap))
     .filter(hasValidBrand)
   if (curated.length >= 6) return curated
@@ -255,44 +319,40 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 export async function getAllOffers(): Promise<Offer[]> {
-  const { brandsMap, creatorsMap } = await buildMaps()
+  const data = await loadData()
+  const { brandsMap, creatorsMap } = buildMapsFrom(data)
 
-  const offersRaw = await fetchTable('Offers', {
-    filterByFormula: ACTIVE_NOT_EXPIRED,
-  })
-
-  return dedupeRecords(offersRaw.records)
+  return dedupeRecords(data.offers)
     .map((r: any) => mapOffer(r, brandsMap, creatorsMap))
     .filter(hasValidBrand)
 }
 
-export async function getAllCreators(): Promise<Creator[]> {
-  const data = await fetchTable('Creators', {
-    'sort[0][field]': 'Name',
-    'sort[0][direction]': 'asc',
-  })
+const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, 'fr')
 
-  return data.records.map((r: any) => ({
-    id: r.id,
-    name: r.fields['Name'] || '',
-    slug: r.fields['Slug'] || '',
-    platforms: r.fields['Platforms'] || [],
-    channelId: r.fields['Channel ID'] || '',
-    avatar: r.fields['Avatar'] || null,
-  }))
+export async function getAllCreators(): Promise<Creator[]> {
+  const data = await loadData()
+
+  return data.creators
+    .map((r: any) => ({
+      id: r.id,
+      name: r.fields['Name'] || '',
+      slug: r.fields['Slug'] || '',
+      platforms: r.fields['Platforms'] || [],
+      channelId: r.fields['Channel ID'] || '',
+      avatar: r.fields['Avatar'] || null,
+    }))
+    .sort(byName)
 }
 
 export async function getAllBrands(): Promise<Brand[]> {
-  const data = await fetchTable('Brands', {
-    'sort[0][field]': 'Name',
-    'sort[0][direction]': 'asc',
-  })
+  const data = await loadData()
 
-  return data.records
+  return data.brands
     .map((r: any) => ({
       id: r.id,
       name: r.fields['Name'] || '',
       slug: r.fields['slug'] || '',
     }))
     .filter((b: Brand) => b.slug)
+    .sort(byName)
 }
