@@ -52,7 +52,7 @@ export default function ExplorerClient({
             Explorer les offres
           </h1>
           <p style={{ color: 'var(--text-2)', fontSize: 16 }}>
-            {offers.length} offres actives · mises à jour en temps réel
+            {offers.length} offres actives
           </p>
         </div>
 

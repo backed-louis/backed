@@ -13,6 +13,9 @@ const syne = Syne({
   weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
 })
+// Laisse le temps d'attendre la fin d'un blocage Airtable (429, 30 s) au lieu d'échouer.
+export const maxDuration = 60
+
 export const metadata: Metadata = {
   title: 'Backed — Les codes promo de tes créateurs YouTube',
   description:
