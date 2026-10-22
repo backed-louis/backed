@@ -2,7 +2,8 @@
 import Link from 'next/link'
 import { WhatsAppIcon } from '@/components/WhatsAppBanner'
 import { WHATSAPP_CHANNEL_URL } from '@/lib/links'
-import { SaisonNote, SaisonGlow } from '@/components/Saison'
+import { SaisonNote } from '@/components/Saison'
+import { SaisonHero } from '@/components/SaisonDecor'
 interface HeroProps {
   offerCount: number
   creatorCount: number
@@ -28,7 +29,7 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
         background: 'radial-gradient(circle, rgba(139,0,255,0.07) 0%, transparent 65%)',
         pointerEvents: 'none',
       }} />
-      <SaisonGlow />
+      <SaisonHero />
       <div style={{ maxWidth: 760, position: 'relative' }}>
         <div style={{
           display: 'inline-flex',

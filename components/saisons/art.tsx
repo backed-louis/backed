@@ -208,3 +208,171 @@ export function PriceTag({ size = 54, label = '-%', style, className }: P & { la
     </svg>
   )
 }
+
+// ─── Halloween (scène) ────────────────────────────────────────────────────────
+
+export function Witch({ size = 150, style, className }: P) {
+  return (
+    <svg width={size} height={size * 0.6} viewBox="0 0 150 90" style={style} className={className} aria-hidden>
+      {/* balai */}
+      <path d="M8 62 L112 50" stroke="#8B5A2B" strokeWidth="4" strokeLinecap="round" />
+      <path d="M108 44c10 0 26 2 36 8-10 2-14 8-30 10-4-6-6-12-6-18z" fill="#E0A44A" />
+      <path d="M114 48l24 6M114 54l22 3M113 51l26 4" stroke="#B57A2A" strokeWidth="1.2" />
+      {/* cape et robe */}
+      <path d="M40 58c-14 2-26-2-34-10 10 0 18-4 24-12z" fill="#5B1E9E" />
+      <path d="M42 30c-6 8-8 18-6 28h34c2-10 0-20-6-28z" fill="#8B00FF" />
+      {/* jambes et bottes */}
+      <path d="M58 58l6 14h8" stroke="#1A1430" strokeWidth="4" strokeLinecap="round" fill="none" />
+      <path d="M50 58l2 12h8" stroke="#1A1430" strokeWidth="4" strokeLinecap="round" fill="none" />
+      {/* bras */}
+      <path d="M60 38l16 10" stroke="#8B00FF" strokeWidth="6" strokeLinecap="round" />
+      <circle cx="78" cy="49" r="3.5" fill="#7CC36B" />
+      {/* tête, cheveux, chapeau */}
+      <path d="M44 22c-6 2-10 10-8 18 3-4 5-8 8-10z" fill="#FF8A1F" />
+      <circle cx="52" cy="22" r="9" fill="#7CC36B" />
+      <circle cx="56" cy="20" r="1.4" fill="#1A1430" />
+      <path d="M58 25c-1.5 1.5-4 1.5-5 0" stroke="#1A1430" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      <path d="M61 22l4 2-4 1z" fill="#6BB05C" />
+      <path d="M36 16h34l-6-3-9-12c-1 5-3 9-7 11z" fill="#5B1E9E" />
+      <path d="M40 13.5h24" stroke="#FF8A1F" strokeWidth="2.5" />
+    </svg>
+  )
+}
+
+export function Moon({ size = 140, style, className }: P) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" style={style} className={className} aria-hidden>
+      <defs>
+        <radialGradient id="sd-moon" cx="40%" cy="38%" r="65%">
+          <stop offset="0" stopColor="#FFF6D6" />
+          <stop offset="1" stopColor="#F2D98A" />
+        </radialGradient>
+      </defs>
+      <circle cx="50" cy="50" r="46" fill="url(#sd-moon)" />
+      <circle cx="35" cy="38" r="8" fill="#E6CB74" opacity=".55" />
+      <circle cx="62" cy="62" r="11" fill="#E6CB74" opacity=".45" />
+      <circle cx="64" cy="30" r="5" fill="#E6CB74" opacity=".5" />
+    </svg>
+  )
+}
+
+export function Tombstone({ size = 70, lines = ['R.I.P.'], style, className }: P & { lines?: string[] }) {
+  return (
+    <svg width={size} height={size * 1.15} viewBox="0 0 60 69" style={style} className={className} aria-hidden>
+      <path d="M6 69V28C6 13 17 4 30 4s24 9 24 24v41z" fill="#5E5A73" />
+      <path d="M10 69V29C10 16 19 8 30 8" stroke="#77738E" strokeWidth="2" fill="none" />
+      {lines.map((l, i) => (
+        <text key={i} x="30" y={32 + i * 11} textAnchor="middle" fontFamily="var(--font-syne), sans-serif" fontWeight="800" fontSize={i === 0 ? 10 : 7.5} fill="#2B283A">{l}</text>
+      ))}
+      <path d="M2 69c6-6 14-6 20-2 6-5 14-5 20 0 6-4 12-3 16 2z" fill="#2E9E4F" opacity=".7" />
+    </svg>
+  )
+}
+
+export function DeadTree({ size = 170, style, className }: P) {
+  return (
+    <svg width={size * 0.8} height={size} viewBox="0 0 136 170" style={style} className={className} aria-hidden>
+      <path d="M60 170c4-30 4-60-2-86-10-6-22-6-34-18m36 24c-14-14-18-30-16-46m18 64c8-20 22-34 40-40m-36 18c8-14 6-28 2-40m30 12c10-6 18-6 28-4M28 66c-8 0-16-4-22-10"
+        stroke="#2A2140" strokeWidth="7" strokeLinecap="round" fill="none" />
+      <path d="M50 170c2-40 4-62 8-86h6c4 30 4 60 8 86z" fill="#2A2140" />
+    </svg>
+  )
+}
+
+export function Cat({ size = 60, style, className }: P) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 60 60" style={style} className={className} aria-hidden>
+      <path d="M48 58c8-6 10-18 2-22" stroke="#1A1430" strokeWidth="4" fill="none" strokeLinecap="round" />
+      <ellipse cx="30" cy="46" rx="16" ry="13" fill="#1A1430" />
+      <circle cx="30" cy="26" r="11" fill="#1A1430" />
+      <path d="M20 20l-2-12 9 6zM40 20l2-12-9 6z" fill="#1A1430" />
+      <ellipse cx="25.5" cy="25" rx="2.4" ry="3.2" fill="#FFE27A" className="sd-flicker" />
+      <ellipse cx="34.5" cy="25" rx="2.4" ry="3.2" fill="#FFE27A" className="sd-flicker" />
+    </svg>
+  )
+}
+
+export function Eyes({ size = 34, style, className }: P) {
+  return (
+    <svg width={size} height={size / 2.4} viewBox="0 0 48 20" style={style} className={className} aria-hidden>
+      <g className="sd-blinkeyes" style={{ transformOrigin: 'center', transformBox: 'fill-box' }}>
+        <ellipse cx="12" cy="10" rx="7" ry="5" fill="#FFE27A" />
+        <ellipse cx="36" cy="10" rx="7" ry="5" fill="#FFE27A" />
+        <ellipse cx="13" cy="10" rx="2" ry="4" fill="#1A1430" />
+        <ellipse cx="37" cy="10" rx="2" ry="4" fill="#1A1430" />
+      </g>
+    </svg>
+  )
+}
+
+// ─── Noël (scène) ─────────────────────────────────────────────────────────────
+
+export function ChristmasTree({ size = 190, style, className }: P) {
+  const lights = [[70, 62, '#FFC94D'], [88, 84, '#E53935'], [56, 92, '#4FC3F7'], [76, 112, '#B266FF'], [100, 124, '#FFC94D'], [48, 128, '#E53935'], [64, 146, '#4FC3F7'], [92, 150, '#FFC94D'], [38, 158, '#B266FF'], [112, 160, '#E53935']]
+  return (
+    <svg width={size * 0.78} height={size} viewBox="0 0 150 190" style={style} className={className} aria-hidden>
+      <rect x="64" y="166" width="22" height="22" fill="#6B4423" />
+      <path d="M75 20 30 82h20L18 128h22L6 172h138l-34-44h22l-32-46h20z" fill="#1F7A3F" />
+      <path d="M75 20 52 52M40 104c20 8 50 8 70 0M28 148c30 10 64 10 94 0" stroke="#2E9E4F" strokeWidth="5" fill="none" strokeLinecap="round" opacity=".8" />
+      <path d="M48 66c18 8 36 8 54 0M36 118c26 10 52 10 78 0M22 162c34 10 72 10 106 0" stroke="#FFC94D" strokeWidth="1.6" fill="none" opacity=".8" />
+      {lights.map(([x, y, c], i) => (
+        <circle key={i} cx={x as number} cy={y as number} r="4.2" fill={c as string} style={{ animation: `sd-twinkle ${1.2 + (i % 3) * 0.45}s ease-in-out ${-(i % 4) * 0.3}s infinite` }} />
+      ))}
+      <path d="M75 2l4.6 9.4 10.4 1.5-7.5 7.3 1.8 10.3L75 25.6l-9.3 4.9 1.8-10.3-7.5-7.3 10.4-1.5z" fill="#FFC94D" className="sd-flicker" />
+    </svg>
+  )
+}
+
+export function Snowman({ size = 120, style, className }: P) {
+  return (
+    <svg width={size * 0.8} height={size} viewBox="0 0 96 120" style={style} className={className} aria-hidden>
+      <circle cx="48" cy="88" r="30" fill="#F4F7FF" />
+      <circle cx="48" cy="46" r="21" fill="#FFFFFF" />
+      <path d="M28 40 6 26M68 40l22-16" stroke="#6B4423" strokeWidth="3" strokeLinecap="round" />
+      <rect x="30" y="58" width="36" height="9" rx="4" fill="#E53935" />
+      <path d="M56 62l8 18-8-2z" fill="#E53935" />
+      <circle cx="41" cy="42" r="2.4" fill="#1A1430" />
+      <circle cx="55" cy="42" r="2.4" fill="#1A1430" />
+      <path d="M48 48l14 4-14 2z" fill="#FF8A1F" />
+      <path d="M40 55c4 3 12 3 16 0" stroke="#1A1430" strokeWidth="2" fill="none" strokeLinecap="round" />
+      <circle cx="48" cy="80" r="2.4" fill="#1A1430" />
+      <circle cx="48" cy="92" r="2.4" fill="#1A1430" />
+      <rect x="32" y="20" width="32" height="5" rx="2" fill="#1A1430" />
+      <rect x="37" y="2" width="22" height="20" rx="2" fill="#1A1430" />
+      <rect x="37" y="15" width="22" height="4" fill="#8B00FF" />
+    </svg>
+  )
+}
+
+export function CandyCane({ size = 60, style, className }: P) {
+  return (
+    <svg width={size * 0.5} height={size} viewBox="0 0 30 60" style={style} className={className} aria-hidden>
+      <path d="M8 58V18a7 7 0 0 1 14 0v4" stroke="#FFFFFF" strokeWidth="6" fill="none" strokeLinecap="round" />
+      <path d="M8 58V18a7 7 0 0 1 14 0v4" stroke="#E53935" strokeWidth="6" fill="none" strokeLinecap="round" strokeDasharray="5 5" />
+    </svg>
+  )
+}
+
+export function Bauble({ size = 30, color = '#E53935', style, className }: P & { color?: string }) {
+  return (
+    <svg width={size} height={size * 1.25} viewBox="0 0 24 30" style={style} className={className} aria-hidden>
+      <rect x="9" y="2" width="6" height="5" rx="1" fill="#FFC94D" />
+      <circle cx="12" cy="18" r="10" fill={color} />
+      <path d="M5 15c4 2 10 2 14 0" stroke="#FFFFFF" strokeWidth="1.4" fill="none" opacity=".6" />
+      <circle cx="8.5" cy="14" r="2.2" fill="#FFFFFF" opacity=".55" />
+    </svg>
+  )
+}
+
+// ─── Black Friday (scène) ─────────────────────────────────────────────────────
+
+export function ShoppingBag({ size = 80, color = '#8B00FF', ink = '#F4F2EE', label = 'B', style, className }: P & { color?: string; ink?: string; label?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 60 60" style={style} className={className} aria-hidden>
+      <path d="M21 20v-6a9 9 0 0 1 18 0v6" stroke="#B266FF" strokeWidth="3" fill="none" />
+      <path d="M10 18h40l-3 40H13z" fill={color} />
+      <path d="M10 18h40l-1 6H11z" fill="#000" opacity=".2" />
+      <text x="30" y="46" textAnchor="middle" fontFamily="var(--font-syne), sans-serif" fontWeight="800" fontSize="16" fill={ink}>{label}</text>
+    </svg>
+  )
+}

@@ -71,16 +71,3 @@ export function SaisonNote() {
     </p>
   )
 }
-
-// Lueur aux couleurs de la saison derrière le titre de l'accueil, en plus du violet Backed.
-export function SaisonGlow() {
-  const s = useSaisons()[0]
-  if (!s) return null
-  return (
-    <div aria-hidden style={{
-      position: 'absolute', top: '32%', left: '50%', transform: 'translate(-50%, -50%)',
-      width: 900, height: 600, pointerEvents: 'none',
-      background: `radial-gradient(ellipse, ${s.couleur}33 0%, transparent 62%)`,
-    }} />
-  )
-}
