@@ -5,6 +5,7 @@ import { SITE_URL } from '@/lib/links'
 import OfferCard from '@/components/OfferCard'
 import WhatsAppBanner from '@/components/WhatsAppBanner'
 import Navbar from '@/components/Navbar'
+import { SaisonChapeau } from '@/components/Saison'
 import { getPopularThreshold, isPopularOffer } from '@/lib/popularUtils'
 
 export const revalidate = 3600
@@ -55,11 +56,12 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
       <main style={{ paddingTop: 96, minHeight: '100vh' }}>
         <div className="container">
           <div style={{ paddingTop: 32, marginBottom: 56 }}>
+            <div style={{ position: 'relative', width: 72, marginBottom: 20 }}>
+            <SaisonChapeau size={50} />
             <div style={{
               width: 72, height: 72, borderRadius: '50%',
               overflow: 'hidden',
               border: '2px solid var(--accent-border)',
-              marginBottom: 20,
               background: 'var(--accent-subtle)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
@@ -77,6 +79,7 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
                   {creator.name.charAt(0).toUpperCase()}
                 </span>
               )}
+            </div>
             </div>
             <div className="section-label">
               {offers.length} offre{offers.length !== 1 ? 's' : ''} active{offers.length !== 1 ? 's' : ''}
