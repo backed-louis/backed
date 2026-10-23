@@ -1,4 +1,4 @@
-# Créateurs à étudier (liste du 20 octobre 2026), un par ligne : @pseudo ou nom de chaîne.
+# Créateurs à étudier (liste du 23 octobre 2026), un par ligne : @pseudo ou nom de chaîne.
 # Le workflow « Découvrir des créateurs » les note avec les mêmes critères que les chaînes découvertes.
 Andy Raconte
 Rebeudeter
@@ -30,4 +30,36 @@ Bruno Maltor
 Nassim Sahili
 Jamcore
 Gastronogeek
-@superkevintran
+# Ajouts du 23 octobre : sponsos fréquents connus, toutes thématiques.
+Vilebrequin
+Just Riadh
+Wartek
+Sulivan Gwed
+Fabien Olicard
+Maskey
+VodK
+Cocadmin
+Underscore_
+Benjamin Code
+MoMaN
+Nowtech TV
+Le Café du Geek
+Aude WTFake
+LinksTheSun
+Carole Quintaine
+Durendal
+Le Fossoyeur de Films
+Alt 236
+Nexus VI
+Mister Geopolitix
+e-penser
+Le Réveilleur
+Épicurieux
+AngleDroit
+Bricolage Avec Robert
+Shera Kerienski
+Paola Locatelli
+Juste Zoé
+Elsa Bois
+Marine Leleu
+Alex Vizeo
