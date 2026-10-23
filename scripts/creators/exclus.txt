@@ -1,5 +1,0 @@
-# Chaînes à ne plus proposer (décision de Louis), une par ligne : identifiant UC…, @pseudo ou nom exact.
-UCjKvFMbYVKOnBDarCtXfEww  # S'investir (Matthieu Louvet)
-Antoine Daniel            # pas de sponsos
-Powl
-TechAddikt

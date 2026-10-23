@@ -1,9 +1,0 @@
-node_modules/
-.next/
-.env.local
-*.pack
-.DS_Store
-
-# Python
-__pycache__/
-*.pyc
