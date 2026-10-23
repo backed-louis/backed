@@ -42,6 +42,7 @@ export default function Footer() {
       { label: 'Toutes les offres', href: '/explorer' },
       { label: 'Créateurs', href: '/createurs' },
       { label: 'Catégories', href: '/categories' },
+      { label: 'Black Friday', href: '/black-friday' },
     ],
     Légal: [
 { label: 'CGU', href: '/cgu' },

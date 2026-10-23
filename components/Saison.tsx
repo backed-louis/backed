@@ -63,7 +63,7 @@ export function SaisonNote() {
       {s.lien && (
         <>
           {' '}
-          <a href={s.lien.href} target="_blank" rel="noopener noreferrer" style={{ color: s.couleur, fontWeight: 600, whiteSpace: 'nowrap' }}>
+          <a href={s.lien.href} {...(s.lien.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})} style={{ color: s.couleur, fontWeight: 600, whiteSpace: 'nowrap' }}>
             {s.lien.label} →
           </a>
         </>
