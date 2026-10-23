@@ -2,7 +2,8 @@ name: Découvrir des créateurs
 
 # Actions → Découvrir des créateurs → Run workflow.
 # Le classement s'affiche dans le résumé du run et se télécharge en bas (Artifacts, .md et .csv).
-# Coût : ~1 000 unités de quota YouTube + 100 par nom de scripts/creators/candidats.txt.
+# Classement : sponsos réguliers × audience × vues/abonnés. Chaînes de scripts/creators/exclus.txt ignorées.
+# Coût : ~1 400 unités de quota YouTube + 2 par chaîne étudiée + 1 à 100 par nom de candidats.txt (plafond 7 500).
 on:
   workflow_dispatch:
     inputs:

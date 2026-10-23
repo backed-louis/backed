@@ -1,15 +1,20 @@
 /**
- * Backed – Découvrir des créateurs YouTube qui ont des campagnes avec code promo
+ * Backed – Découvrir des créateurs YouTube : communauté active + sponsos réguliers
  * Usage: AIRTABLE_API_KEY=xxx YOUTUBE_API_KEY=xxx node scripts/discover-creators.js
  *
- * 1. Cherche les vidéos françaises récentes qui parlent de code promo (recherche YouTube).
- * 2. Ajoute les chaînes de scripts/creators/candidats.txt.
- * 3. Pour chaque chaîne absente de Backed : abonnés, et part des 15 dernières vidéos
- *    dont la description contient un code promo (= campagnes récurrentes), avec des exemples.
+ * 1. Cherche les vidéos françaises récentes sponsorisées (codes promo, « sponsorisé par »,
+ *    marques qui sponsorisent beaucoup de youtubeurs : NordVPN, Raid Shadow Legends…).
+ * 2. Ajoute les chaînes de scripts/creators/candidats.txt et retire celles de exclus.txt.
+ * 3. Pour chaque chaîne absente de Backed, sur ses dernières vidéos longues (hors Shorts) :
+ *    - communauté active : vues médianes / abonnés ;
+ *    - sponsos réguliers : part des vidéos avec un code promo, un partenariat annoncé
+ *      ou la mention « communication commerciale » de YouTube ;
+ *    - activité : nombre de vidéos longues sur 90 jours.
  * 4. Écrit un classement : out/decouverte/createurs.md (aussi dans le résumé du run) et .csv.
  *
- * Quota YouTube : une recherche coûte 100 unités (quota de 10 000 par jour, partagé avec la synchro).
- * Par défaut ~1 000 unités pour la découverte + 100 par nom de la liste.
+ * Quota YouTube (10 000 unités par jour, partagé avec la synchro) : une recherche coûte 100,
+ * le reste 1. Par défaut ~1 200 unités de recherche + 2 par chaîne étudiée ; un nom de la liste
+ * sans @ coûte 1 unité s'il correspond à un @pseudo, sinon 100. Plafond : MAX_QUOTA (7 500).
  */
 
 const fs = require('fs')
@@ -21,21 +26,36 @@ const BASE = process.env.AIRTABLE_BASE_ID || 'appzPhfC7ZdsjlPNa'
 const MIN_SUBSCRIBERS = Number(process.env.MIN_SUBSCRIBERS || 40000)
 const DAYS = Number(process.env.DAYS || 45)
 const WITH_CANDIDATES = process.env.WITH_CANDIDATES !== 'false'
+const MAX_QUOTA = Number(process.env.MAX_QUOTA || 7500)
 const OUT_DIR = process.env.OUT_DIR || 'out/decouverte'
-const RECENT_VIDEOS = 15
 // Pays acceptés (code ISO déclaré par la chaîne). Une chaîne sans pays déclaré est gardée
 // seulement si ses textes sont en français.
 const COUNTRIES = (process.env.COUNTRIES || 'FR').split(',').map((c) => c.trim().toUpperCase()).filter(Boolean)
 
-// Recherches YouTube (2 pages de 50 vidéos chacune).
-const QUERIES = ['code promo', 'avec mon code', 'code promo lien en description', 'partenaire de cette vidéo code']
-const PAGES_PER_QUERY = 2
+const LONG_VIDEOS = 15 // vidéos longues étudiées par chaîne
+const SHORT_MAX_SECONDS = 180 // en dessous : Short, ignoré
+const FRESH_DAYS = 5 // une vidéo plus récente n'a pas encore fait ses vues
+const MIN_UPLOADS_90 = 2 // vidéos longues sur 90 jours pour être considérée active
+const MIN_SPONSORED = 2 // vidéos sponsorisées pour être retenue (hors liste)
+const REF_RATIO = 0.1 // vues médianes = 10 % des abonnés : communauté « normale »
+const STUDY_RESERVE = 1000 // unités gardées pour étudier les chaînes trouvées
+const canSearch = () => quotaUsed + 100 <= MAX_QUOTA - STUDY_RESERVE
+// Les noms de la liste ne peuvent pas manger le quota des recherches de découverte.
+const canSearchName = () => quotaUsed + 100 <= MAX_QUOTA - STUDY_RESERVE - QUERIES.length * 100
+
+// Recherches YouTube (1 page de 50 vidéos chacune, triées par vues ; medium = 4 à 20 min,
+// long = plus de 20 min, pour ne pas remonter des Shorts).
+const QUERIES = [
+  ['code promo', 'medium'], ['code promo', 'long'], ['avec mon code', 'medium'],
+  ['sponsorisé par', 'medium'], ['sponsorisé par', 'long'], ['partenaire de cette vidéo', 'medium'],
+  ...['NordVPN', 'Surfshark', 'Raid Shadow Legends', 'Dashlane', 'Saily', 'HelloFresh', 'Revolut', 'Holy'].map((q) => [q, 'medium']),
+]
 
 // Un code promo dans une description : « code SQUEEZIE », « code promo : MICHOU10 », « avec le code "X" ».
 const CODE_RE = /(?:code(?:\s+(?:promo|créateur|createur))?|avec\s+le\s+code|utilise[rz]?\s+(?:le\s+|mon\s+)?code)\s*[:：«"“'‘-]?\s*[«"“'‘]?([A-Za-z0-9][A-Za-z0-9_-]{2,19})/gi
-const NOT_CODES = new Set(['promo', 'pour', 'dans', 'avec', 'sur', 'est', 'qui', 'les', 'des', 'une', 'and', 'the', 'source', 'lien', 'ici', 'suivant', 'personnel', 'exclusif'])
-
-let quotaUsed = 0
+const NOT_CODES = new Set(['promo', 'pour', 'dans', 'avec', 'sur', 'est', 'qui', 'les', 'des', 'une', 'and', 'the', 'source', 'lien', 'ici', 'suivant', 'personnel', 'exclusif', 'de', 'la', 'route'])
+// Partenariat annoncé sans code (lien personnel, sponsor cité).
+const SPONSOR_RE = /sponsoris[ée]|partenaire de (cette|la) vid[ée]o|en partenariat avec|collaboration commerciale|communication commerciale|placement de produit|lien affili|avec mon lien|via mon lien|gr[âa]ce [àa] mon lien/i
 
 // Texte plutôt français que anglais (mots outils les plus fréquents).
 const FR_WORDS = /\b(le|la|les|des|du|et|pour|avec|sur|dans|une|est|vous|ton|ta|tes|mon|ma|mes|abonne|vidéo)\b/gi
@@ -47,12 +67,20 @@ function looksFrench(text) {
   return fr >= 5 && fr > en * 1.5
 }
 
+let quotaUsed = 0
+let quotaExhausted = false
+
 async function yt(endpoint, params, cost = 1) {
+  if (quotaExhausted) throw new Error('quota YouTube épuisé')
+  if (quotaUsed + cost > MAX_QUOTA) throw new Error(`plafond de ${MAX_QUOTA} unités atteint`)
   const q = new URLSearchParams({ ...params, key: YOUTUBE_API_KEY })
   const res = await fetch(`https://www.googleapis.com/youtube/v3/${endpoint}?${q}`)
   const data = await res.json()
   quotaUsed += cost
-  if (data.error) throw new Error(`YouTube ${data.error.code}: ${data.error.message}`)
+  if (data.error) {
+    if (data.error.errors?.some((e) => e.reason === 'quotaExceeded')) quotaExhausted = true
+    throw new Error(`YouTube ${data.error.code}: ${data.error.message}`)
+  }
   return data
 }
 
@@ -64,6 +92,23 @@ function codesIn(text) {
   }
   return [...new Set(found)]
 }
+
+// « PT1H2M3S » -> secondes
+function seconds(iso) {
+  const m = String(iso || '').match(/P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+  if (!m) return 0
+  return Number(m[1] || 0) * 86400 + Number(m[2] || 0) * 3600 + Number(m[3] || 0) * 60 + Number(m[4] || 0)
+}
+
+function median(values) {
+  const v = values.filter((x) => Number.isFinite(x)).sort((a, b) => a - b)
+  if (!v.length) return 0
+  const mid = Math.floor(v.length / 2)
+  return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2
+}
+
+const normalize = (s) =>
+  String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
 
 async function existingChannelIds() {
   const ids = new Set()
@@ -89,44 +134,109 @@ async function channelsInfo(ids) {
   return out
 }
 
-// Part des dernières vidéos (hors Shorts courts) avec un code promo, et exemples de codes.
-async function recentCampaigns(channel) {
-  const uploads = channel.contentDetails?.relatedPlaylists?.uploads
-  if (!uploads) return { checked: 0, withCode: 0, codes: [] }
-  const list = await yt('playlistItems', { part: 'contentDetails', playlistId: uploads, maxResults: String(RECENT_VIDEOS) })
-  const ids = (list.items || []).map((it) => it.contentDetails.videoId)
-  if (!ids.length) return { checked: 0, withCode: 0, codes: [] }
-  const vids = await yt('videos', { part: 'snippet', id: ids.join(',') })
-  let withCode = 0
-  const codes = []
-  const texts = []
-  for (const v of vids.items || []) {
-    texts.push(v.snippet?.title || '', v.snippet?.description || '')
-    const c = codesIn(v.snippet?.description)
-    if (c.length) {
-      withCode++
-      codes.push(...c)
+// La mention YouTube « Inclut une communication commerciale » n'est pas toujours exposée :
+// si la partie est refusée, on continue sans.
+let withPlacement = true
+async function videosDetails(ids) {
+  const parts = 'snippet,statistics,contentDetails'
+  if (withPlacement) {
+    try {
+      return await yt('videos', { part: `${parts},paidProductPlacementDetails`, id: ids.join(',') })
+    } catch (err) {
+      if (quotaExhausted || /plafond/.test(err.message)) throw err
+      withPlacement = false
     }
   }
-  return { checked: (vids.items || []).length, withCode, codes: [...new Set(codes)], french: looksFrench(texts.join(' ')) }
+  return yt('videos', { part: parts, id: ids.join(',') })
 }
 
-function readCandidates() {
-  const file = path.join(__dirname, 'creators', 'candidats.txt')
-  if (!fs.existsSync(file)) return []
-  return fs.readFileSync(file, 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'))
+// Vidéos longues récentes : vues, sponsos, régularité.
+async function study(channel) {
+  const empty = { long: 0, sponsored: 0, codes: [], medianViews: 0, engagement: 0, uploads90: 0, lastLong: null, french: false }
+  const uploads = channel.contentDetails?.relatedPlaylists?.uploads
+  if (!uploads) return empty
+  const list = await yt('playlistItems', { part: 'contentDetails', playlistId: uploads, maxResults: '50' })
+  const ids = (list.items || []).map((it) => it.contentDetails.videoId)
+  if (!ids.length) return empty
+  const data = await videosDetails(ids)
+  const now = Date.now()
+  const texts = []
+  const long = []
+  for (const v of data.items || []) {
+    texts.push(v.snippet?.title || '', v.snippet?.description || '')
+    if (seconds(v.contentDetails?.duration) <= SHORT_MAX_SECONDS) continue
+    if (v.snippet?.liveBroadcastContent && v.snippet.liveBroadcastContent !== 'none') continue
+    long.push(v)
+  }
+  long.sort((a, b) => new Date(b.snippet.publishedAt) - new Date(a.snippet.publishedAt))
+  const recent = long.slice(0, LONG_VIDEOS)
+  let sponsored = 0
+  const codes = []
+  for (const v of recent) {
+    const desc = v.snippet?.description || ''
+    const c = codesIn(desc)
+    if (v.paidProductPlacementDetails?.hasPaidProductPlacement || c.length || SPONSOR_RE.test(desc)) sponsored++
+    codes.push(...c)
+  }
+  const aged = recent.filter((v) => now - new Date(v.snippet.publishedAt) > FRESH_DAYS * 864e5)
+  const base = aged.length ? aged : recent
+  const views = base.map((v) => Number(v.statistics?.viewCount || 0))
+  const engagement = base
+    .filter((v) => Number(v.statistics?.viewCount) > 0)
+    .map((v) => (Number(v.statistics?.likeCount || 0) + Number(v.statistics?.commentCount || 0)) / Number(v.statistics.viewCount))
+  return {
+    long: recent.length,
+    sponsored,
+    codes: [...new Set(codes)],
+    medianViews: median(views),
+    engagement: median(engagement),
+    uploads90: long.filter((v) => now - new Date(v.snippet.publishedAt) <= 90 * 864e5).length,
+    lastLong: recent[0]?.snippet?.publishedAt?.slice(0, 10) || null,
+    french: looksFrench(texts.join(' ')),
+  }
 }
 
+function readList(file) {
+  const p = path.join(__dirname, 'creators', file)
+  if (!fs.existsSync(p)) return []
+  return fs.readFileSync(p, 'utf8').split('\n').map((l) => l.replace(/#.*$/, '').trim()).filter(Boolean)
+}
+
+// @pseudo -> 1 unité. Identifiant UC… -> direct. Nom -> on essaie d'abord le @pseudo évident
+// (« Andy Raconte » -> @andyraconte, 1 unité), puis la recherche de chaîne (100 unités).
 async function resolveCandidate(name) {
+  if (/^UC[\w-]{22}$/.test(name)) return name
   if (name.startsWith('@')) {
     const data = await yt('channels', { part: 'id', forHandle: name })
     return data.items?.[0]?.id || null
   }
+  const target = normalize(name)
+  if (target.length >= 4) {
+    const data = await yt('channels', { part: 'snippet', forHandle: `@${target}` })
+    const ch = data.items?.[0]
+    if (ch && normalize(ch.snippet.title).includes(target)) return ch.id
+  }
+  if (!canSearchName()) throw new Error('pas assez de quota pour une recherche')
   const data = await yt('search', { part: 'snippet', type: 'channel', maxResults: '1', regionCode: 'FR', relevanceLanguage: 'fr', q: name }, 100)
   return data.items?.[0]?.snippet?.channelId || null
 }
 
+function isExcluded(ch, excluded) {
+  const handle = normalize(ch.snippet.customUrl)
+  const title = normalize(ch.snippet.title)
+  return excluded.some((e) => e === ch.id || (normalize(e) && (normalize(e) === handle || normalize(e) === title)))
+}
+
+// « liste (X) » tel quel ; les recherches regroupées : « recherche : code promo, NordVPN… ».
+function viaLabel(via) {
+  const list = [...via].filter((v) => v.startsWith('liste'))
+  const searches = [...via].filter((v) => v.startsWith('recherche')).map((v) => v.replace(/^recherche « (.*) »$/, '$1'))
+  if (searches.length) list.push(`recherche : ${searches.slice(0, 3).join(', ')}${searches.length > 3 ? '…' : ''}`)
+  return list.join(', ')
+}
+
 const fmt = (n) => Number(n || 0).toLocaleString('fr-FR')
+const pct = (x) => `${Math.round(x * 100)} %`
 const csvCell = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`
 
 async function main() {
@@ -135,40 +245,22 @@ async function main() {
     process.exit(1)
   }
   const known = await existingChannelIds()
-  console.log(`🗂️  ${known.size} chaînes déjà sur Backed`)
+  const excluded = readList('exclus.txt')
+  console.log(`🗂️  ${known.size} chaînes déjà sur Backed, ${excluded.length} exclues`)
 
-  // channelId -> { via: Set, hits: nombre de vidéos trouvées par la recherche }
+  // channelId -> { via: Set }
   const pool = new Map()
   const add = (id, via) => {
-    if (!id || known.has(id)) return
-    const p = pool.get(id) || { via: new Set(), hits: 0 }
+    if (!id || known.has(id) || excluded.includes(id)) return
+    const p = pool.get(id) || { via: new Set() }
     p.via.add(via)
-    if (via === 'recherche') p.hits++
     pool.set(id, p)
   }
 
-  const after = new Date(Date.now() - DAYS * 864e5).toISOString()
-  try {
-    for (const q of QUERIES) {
-      let pageToken = ''
-      for (let page = 0; page < PAGES_PER_QUERY; page++) {
-        const data = await yt('search', {
-          part: 'snippet', type: 'video', maxResults: '50', regionCode: 'FR', relevanceLanguage: 'fr',
-          publishedAfter: after, order: 'viewCount', q, ...(pageToken ? { pageToken } : {}),
-        }, 100)
-        for (const it of data.items || []) add(it.snippet.channelId, 'recherche')
-        pageToken = data.nextPageToken
-        if (!pageToken) break
-      }
-      console.log(`🔎 « ${q} » : ${pool.size} chaînes candidates`)
-    }
-  } catch (err) {
-    console.error(`⚠️  Recherche interrompue : ${err.message}`)
-  }
-
+  // La liste d'abord : elle est choisie à la main, elle passe avant la recherche si le quota manque.
   const unresolved = []
   if (WITH_CANDIDATES) {
-    for (const name of readCandidates()) {
+    for (const name of readList('candidats.txt')) {
       try {
         const id = await resolveCandidate(name)
         if (!id) unresolved.push(name)
@@ -176,41 +268,75 @@ async function main() {
         else add(id, `liste (${name})`)
       } catch (err) {
         unresolved.push(`${name} (${err.message})`)
+        if (quotaExhausted) break
       }
+    }
+  }
+
+  const after = new Date(Date.now() - DAYS * 864e5).toISOString()
+  for (const [q, videoDuration] of QUERIES) {
+    if (quotaExhausted || !canSearch()) break
+    try {
+      const data = await yt('search', {
+        part: 'snippet', type: 'video', maxResults: '50', regionCode: 'FR', relevanceLanguage: 'fr',
+        publishedAfter: after, order: 'viewCount', videoDuration, q,
+      }, 100)
+      for (const it of data.items || []) add(it.snippet.channelId, `recherche « ${q} »`)
+      console.log(`🔎 « ${q} » (${videoDuration}) : ${pool.size} chaînes candidates`)
+    } catch (err) {
+      console.error(`⚠️  Recherche « ${q} » : ${err.message}`)
     }
   }
 
   const channels = await channelsInfo([...pool.keys()])
   const rows = []
+  const setAside = []
   for (const ch of channels) {
+    if (isExcluded(ch, excluded)) continue
     const subs = Number(ch.statistics?.subscriberCount || 0)
     const fromList = [...pool.get(ch.id).via].some((v) => v.startsWith('liste'))
+    const label = ch.snippet.title
     if (subs < MIN_SUBSCRIBERS && !fromList) continue
     const country = (ch.snippet.country || '').toUpperCase()
     // Pays déclaré hors liste : écarté sans dépenser de quota.
     if (country && !COUNTRIES.includes(country) && !fromList) continue
-    let camp = { checked: 0, withCode: 0, codes: [] }
+    let s
     try {
-      camp = await recentCampaigns(ch)
+      s = await study(ch)
     } catch (err) {
-      console.error(`⚠️  ${ch.snippet.title} : ${err.message}`)
+      console.error(`⚠️  ${label} : ${err.message}`)
+      if (fromList) setAside.push(`${label} (non étudiée : ${err.message})`)
+      continue
     }
     // Pas de pays déclaré : on garde seulement si les vidéos sont en français.
-    if (!country && !camp.french && !fromList) continue
-    const share = camp.checked ? camp.withCode / camp.checked : 0
+    if (!country && !s.french && !fromList) continue
+    const share = s.long ? s.sponsored / s.long : 0
+    const ratio = subs ? s.medianViews / subs : 0
+    const why = []
+    if (s.uploads90 < MIN_UPLOADS_90) why.push(`${s.uploads90} vidéo(s) longue(s) en 90 j`)
+    if (s.sponsored < MIN_SPONSORED) why.push(`${s.sponsored} vidéo(s) sponsorisée(s) sur ${s.long}`)
+    if (why.length) {
+      if (fromList) setAside.push(`${label} : ${why.join(', ')}`)
+      continue
+    }
     rows.push({
-      title: ch.snippet.title,
+      title: label,
       id: ch.id,
       handle: ch.snippet.customUrl || '',
       country: ch.snippet.country || '',
       subs,
-      withCode: camp.withCode,
-      checked: camp.checked,
+      medianViews: s.medianViews,
+      ratio,
+      engagement: s.engagement,
+      sponsored: s.sponsored,
+      long: s.long,
       share,
-      codes: camp.codes.slice(0, 4),
-      via: [...pool.get(ch.id).via].join(', '),
-      // Score : campagnes récurrentes d'abord, pondérées par l'audience.
-      score: share * Math.log10(Math.max(subs, 10)),
+      uploads90: s.uploads90,
+      lastLong: s.lastLong,
+      codes: s.codes.slice(0, 4),
+      via: viaLabel(pool.get(ch.id).via),
+      // Sponsos réguliers × audience × communauté active (vues/abonnés, de ×0,25 à ×2).
+      score: share * Math.log10(Math.max(subs, 10)) * Math.min(2, Math.max(0.25, ratio / REF_RATIO)),
     })
   }
   rows.sort((a, b) => b.score - a.score || b.subs - a.subs)
@@ -219,19 +345,21 @@ async function main() {
   const md = [
     `# Créateurs à découvrir`,
     ``,
-    `Chaînes absentes de Backed, classées par campagnes récurrentes (vidéos avec code promo parmi les ${RECENT_VIDEOS} dernières) puis par audience. Chaînes françaises uniquement (pays ${COUNTRIES.join(', ')}, ou sans pays mais vidéos en français). Recherche sur les ${DAYS} derniers jours, seuil ${fmt(MIN_SUBSCRIBERS)} abonnés (sauf pour la liste). Quota YouTube utilisé : ${fmt(quotaUsed)} unités.`,
+    `Chaînes absentes de Backed, sur leurs ${LONG_VIDEOS} dernières vidéos longues (Shorts exclus). Classement : part de vidéos sponsorisées × audience × vues médianes rapportées aux abonnés (repère : ${pct(REF_RATIO)}). Gardées : au moins ${MIN_UPLOADS_90} vidéos longues sur 90 jours et ${MIN_SPONSORED} vidéos sponsorisées. Chaînes françaises (pays ${COUNTRIES.join(', ')}, ou sans pays mais vidéos en français), seuil ${fmt(MIN_SUBSCRIBERS)} abonnés (sauf liste). Quota YouTube utilisé : ${fmt(quotaUsed)} unités.`,
     ``,
-    `| # | Chaîne | Abonnés | Vidéos avec code | Exemples de codes | Pays | Trouvée via |`,
-    `| --- | --- | --- | --- | --- | --- | --- |`,
-    ...rows.map((r, i) => `| ${i + 1} | [${r.title}](https://www.youtube.com/channel/${r.id})${r.handle ? ` ${r.handle}` : ''} | ${fmt(r.subs)} | ${r.withCode}/${r.checked} | ${r.codes.join(', ') || '—'} | ${r.country || '—'} | ${r.via} |`),
+    `| # | Chaîne | Abonnés | Vues médianes | Vues / abonnés | Vidéos sponsorisées | Vidéos 90 j | Exemples de codes | Trouvée via |`,
+    `| --- | --- | --- | --- | --- | --- | --- | --- | --- |`,
+    ...rows.map((r, i) => `| ${i + 1} | [${r.title}](https://www.youtube.com/channel/${r.id})${r.handle ? ` ${r.handle}` : ''} | ${fmt(r.subs)} | ${fmt(Math.round(r.medianViews))} | ${pct(r.ratio)} | ${r.sponsored}/${r.long} | ${r.uploads90} | ${r.codes.join(', ') || '—'} | ${r.via} |`),
     ``,
-    unresolved.length ? `Introuvables dans la liste : ${unresolved.join(', ')}` : '',
+    setAside.length ? `**Liste, écartées :** ${setAside.join(' · ')}` : '',
+    ``,
+    unresolved.length ? `**Introuvables dans la liste :** ${unresolved.join(', ')}` : '',
   ].join('\n')
   fs.writeFileSync(path.join(OUT_DIR, 'createurs.md'), md)
   fs.writeFileSync(
     path.join(OUT_DIR, 'createurs.csv'),
-    ['rang,chaine,handle,channel_id,abonnes,videos_avec_code,videos_verifiees,exemples_codes,pays,trouvee_via',
-      ...rows.map((r, i) => [i + 1, r.title, r.handle, r.id, r.subs, r.withCode, r.checked, r.codes.join(' '), r.country, r.via].map(csvCell).join(','))].join('\n'),
+    ['rang,chaine,handle,channel_id,abonnes,vues_medianes,vues_sur_abonnes,engagement,videos_sponsorisees,videos_longues,videos_90j,derniere_video,exemples_codes,pays,trouvee_via,score',
+      ...rows.map((r, i) => [i + 1, r.title, r.handle, r.id, r.subs, Math.round(r.medianViews), r.ratio.toFixed(3), r.engagement.toFixed(4), r.sponsored, r.long, r.uploads90, r.lastLong, r.codes.join(' '), r.country, r.via, r.score.toFixed(3)].map(csvCell).join(','))].join('\n'),
   )
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md + '\n')
   console.log(md)
