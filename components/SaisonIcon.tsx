@@ -17,6 +17,7 @@ export default function SaisonIcon({ id, color, size = 18 }: { id: SaisonId; col
           <path d="M11.2 6.2c-.1-1.6.4-3 1.6-4.2l1.3 1.1c-.9.9-1.3 1.9-1.2 3.1Z" fill="#3E7A3A" />
         </svg>
       )
+    case 'black-november':
     case 'black-friday': // étiquette de prix
       return (
         <svg {...common} fill="none" stroke={color} strokeWidth={2.2} strokeLinejoin="round">

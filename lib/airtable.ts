@@ -86,6 +86,7 @@ export interface Offer {
   slug: string
   clicks: number
   endDate: string | null
+  blackFriday: boolean
 }
 
 export interface Category {
@@ -245,6 +246,7 @@ function mapOffer(r: any, brandsMap: any, creatorsMap: any): Offer {
     slug: r.fields['Slug'] || '',
     clicks: r.fields['Clicks'] || 0,
     endDate: r.fields['End Date'] || null,
+    blackFriday: Boolean(r.fields['Black Friday']),
   }
 }
 

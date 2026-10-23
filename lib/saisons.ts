@@ -2,7 +2,7 @@
 // Chaque saison a ses dates (heure de Paris), une couleur, un petit message et une icône.
 // Pour en ajouter une : une entrée dans SAISONS, et son icône dans components/SaisonIcon.tsx.
 
-export type SaisonId = 'octobre-rose' | 'halloween' | 'black-friday' | 'noel'
+export type SaisonId = 'octobre-rose' | 'halloween' | 'black-november' | 'black-friday' | 'noel'
 
 export interface Saison {
   id: SaisonId
@@ -24,7 +24,7 @@ const entre = (d: JourParis, debut: [number, number], fin: [number, number]) => 
 }
 
 // Black Friday : le lendemain du 4e jeudi de novembre. On l'affiche du lundi au Cyber Monday.
-function blackFriday(annee: number): Date {
+export function blackFriday(annee: number): Date {
   const premierNov = new Date(Date.UTC(annee, 10, 1))
   const premierJeudi = 1 + ((4 - premierNov.getUTCDay() + 7) % 7)
   return new Date(Date.UTC(annee, 10, premierJeudi + 21 + 1))
@@ -49,10 +49,25 @@ export const SAISONS: Saison[] = [
     active: (d) => entre(d, [10, 26], [10, 31]),
   },
   {
+    // Avant la semaine du Black Friday : juste l'icône et un message vers la page dédiée.
+    id: 'black-november',
+    nom: 'Black Friday',
+    couleur: '#F4F2EE',
+    message: 'Le Black Friday arrive : tous les codes des créateurs au même endroit.',
+    lien: { href: '/black-friday', label: 'Voir la page' },
+    priorite: 1,
+    active: (d) => {
+      const bf = blackFriday(d.annee)
+      const t = Date.UTC(d.annee, d.mois - 1, d.jour)
+      return d.mois === 11 && t < bf.getTime() - 4 * 86400000
+    },
+  },
+  {
     id: 'black-friday',
     nom: 'Black Friday',
     couleur: '#F4F2EE',
     message: 'Black Friday : avant de payer, vérifie le code de ton créateur.',
+    lien: { href: '/black-friday', label: 'Tous les codes' },
     priorite: 3,
     active: (d) => {
       const bf = blackFriday(d.annee)
