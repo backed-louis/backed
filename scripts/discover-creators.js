@@ -73,10 +73,12 @@ function hostsIn(text) {
 }
 
 // Lignes d'une description qui parlent du sponsor (code, partenariat), pour l'inspection.
-function sponsorLines(desc) {
+function allSponsorLines(desc) {
   return String(desc || '').split('\n').map((l) => l.trim())
     .filter((l) => l && (new RegExp(CODE_RE.source, 'i').test(l) || SPONSOR_RE.test(l)))
-    .slice(0, 3).map((l) => (l.length > 180 ? `${l.slice(0, 177)}…` : l))
+}
+function sponsorLines(desc) {
+  return allSponsorLines(desc).slice(0, 3).map((l) => (l.length > 180 ? `${l.slice(0, 177)}…` : l))
 }
 
 // Texte plutôt français que anglais (mots outils les plus fréquents).
@@ -204,9 +206,9 @@ async function study(channel) {
     const isSponsored = placement || c.length > 0 || SPONSOR_RE.test(desc)
     if (isSponsored) sponsored++
     codes.push(...c)
-    const hosts = hostsIn(desc)
-    hosts.forEach((h) => hostCount.set(h, (hostCount.get(h) || 0) + 1))
-    if (isSponsored) hosts.forEach((h) => sponsoredHosts.add(h))
+    hostsIn(desc).forEach((h) => hostCount.set(h, (hostCount.get(h) || 0) + 1))
+    // Marques : liens des lignes sponsor seulement (pas les sources citées dans la description).
+    if (isSponsored) hostsIn(allSponsorLines(desc).join('\n')).forEach((h) => sponsoredHosts.add(h))
     videos.push({
       date: v.snippet.publishedAt.slice(0, 10),
       views: Number(v.statistics?.viewCount || 0),
@@ -217,7 +219,7 @@ async function study(channel) {
     })
   }
   // Un lien présent dans plus de 60 % des vidéos est un lien permanent (boutique, site du créateur) :
-  // les marques sont les autres liens des vidéos sponsorisées, hors raccourcisseurs.
+  // les marques sont les autres liens des lignes sponsor, hors raccourcisseurs.
   const permanent = [...hostCount].filter(([, n]) => recent.length >= 4 && n / recent.length > 0.6).map(([h]) => h)
   const brands = [...sponsoredHosts].filter((h) => !permanent.includes(h) && !SHORTENER.test(h))
   const aged = recent.filter((v) => now - new Date(v.snippet.publishedAt) > FRESH_DAYS * 864e5)
