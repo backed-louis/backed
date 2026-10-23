@@ -12,6 +12,9 @@
  *    - activité : nombre de vidéos longues sur 90 jours.
  * 4. Écrit un classement : out/decouverte/createurs.md (aussi dans le résumé du run) et .csv.
  *
+ * Inspection (CHANNELS="@pseudo, UC…") : seulement ces chaînes, avec leurs dernières vidéos et
+ * les lignes sponsor de chaque description -> out/decouverte/inspection.md.
+ *
  * Quota YouTube (10 000 unités par jour, partagé avec la synchro) : une recherche coûte 100,
  * le reste 1. Par défaut ~1 200 unités de recherche + 2 par chaîne étudiée ; un nom de la liste
  * sans @ coûte 1 unité s'il correspond à un @pseudo, sinon 100. Plafond : MAX_QUOTA (7 500).
@@ -56,6 +59,25 @@ const CODE_RE = /(?:code(?:\s+(?:promo|créateur|createur))?|avec\s+le\s+code|ut
 const NOT_CODES = new Set(['promo', 'pour', 'dans', 'avec', 'sur', 'est', 'qui', 'les', 'des', 'une', 'and', 'the', 'source', 'lien', 'ici', 'suivant', 'personnel', 'exclusif', 'de', 'la', 'route'])
 // Partenariat annoncé sans code (lien personnel, sponsor cité).
 const SPONSOR_RE = /sponsoris[ée]|partenaire de (cette|la) vid[ée]o|en partenariat avec|collaboration commerciale|communication commerciale|placement de produit|lien affili|avec mon lien|via mon lien|gr[âa]ce [àa] mon lien/i
+
+// Liens qui ne sont pas des marques (réseaux, dons, musique…) et raccourcisseurs (marque inconnue).
+const NOT_BRAND_HOST = /(^|\.)(youtube\.com|youtu\.be|instagram\.com|tiktok\.com|twitter\.com|x\.com|facebook\.com|fb\.me|twitch\.tv|discord\.gg|discord\.com|linktr\.ee|patreon\.com|tipeee\.com|utip\.io|spotify\.com|apple\.com|deezer\.com|threads\.net|snapchat\.com|linkedin\.com|bsky\.app|google\.com|goo\.gl|wikipedia\.org|kick\.com|whatsapp\.com|t\.me|reddit\.com|pinterest\.\w+|soundcloud\.com|bandcamp\.com|ko-fi\.com|beacons\.ai)$/i
+const SHORTENER = /(^|\.)(bit\.ly|tinyurl\.com|lnk\.to|urlz\.fr|cutt\.ly|rebrand\.ly|shorturl\.at|geni\.us|amzn\.to|ow\.ly|tidd\.ly|go2\.\w+|s\.\w+\.\w+)$/i
+function hostsIn(text) {
+  const hosts = new Set()
+  for (const m of String(text || '').matchAll(/https?:\/\/([^/\s?#)]+)/gi)) {
+    const h = m[1].toLowerCase().replace(/^www\./, '')
+    if (!NOT_BRAND_HOST.test(h)) hosts.add(h)
+  }
+  return hosts
+}
+
+// Lignes d'une description qui parlent du sponsor (code, partenariat), pour l'inspection.
+function sponsorLines(desc) {
+  return String(desc || '').split('\n').map((l) => l.trim())
+    .filter((l) => l && (new RegExp(CODE_RE.source, 'i').test(l) || SPONSOR_RE.test(l)))
+    .slice(0, 3).map((l) => (l.length > 180 ? `${l.slice(0, 177)}…` : l))
+}
 
 // Texte plutôt français que anglais (mots outils les plus fréquents).
 const FR_WORDS = /\b(le|la|les|des|du|et|pour|avec|sur|dans|une|est|vous|ton|ta|tes|mon|ma|mes|abonne|vidéo)\b/gi
@@ -152,7 +174,7 @@ async function videosDetails(ids) {
 
 // Vidéos longues récentes : vues, sponsos, régularité.
 async function study(channel) {
-  const empty = { long: 0, sponsored: 0, codes: [], medianViews: 0, engagement: 0, uploads90: 0, lastLong: null, french: false }
+  const empty = { long: 0, sponsored: 0, codes: [], brands: [], permanent: [], videos: [], medianViews: 0, engagement: 0, uploads90: 0, lastLong: null, french: false }
   const uploads = channel.contentDetails?.relatedPlaylists?.uploads
   if (!uploads) return empty
   const list = await yt('playlistItems', { part: 'contentDetails', playlistId: uploads, maxResults: '50' })
@@ -172,12 +194,32 @@ async function study(channel) {
   const recent = long.slice(0, LONG_VIDEOS)
   let sponsored = 0
   const codes = []
+  const hostCount = new Map()
+  const sponsoredHosts = new Set()
+  const videos = []
   for (const v of recent) {
     const desc = v.snippet?.description || ''
     const c = codesIn(desc)
-    if (v.paidProductPlacementDetails?.hasPaidProductPlacement || c.length || SPONSOR_RE.test(desc)) sponsored++
+    const placement = Boolean(v.paidProductPlacementDetails?.hasPaidProductPlacement)
+    const isSponsored = placement || c.length > 0 || SPONSOR_RE.test(desc)
+    if (isSponsored) sponsored++
     codes.push(...c)
+    const hosts = hostsIn(desc)
+    hosts.forEach((h) => hostCount.set(h, (hostCount.get(h) || 0) + 1))
+    if (isSponsored) hosts.forEach((h) => sponsoredHosts.add(h))
+    videos.push({
+      date: v.snippet.publishedAt.slice(0, 10),
+      views: Number(v.statistics?.viewCount || 0),
+      title: v.snippet.title,
+      sponsored: isSponsored,
+      placement,
+      lines: sponsorLines(desc),
+    })
   }
+  // Un lien présent dans plus de 60 % des vidéos est un lien permanent (boutique, site du créateur) :
+  // les marques sont les autres liens des vidéos sponsorisées, hors raccourcisseurs.
+  const permanent = [...hostCount].filter(([, n]) => recent.length >= 4 && n / recent.length > 0.6).map(([h]) => h)
+  const brands = [...sponsoredHosts].filter((h) => !permanent.includes(h) && !SHORTENER.test(h))
   const aged = recent.filter((v) => now - new Date(v.snippet.publishedAt) > FRESH_DAYS * 864e5)
   const base = aged.length ? aged : recent
   const views = base.map((v) => Number(v.statistics?.viewCount || 0))
@@ -188,6 +230,9 @@ async function study(channel) {
     long: recent.length,
     sponsored,
     codes: [...new Set(codes)],
+    brands,
+    permanent,
+    videos,
     medianViews: median(views),
     engagement: median(engagement),
     uploads90: long.filter((v) => now - new Date(v.snippet.publishedAt) <= 90 * 864e5).length,
@@ -244,6 +289,7 @@ async function main() {
     console.error('❌ AIRTABLE_API_KEY et YOUTUBE_API_KEY requis')
     process.exit(1)
   }
+  if (process.env.CHANNELS) return inspect(process.env.CHANNELS.split(/[,\n]/).map((c) => c.trim()).filter(Boolean))
   const known = await existingChannelIds()
   const excluded = readList('exclus.txt')
   console.log(`🗂️  ${known.size} chaînes déjà sur Backed, ${excluded.length} exclues`)
@@ -334,6 +380,7 @@ async function main() {
       uploads90: s.uploads90,
       lastLong: s.lastLong,
       codes: s.codes.slice(0, 4),
+      brands: s.brands,
       via: viaLabel(pool.get(ch.id).via),
       // Sponsos réguliers × audience × communauté active (vues/abonnés, de ×0,25 à ×2).
       score: share * Math.log10(Math.max(subs, 10)) * Math.min(2, Math.max(0.25, ratio / REF_RATIO)),
@@ -347,9 +394,9 @@ async function main() {
     ``,
     `Chaînes absentes de Backed, sur leurs ${LONG_VIDEOS} dernières vidéos longues (Shorts exclus). Classement : part de vidéos sponsorisées × audience × vues médianes rapportées aux abonnés (repère : ${pct(REF_RATIO)}). Gardées : au moins ${MIN_UPLOADS_90} vidéos longues sur 90 jours et ${MIN_SPONSORED} vidéos sponsorisées. Chaînes françaises (pays ${COUNTRIES.join(', ')}, ou sans pays mais vidéos en français), seuil ${fmt(MIN_SUBSCRIBERS)} abonnés (sauf liste). Quota YouTube utilisé : ${fmt(quotaUsed)} unités.`,
     ``,
-    `| # | Chaîne | Abonnés | Vues médianes | Vues / abonnés | Vidéos sponsorisées | Vidéos 90 j | Exemples de codes | Trouvée via |`,
-    `| --- | --- | --- | --- | --- | --- | --- | --- | --- |`,
-    ...rows.map((r, i) => `| ${i + 1} | [${r.title}](https://www.youtube.com/channel/${r.id})${r.handle ? ` ${r.handle}` : ''} | ${fmt(r.subs)} | ${fmt(Math.round(r.medianViews))} | ${pct(r.ratio)} | ${r.sponsored}/${r.long} | ${r.uploads90} | ${r.codes.join(', ') || '—'} | ${r.via} |`),
+    `| # | Chaîne | Abonnés | Vues médianes | Vues / abonnés | Vidéos sponsorisées | Vidéos 90 j | Marques (liens) | Exemples de codes | Trouvée via |`,
+    `| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |`,
+    ...rows.map((r, i) => `| ${i + 1} | [${r.title}](https://www.youtube.com/channel/${r.id})${r.handle ? ` ${r.handle}` : ''} | ${fmt(r.subs)} | ${fmt(Math.round(r.medianViews))} | ${pct(r.ratio)} | ${r.sponsored}/${r.long} | ${r.uploads90} | ${r.brands.length ? `${r.brands.length} : ${r.brands.slice(0, 4).join(', ')}` : '—'} | ${r.codes.join(', ') || '—'} | ${r.via} |`),
     ``,
     setAside.length ? `**Liste, écartées :** ${setAside.join(' · ')}` : '',
     ``,
@@ -358,9 +405,52 @@ async function main() {
   fs.writeFileSync(path.join(OUT_DIR, 'createurs.md'), md)
   fs.writeFileSync(
     path.join(OUT_DIR, 'createurs.csv'),
-    ['rang,chaine,handle,channel_id,abonnes,vues_medianes,vues_sur_abonnes,engagement,videos_sponsorisees,videos_longues,videos_90j,derniere_video,exemples_codes,pays,trouvee_via,score',
-      ...rows.map((r, i) => [i + 1, r.title, r.handle, r.id, r.subs, Math.round(r.medianViews), r.ratio.toFixed(3), r.engagement.toFixed(4), r.sponsored, r.long, r.uploads90, r.lastLong, r.codes.join(' '), r.country, r.via, r.score.toFixed(3)].map(csvCell).join(','))].join('\n'),
+    ['rang,chaine,handle,channel_id,abonnes,vues_medianes,vues_sur_abonnes,engagement,videos_sponsorisees,videos_longues,videos_90j,derniere_video,marques,exemples_codes,pays,trouvee_via,score',
+      ...rows.map((r, i) => [i + 1, r.title, r.handle, r.id, r.subs, Math.round(r.medianViews), r.ratio.toFixed(3), r.engagement.toFixed(4), r.sponsored, r.long, r.uploads90, r.lastLong, r.brands.join(' '), r.codes.join(' '), r.country, r.via, r.score.toFixed(3)].map(csvCell).join(','))].join('\n'),
   )
+  if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md + '\n')
+  console.log(md)
+}
+
+// Inspection détaillée de quelques chaînes (@pseudo, identifiant UC… ou nom) : pour chacune,
+// ses dernières vidéos longues avec les lignes sponsor de la description. ~3 unités par chaîne.
+async function inspect(names) {
+  const ids = []
+  const unresolved = []
+  for (const n of names) {
+    try {
+      const id = await resolveCandidate(n)
+      id ? ids.push(id) : unresolved.push(n)
+    } catch (err) {
+      unresolved.push(`${n} (${err.message})`)
+    }
+  }
+  const out = [`# Inspection de ${ids.length} chaîne(s)`, '']
+  for (const ch of await channelsInfo(ids)) {
+    const subs = Number(ch.statistics?.subscriberCount || 0)
+    let s
+    try {
+      s = await study(ch)
+    } catch (err) {
+      out.push(`## ${ch.snippet.title}`, '', `Non étudiée : ${err.message}`, '')
+      continue
+    }
+    out.push(
+      `## [${ch.snippet.title}](https://www.youtube.com/channel/${ch.id}) ${ch.snippet.customUrl || ''}`,
+      '',
+      `${fmt(subs)} abonnés · pays ${ch.snippet.country || '—'} · vues médianes ${fmt(Math.round(s.medianViews))} (${pct(subs ? s.medianViews / subs : 0)} des abonnés) · ${s.sponsored}/${s.long} vidéos sponsorisées · ${s.uploads90} vidéos longues en 90 j`,
+      '',
+      `Marques (liens) : ${s.brands.join(', ') || '—'} · liens permanents : ${s.permanent.join(', ') || '—'}`,
+      '',
+      ...s.videos.map((v) => `- ${v.date} · ${fmt(v.views)} vues · ${v.title}${v.placement ? ' · [communication commerciale]' : ''}${v.lines.length ? `\n  - ${v.lines.join('\n  - ')}` : ''}`),
+      '',
+    )
+  }
+  if (unresolved.length) out.push(`Introuvables : ${unresolved.join(', ')}`, '')
+  out.push(`Quota YouTube utilisé : ${fmt(quotaUsed)} unités.`)
+  const md = out.join('\n')
+  fs.mkdirSync(OUT_DIR, { recursive: true })
+  fs.writeFileSync(path.join(OUT_DIR, 'inspection.md'), md)
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md + '\n')
   console.log(md)
 }
