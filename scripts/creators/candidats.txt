@@ -16,7 +16,6 @@ Mynthos
 Kotei
 Cookie Connecté
 Les Numériques
-TechAddikt
 Le Vortex
 Scilabus
 Monsieur Phi
@@ -27,10 +26,8 @@ Linguisticae
 Les Revues du Monde
 Mr Sam
 Thami Kabbaj
-Powl
 Bruno Maltor
 Nassim Sahili
 Jamcore
 Gastronogeek
-Antoine Daniel
-Le Rire Jaune
+@superkevintran
