@@ -95,4 +95,27 @@ function endDateFromText(description, anchors, publishedDate) {
   return null
 }
 
-module.exports = { ADVANTAGE, isLinkOffer, isDisplayable, endDateFromText }
+// ─── Offre Black Friday ───────────────────────────────────────────────────────
+
+const BLACK_FRIDAY = /black\s*friday|black\s*friyay|black\s*week|black\s*november|cyber\s*monday/i
+
+// L'offre est-elle présentée comme une offre Black Friday ? On regarde son propre bloc dans la
+// description (sa ligne et ce qui suit jusqu'au lien suivant), pas toute la description.
+function blackFridayFromText(description, anchors) {
+  const text = String(description || '')
+  const lower = text.toLowerCase()
+  for (const a of anchors) {
+    const anchor = String(a || '').trim().toLowerCase()
+    if (anchor.length < 3) continue
+    const pos = lower.indexOf(anchor)
+    if (pos < 0) continue
+    const after = text.slice(pos + anchor.length, pos + anchor.length + 300)
+    const next = after.search(/https?:\/\//i)
+    const lineStart = text.lastIndexOf('\n', pos) + 1
+    const head = text.slice(Math.max(lineStart, pos - 200), pos)
+    if (BLACK_FRIDAY.test(head + ' ' + (next >= 0 ? after.slice(0, next) : after))) return true
+  }
+  return false
+}
+
+module.exports = { ADVANTAGE, isLinkOffer, isDisplayable, endDateFromText, BLACK_FRIDAY, blackFridayFromText }
