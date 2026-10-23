@@ -1,5 +1,5 @@
 const Airtable = require('airtable')
-const { isLinkOffer, endDateFromText } = require('./lib/offres')
+const { isLinkOffer, endDateFromText, BLACK_FRIDAY, blackFridayFromText } = require('./lib/offres')
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY })
   .base(process.env.AIRTABLE_BASE_ID)
@@ -102,7 +102,7 @@ async function loadState() {
   // Toutes les offres, actives ET inactives : une offre déjà connue n'est jamais recréée.
   // Si le créateur la repartage dans une nouvelle vidéo, on la met à jour (« Vu le », réactivation).
   // Attention : via l'API, un champ lié renvoie des IDs d'enregistrements (pas des noms).
-  const offers = await base('Offers').select({ fields: ['Code', 'Brand', 'Creator', 'Source URL', 'Status', 'Vu le', 'End Date', 'Created time'] }).all()
+  const offers = await base('Offers').select({ fields: ['Code', 'Brand', 'Creator', 'Source URL', 'Status', 'Vu le', 'End Date', 'Created time', 'Black Friday'] }).all()
   for (const r of offers) {
     const creatorId = r.fields['Creator']?.[0]
     if (!creatorId) continue
@@ -117,6 +117,7 @@ async function loadState() {
       active: r.fields['Status'] === 'Active',
       seen: r.fields['Vu le'] || null,
       end: r.fields['End Date'] || null,
+      bf: Boolean(r.fields['Black Friday']),
     })
   }
 
@@ -148,7 +149,8 @@ async function detectCodesWithClaude(description, creatorName, publishedDate) {
     `      "brand": "Nom de la marque",`,
     `      "benefit": "Description de l avantage",`,
     `      "url": "https://lien-ou-null",`,
-    `      "endDate": "YYYY-MM-DD ou null"`,
+    `      "endDate": "YYYY-MM-DD ou null",`,
+    `      "blackFriday": true ou false`,
     `    }`,
     `  ]`,
     `}`,
@@ -162,6 +164,7 @@ async function detectCodesWithClaude(description, creatorName, publishedDate) {
     `- Le champ "url" doit être null si pas de lien spécifique`,
     `- IMPORTANT pour "brand": renvoie le nom commercial propre de l'annonceur (la société ou le service qui propose l'offre), ex: "NordVPN", "HelloFresh", "Revolut". JAMAIS un nom de domaine ou une URL, JAMAIS le nom du créateur, JAMAIS la description d'un produit, JAMAIS de parenthèses. Pour un lien affilié vers un produit, renvoie la marque qui le vend ou le fabrique (ex: "Amazon", "MSI"). Si tu ne peux pas identifier la marque avec certitude, renvoie null.`,
     `- Marques déjà connues : ${knownBrands}. Si l'annonceur correspond à l'une d'elles (même sous une variante comme "Emma Sleep" pour "Emma" ou "Scuf Gaming" pour "Scuf"), utilise EXACTEMENT son nom de cette liste. N'invente une nouvelle marque que si elle n'est pas dans la liste.`,
+    `- "blackFriday": true si l'offre est présentée comme une offre Black Friday, Black Week, Black November ou Cyber Monday, sinon false.`,
     `- "endDate": si la description indique une date de fin ou de validité, même dans une phrase séparée du lien (ex: "jusqu'au 14 mars", "valable jusqu'à fin 2026", "L'offre se termine le 30/09/2026"), renvoie-la au format YYYY-MM-DD en déduisant l'année la plus plausible à partir de la date de publication de la vidéo. Sinon renvoie null. N'invente jamais de date.`,
   ].join('\n')
 
@@ -307,7 +310,7 @@ async function getOrCreateBrand(name, sourceUrl) {
   return brandId
 }
 
-async function createOffer(code, brand, benefit, sourceUrl, endDate, creatorId, creatorName, seenDate) {
+async function createOffer(code, brand, benefit, sourceUrl, endDate, creatorId, creatorName, seenDate, blackFriday = false) {
   const label = code || 'lien'
   // Backed affiche les codes promo, et les liens personnels du créateur avec un avantage chiffré
   // (ex. Revolut : « 20 € offerts » via get.revolut.com/…/SQueezie). Un lien sans avantage, ou
@@ -342,9 +345,10 @@ async function createOffer(code, brand, benefit, sourceUrl, endDate, creatorId, 
     if (end && end !== existing.end) fields['End Date'] = end
     else if (!end && existing.end && existing.end < todayString()) fields['End Date'] = null // nouvelle campagne sans date
     if (!existing.active) fields['Status'] = 'Active'
+    if (blackFriday && !existing.bf) fields['Black Friday'] = true
     if (Object.keys(fields).length) {
       await base('Offers').update([{ id: existing.id, fields }])
-      Object.assign(existing, { active: true, seen: fields['Vu le'] || existing.seen, end: 'End Date' in fields ? fields['End Date'] : existing.end })
+      Object.assign(existing, { active: true, seen: fields['Vu le'] || existing.seen, end: 'End Date' in fields ? fields['End Date'] : existing.end, bf: existing.bf || blackFriday })
       refreshedOffersCount++
       console.log(`  🔄 Offre repartagée, mise à jour : ${label} (${brand}) — ${Object.keys(fields).join(', ')}`)
     } else {
@@ -366,9 +370,10 @@ async function createOffer(code, brand, benefit, sourceUrl, endDate, creatorId, 
     'Vu le': seen,
   }
   if (end) fields['End Date'] = end
+  if (blackFriday) fields['Black Friday'] = true
 
   const created = await base('Offers').create([{ fields }])
-  knownOffers.set(key, { id: created[0].id, created: new Date().toISOString(), active: true, seen, end: end || null })
+  knownOffers.set(key, { id: created[0].id, created: new Date().toISOString(), active: true, seen, end: end || null, bf: Boolean(blackFriday) })
   createdOffersCount++
   console.log(`  ✅ Offre créée : ${label} (${brand}) — ${benefit}${end ? ` — fin ${end}` : ''}`)
 }
@@ -450,7 +455,9 @@ async function main() {
         for (const c of codes) {
           // Date de fin : celle lue par Claude, sinon celle écrite près de l'offre dans la description.
           const endDate = c.endDate || endDateFromText(description, [c.code, c.url], publishedDate)
-          await createOffer(c.code, c.brand, c.benefit, c.url || video.url, endDate, creator.id, creator.name, publishedDate)
+          // Offre Black Friday : vue par Claude, ou écrite dans le texte de l'offre ou près d'elle.
+          const blackFriday = c.blackFriday === true || BLACK_FRIDAY.test(`${c.benefit || ''} ${c.code || ''}`) || blackFridayFromText(description, [c.code, c.url])
+          await createOffer(c.code, c.brand, c.benefit, c.url || video.url, endDate, creator.id, creator.name, publishedDate, blackFriday)
           totalCodes++
         }
         totalVideos++

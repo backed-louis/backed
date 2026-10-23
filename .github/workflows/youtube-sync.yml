@@ -2,6 +2,8 @@ name: YouTube Sync
 on:
   schedule:
     - cron: '0 19 * * *'
+    # Semaine du Black Friday : une synchro de plus le matin (9h à Paris), du 20 au 30 novembre.
+    - cron: '0 8 20-30 11 *'
   workflow_dispatch:
 jobs:
   sync:
