@@ -103,7 +103,8 @@ PCT = re.compile(r"(\d{1,2})\s?%")
 
 def percent_of(benefit):
     """Premier pourcentage de réduction trouvé dans le texte de l'offre (5 à 90), sinon None."""
-    if "jusqu" in (benefit or "").lower():  # « jusqu'à -74 % » : pas un pourcentage garanti
+    # « jusqu'à -74 % » : pas un pourcentage garanti (mais « valable jusqu'à fin 2026 » ne gêne pas)
+    if re.search(r"jusqu\S*\s*(?:à|a)\s*-?\s?\d+\s?%", benefit or "", re.I):
         return None
     for m in PCT.finditer(benefit or ""):
         v = int(m.group(1))
