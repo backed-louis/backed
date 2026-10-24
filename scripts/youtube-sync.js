@@ -7,8 +7,13 @@ const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY })
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
 
-// Nombre maximum de vidéos remontées par créateur à chaque run.
+// Nombre maximum de vidéos remontées par créateur à chaque run (vidéos longues seulement :
+// les Shorts n'ont presque jamais de code et occupaient la fenêtre des chaînes qui en postent beaucoup).
 const MAX_VIDEOS_PER_CREATOR = 15
+// En dessous de cette durée, c'est un Short (jusqu'à 3 min) : ignoré.
+const SHORT_MAX_SECONDS = 180
+// Pages de 50 vidéos parcourues au plus pour trouver les vidéos longues.
+const MAX_PLAYLIST_PAGES = 4
 // On ignore les vidéos publiées il y a plus de X mois.
 const MAX_AGE_MONTHS = 6
 // Petit délai (ms) entre deux appels à l'API Claude pour éviter le rate-limit.
@@ -159,6 +164,8 @@ async function detectCodesWithClaude(description, creatorName, publishedDate) {
     `- Ne retourne que de vrais codes promo ou liens affiliés avec un vrai avantage chiffré ou concret`,
     `- Ignore les mentions de réseaux sociaux`,
     `- Ignore les mots génériques (YOUTUBE, ABONNE, etc.)`,
+    `- Ignore ce que le créateur vend lui-même (sa boutique, son merch, sa formation, son kit, sa newsletter) : seulement les offres d'une marque partenaire. Exception : si la chaîne est la chaîne officielle d'une marque, ses propres offres comptent.`,
+    `- Ignore les codes à usage unique (bon cadeau du type "AB12-CD34-EF56") et les codes qui ne sont pas un mot ou une suite de caractères à taper (une phrase n'est pas un code).`,
     `- Si aucun code trouvé, retourne {"codes": []}`,
     `- Le champ "code" doit être null si c est uniquement un lien affilié sans code (ex: "Téléchargez Revolut avec ce lien … 20 € offerts" → code null, url = le lien, benefit = "20 € offerts …")`,
     `- Le champ "url" doit être null si pas de lien spécifique`,
@@ -212,6 +219,15 @@ async function getUploadsPlaylistId(channelId) {
   return data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads
 }
 
+// « PT1H2M3S » -> secondes
+function durationSeconds(iso) {
+  const m = String(iso || '').match(/P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+  if (!m) return 0
+  return Number(m[1] || 0) * 86400 + Number(m[2] || 0) * 3600 + Number(m[3] || 0) * 60 + Number(m[4] || 0)
+}
+
+// Les MAX_VIDEOS_PER_CREATOR dernières vidéos longues (Shorts, lives et premières à venir exclus),
+// avec leur description. Une page de 50 vidéos coûte 2 unités de quota (liste + détails).
 async function getRecentVideos(channelId) {
   const uploadsId = await getUploadsPlaylistId(channelId)
   if (!uploadsId) return []
@@ -222,11 +238,11 @@ async function getRecentVideos(channelId) {
 
   const videos = []
   let pageToken = ''
+  let pages = 0
   let reachedOld = false
+  let shorts = 0
 
-  // Pagination : on remonte par pages de 50 jusqu'à MAX_VIDEOS_PER_CREATOR,
-  // ou jusqu'à tomber sur une vidéo plus vieille que la date limite
-  // (la playlist uploads est triée du plus récent au plus ancien).
+  // La playlist uploads est triée du plus récent au plus ancien.
   do {
     const url = `https://www.googleapis.com/youtube/v3/playlistItems` +
       `?key=${YOUTUBE_API_KEY}` +
@@ -234,43 +250,43 @@ async function getRecentVideos(channelId) {
       `&part=snippet` +
       `&maxResults=50` +
       (pageToken ? `&pageToken=${pageToken}` : '')
-
     const res = await fetch(url)
     const data = await res.json()
     assertYoutubeOk(data, 'playlistItems')
-    if (!data.items) break
+    pages++
+    if (!data.items?.length) break
 
+    const page = []
     for (const item of data.items) {
       const publishedAt = item.snippet.publishedAt
       if (publishedAt && new Date(publishedAt) < cutoff) {
         reachedOld = true
         break
       }
-      videos.push({
-        videoId: item.snippet.resourceId.videoId,
-        title: item.snippet.title,
-        publishedAt,
-        url: `https://www.youtube.com/watch?v=${item.snippet.resourceId.videoId}`,
-      })
-      if (videos.length >= MAX_VIDEOS_PER_CREATOR) break
+      page.push({ videoId: item.snippet.resourceId.videoId, title: item.snippet.title, publishedAt })
+    }
+
+    if (page.length) {
+      const det = await fetch(`https://www.googleapis.com/youtube/v3/videos?key=${YOUTUBE_API_KEY}` +
+        `&id=${page.map((v) => v.videoId).join(',')}&part=snippet,contentDetails`)
+      const detData = await det.json()
+      assertYoutubeOk(detData, 'videos')
+      const byId = new Map((detData.items || []).map((it) => [it.id, it]))
+      for (const v of page) {
+        const it = byId.get(v.videoId)
+        if (!it) continue // vidéo privée ou supprimée
+        if (it.snippet?.liveBroadcastContent && it.snippet.liveBroadcastContent !== 'none') continue
+        if (durationSeconds(it.contentDetails?.duration) <= SHORT_MAX_SECONDS) { shorts++; continue }
+        videos.push({ ...v, description: it.snippet?.description || '', url: `https://www.youtube.com/watch?v=${v.videoId}` })
+        if (videos.length >= MAX_VIDEOS_PER_CREATOR) break
+      }
     }
 
     pageToken = data.nextPageToken || ''
-  } while (pageToken && videos.length < MAX_VIDEOS_PER_CREATOR && !reachedOld)
+  } while (pageToken && videos.length < MAX_VIDEOS_PER_CREATOR && !reachedOld && pages < MAX_PLAYLIST_PAGES)
 
+  if (shorts) console.log(`  ⏭️  ${shorts} Short(s) ignoré(s)`)
   return videos
-}
-
-async function getVideoDescription(videoId) {
-  const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?key=${YOUTUBE_API_KEY}&id=${videoId}&part=snippet,contentDetails`)
-  const data = await res.json()
-  assertYoutubeOk(data, 'videos')
-  const item = data.items?.[0]
-  if (!item) return null
-  const duration = item.contentDetails?.duration || ''
-  const isShort = /^PT(\d+S|[0-5]?\dS)$/.test(duration)
-  if (isShort) return null
-  return item.snippet?.description || ''
 }
 
 // ─── Airtable ────────────────────────────────────────────────────────────────
@@ -310,7 +326,17 @@ async function getOrCreateBrand(name, sourceUrl) {
   return brandId
 }
 
+// Code à usage unique (bon cadeau « B7YB-S4TC-TZXR ») : une seule personne peut s'en servir.
+const SINGLE_USE_CODE = /^[A-Z0-9]{4}(-[A-Z0-9]{4}){2,}$/i
+
 async function createOffer(code, brand, benefit, sourceUrl, endDate, creatorId, creatorName, seenDate, blackFriday = false) {
+  // Une phrase (« Le voyage de Bruno ») n'est pas un code : l'offre est traitée comme un lien.
+  if (code && /\s/.test(String(code).trim())) code = null
+  if (code && SINGLE_USE_CODE.test(String(code).trim())) {
+    console.log(`  ⏭️  Code à usage unique ignoré : ${code} (${brand})`)
+    skippedOffersCount++
+    return
+  }
   const label = code || 'lien'
   // Backed affiche les codes promo, et les liens personnels du créateur avec un avantage chiffré
   // (ex. Revolut : « 20 € offerts » via get.revolut.com/…/SQueezie). Un lien sans avantage, ou
@@ -408,13 +434,12 @@ async function main() {
     console.log(`\n👤 ${creator.name}`)
     try {
       const videos = await getRecentVideos(creator.channelId)
-      console.log(`  📺 ${videos.length} vidéos remontées depuis la playlist`)
+      console.log(`  📺 ${videos.length} vidéos longues remontées depuis la playlist`)
 
       for (const video of videos) {
         if (knownVideoIds.has(video.videoId)) continue
 
-        const description = await getVideoDescription(video.videoId)
-        if (description === null) { console.log(`  ⏭️  Short ignoré : ${video.title}`); continue }
+        const description = video.description
 
         const publishedDate = video.publishedAt ? video.publishedAt.split('T')[0] : null
 
