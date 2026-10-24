@@ -98,13 +98,14 @@ def texts_offer(o, weekday):
     accroche = f"Code promo {o['brand']} : -{o['pct']} %." if o["pct"] else f"Code promo {o['brand']}."
     via = f"le code de {o['creator']}" if o["creator"] else f"chez {o['brand']}"
     tags = f"#codepromo #codepromo{tag(o['brand'])[1:]} {tag(o['brand'])}" + (f" {tag(o['creator'])}" if o["creator"] else "") + " #bonplan"
-    gain = render.short(o.get("benefit") or "", 60).rstrip(" .")
-    accroche_tt = accroche if o["pct"] or not gain else f"Code promo {o['brand']} : {gain}."
+    # Avantage en clair, jamais coupé au milieu : s'il ne tient pas, la caption reste « Code promo <marque>. »
+    gain = render.first_clause(o.get("benefit") or "", 60).rstrip(" .")
+    accroche_tt = accroche if o["pct"] or not gain or gain.endswith("…") else f"Code promo {o['brand']} : {gain}."
     tiktok = f"{accroche_tt} ⚡\nCode {o['code']}, {via}.\nTous les codes sur backed.fr\n\n{tags}"
     insta = (f"{accroche} ⚡\n{render.short(o['benefit'], 120)}\nCode {o['code']}"
              + (f", partagé par {o['creator']}" if o["creator"] else "")
              + f".\n\nTous les codes → lien en bio\n\n{tags} #reduction")
-    wa = (f"Code du jour ⚡\n{o['brand']} : {render.short(o['benefit'], 80)}\nCode : {o['code']}\n"
+    wa = (f"Code du jour ⚡\n{o['brand']} : {render.first_clause(o['benefit'], 80)}\nCode : {o['code']}\n"
           + (f"via {o['creator']}\n" if o["creator"] else "") + f"→ {url}")
     wa_time = "18h" if weekday == 6 else "12h15"
     return tiktok, insta, wa, wa_time
