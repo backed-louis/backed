@@ -252,6 +252,8 @@ function mapOffer(r: any, brandsMap: any, creatorsMap: any): Offer {
 
 // Avantage concret et chiffré : « 20 € offerts », « -15 % », « 4 mois offerts », « 7 jours gratuits »…
 const ADVANTAGE = /\d+([.,]\d+)?\s?(%|€|euros?\b|mois\b|jours?\b|ans?\b|go\b)|offert|gratuit|essai/i
+const PRICE_ONLY = /\d+([.,]\d+)?\s?(€|euros?)\s?(TTC\s?)?(\/|par)\s?mois/i
+const DISCOUNT_WORDS = /réduc|offert|gratuit|essai|remise|moins|économi|-\s?\d|%|bonus|cashback|seulement/i
 
 // Offre « lien » : pas de code, mais un lien personnel du créateur (ex. get.revolut.com/…/SQueezie)
 // avec un avantage chiffré. Les liens sans avantage, ou qui renvoient juste à la vidéo, restent masqués.
@@ -264,7 +266,10 @@ export function isLinkOffer(offer: Pick<Offer, 'code' | 'sourceUrl' | 'benefit'>
     return false
   }
   if (/(^|\.)(youtube\.com|youtu\.be)$/.test(host)) return false
-  return ADVANTAGE.test(offer.benefit) && !/newsletter/i.test(offer.benefit)
+  const b = offer.benefit || ''
+  if (!ADVANTAGE.test(b) || /newsletter/i.test(b)) return false
+  // Un simple prix (« 12 € TTC/mois ») n'est pas un avantage, sauf s'il est présenté comme une remise.
+  return !(PRICE_ONLY.test(b) && !DISCOUNT_WORDS.test(b))
 }
 
 // Garde-fou : une offre n'est affichée que si
