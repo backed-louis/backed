@@ -14,8 +14,17 @@ function isLinkOffer({ code, sourceUrl, benefit }) {
     return false
   }
   if (/(^|\.)(youtube\.com|youtu\.be)$/.test(host)) return false
+  return isAdvantage(benefit)
+}
+
+// Un simple prix (« 12 € TTC/mois ») n'est pas un avantage, sauf s'il est présenté comme une remise
+// (« seulement 3,37 €/mois », « économisez 40 €/mois »).
+const PRICE_ONLY = /\d+([.,]\d+)?\s?(€|euros?)\s?(TTC\s?)?(\/|par)\s?mois/i
+const DISCOUNT_WORDS = /réduc|offert|gratuit|essai|remise|moins|économi|-\s?\d|%|bonus|cashback|seulement/i
+function isAdvantage(benefit) {
   const b = String(benefit || '')
-  return ADVANTAGE.test(b) && !/newsletter/i.test(b)
+  if (!ADVANTAGE.test(b) || /newsletter/i.test(b)) return false
+  return !(PRICE_ONLY.test(b) && !DISCOUNT_WORDS.test(b))
 }
 
 // Une offre est affichée si elle a un code, ou si c'est une offre lien.
@@ -118,4 +127,4 @@ function blackFridayFromText(description, anchors) {
   return false
 }
 
-module.exports = { ADVANTAGE, isLinkOffer, isDisplayable, endDateFromText, BLACK_FRIDAY, blackFridayFromText }
+module.exports = { ADVANTAGE, isAdvantage, isLinkOffer, isDisplayable, endDateFromText, BLACK_FRIDAY, blackFridayFromText }

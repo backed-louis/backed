@@ -165,6 +165,7 @@ async function detectCodesWithClaude(description, creatorName, publishedDate) {
     `- Ignore les mentions de réseaux sociaux`,
     `- Ignore les mots génériques (YOUTUBE, ABONNE, etc.)`,
     `- Ignore ce que le créateur vend lui-même (sa boutique, son merch, sa formation, son kit, sa newsletter) : seulement les offres d'une marque partenaire. Exception : si la chaîne est la chaîne officielle d'une marque, ses propres offres comptent.`,
+    `- Un simple prix ("12 €/mois") ou un service gratuit pour tout le monde ("application gratuite", "envoi gratuit de fichiers") n'est pas un avantage : ignore-les.`,
     `- Ignore les codes à usage unique (bon cadeau du type "AB12-CD34-EF56") et les codes qui ne sont pas un mot ou une suite de caractères à taper (une phrase n'est pas un code).`,
     `- Si aucun code trouvé, retourne {"codes": []}`,
     `- Le champ "code" doit être null si c est uniquement un lien affilié sans code (ex: "Téléchargez Revolut avec ce lien … 20 € offerts" → code null, url = le lien, benefit = "20 € offerts …")`,
