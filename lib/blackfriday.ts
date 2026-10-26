@@ -1,6 +1,7 @@
 // Page Black Friday : dates de l'année et sélection des offres.
 import { blackFriday } from '@/lib/saisons'
 import type { Offer } from '@/lib/airtable'
+import { parClassement } from '@/lib/classement'
 
 const JOUR = 86400000
 
@@ -29,4 +30,5 @@ export const estCumulable = (o: Offer) => CUMUL.test(o.benefit)
 // Catégories où l'on achète le plus pendant le Black Friday.
 export const CATEGORIES_BF = ['tech-gaming', 'ecommerce', 'decoration', 'beaute', 'sport', 'voyage']
 
-export const parClics = (a: Offer, b: Offer) => b.clicks - a.clicks || a.brand.localeCompare(b.brand, 'fr')
+// Même classement que « Les codes les plus copiés » : clics de la semaine, puis au total.
+export const parClics = parClassement

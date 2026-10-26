@@ -6,10 +6,11 @@ et le fichier `publications.md` avec les textes TikTok, Instagram et WhatsApp de
 ## Automatique
 
 Le workflow **Vidéos de la semaine** tourne chaque samedi à 8h (heure de Paris en hiver).
-Il prépare la semaine suivante, du dimanche au samedi :
+Chaque run prépare :
 
-- du dimanche au vendredi : 1 vidéo « Code du jour » par jour ;
-- le samedi : le top 3 des codes les plus cliqués.
+- le top 3 du jour même (samedi) : les 3 codes les plus copiés des 7 derniers jours, vidéo `00-…-top3.mp4`
+  et textes en tête de `publications.md`, avec le tableau des clics qui a servi au classement ;
+- du dimanche au vendredi suivants : 1 vidéo « Code du jour » par jour.
 
 Pour récupérer les fichiers : GitHub → onglet **Actions** → **Vidéos de la semaine** →
 dernier run → en bas, **Artifacts** → `backed-semaine-N` (zip, gardé 30 jours).
@@ -21,9 +22,11 @@ Pour lancer à la main : **Actions → Vidéos de la semaine → Run workflow**
 ## Comment les offres sont choisies
 
 - Offres `Active` et non expirées, avec un code et une marque (nom + slug), comme sur le site.
-- Les plus cliquées d'abord (champ `Clicks`), puis les plus récentes.
+- Les plus copiées d'abord : clics des 7 derniers jours (clics actuels − relevé « Suivi quotidien » d'il y a
+  7 jours), puis clics au total, puis les plus récentes. Les clics sont regroupés par `Slug`
+  (marque + créateur), comme sur le site (`lib/classement.ts`).
 - Une seule offre par marque.
-- Seulement les offres valables jusqu'à la fin de la semaine (date de fin vide ou après le samedi).
+- Codes du jour : seulement les offres valables jusqu'au vendredi (date de fin vide ou après).
 - Le nombre de nouvelles offres par jour ne change rien : toujours 1 vidéo par jour. S'il manque des offres, le jour est marqué « pas de nouvelle vidéo » dans `publications.md`.
 - Aucun compteur (nombre de codes, de créateurs) dans les vidéos, puisqu'elles sont préparées pour toute la semaine.
 - Si le texte de l'offre contient un pourcentage (5 à 90 %), la vidéo s'ouvre sur un prix barré
