@@ -19,6 +19,12 @@ OFF = (244, 242, 238)
 GREY = (140, 143, 163)
 GREEN = (46, 204, 113)
 
+# Zone sûre : ce que l'interface TikTok / Reels ne recouvre pas (barre du haut, boutons à droite,
+# légende et pseudo en bas). Tout texte et toute carte des vidéos restent dedans.
+SAFE_L, SAFE_T, SAFE_R, SAFE_B = 120, 300, 920, 1360
+CX = (SAFE_L + SAFE_R) / 2   # 520 : axe de la zone sûre, décalé à gauche à cause des boutons
+SW = SAFE_R - SAFE_L         # 800 : largeur utile
+
 FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
 _FILES = {"syne": "Syne.ttf", "inter": "Inter.ttf", "mono": "Mono.ttf"}
 _cache = {}
@@ -62,7 +68,7 @@ def fit(d, s, maxw, size, kind="syne", weight="ExtraBold"):
 
 def text_c(d, yc, s, f, fill, alpha=1.0):
     b, w, h = tsize(d, s, f)
-    d.text(((W - w) / 2 - b[0], yc - h / 2 - b[1]), s, font=f, fill=fill + (int(255 * clamp(alpha)),))
+    d.text((CX - w / 2 - b[0], yc - h / 2 - b[1]), s, font=f, fill=fill + (int(255 * clamp(alpha)),))
 
 
 def rise(d, lt, start, yc, s, f, fill, dist=40, dur=0.3):
@@ -195,19 +201,20 @@ def draw_card(img, lt, start, o, yc, copy_at=None):
     p = eo(prog(lt, start, 0.35))
     if p <= 0:
         return
-    cw, ch = 920, 560
+    cw, ch = SW, 560
     c = Image.new("RGBA", (cw, ch), (0, 0, 0, 0))
     d = ImageDraw.Draw(c)
     d.rounded_rectangle((0, 0, cw - 1, ch - 1), radius=40, fill=SLATE, outline=LINE, width=3)
+    # Ligne 1 : la marque, sur toute la largeur. Ligne 2 : « via créateur » à gauche, la remise à droite.
     disc = o.get("disc") or ""
-    dw = tsize(d, disc, F("syne", 110))[1] + 40 if disc else 0
+    fd = F("syne", 80)
+    dw = tsize(d, disc, fd)[1] + 40 if disc else 0
+    d.text((50, 40), o["brand"], font=fit(d, o["brand"], cw - 100, 72), fill=OFF)
     if disc:
-        fd = F("syne", 110)
-        b, w, _ = tsize(d, disc, fd)
-        d.text((cw - 50 - w - b[0], 46 - b[1]), disc, font=fd, fill=LILAS)
-    d.text((50, 46), o["brand"], font=fit(d, o["brand"], cw - 100 - dw, 72), fill=OFF)
+        b, w, h = tsize(d, disc, fd)
+        d.text((cw - 50 - w - b[0], 150 - h / 2 - b[1]), disc, font=fd, fill=LILAS)
     if o.get("creator"):
-        d.text((50, 140), "via " + o["creator"], font=fit(d, "via " + o["creator"], cw - 100, 36, "inter", "Medium"), fill=GREY)
+        d.text((50, 132), "via " + o["creator"], font=fit(d, "via " + o["creator"], cw - 100 - dw, 36, "inter", "Medium"), fill=GREY)
     if o.get("detail"):
         det = short(o["detail"], 48)
         d.text((50, 200), det, font=fit(d, det, cw - 100, 36, "inter", "SemiBold"), fill=OFF)
@@ -227,7 +234,7 @@ def draw_card(img, lt, start, o, yc, copy_at=None):
         sc *= 1 + 0.03 * math.exp(-(lt - copy_at) * 10)
     c = c.resize((int(cw * sc), int(ch * sc)), Image.BICUBIC)
     c.putalpha(c.getchannel("A").point(lambda v: int(v * p)))
-    img.paste(c, (int(W / 2 - c.width / 2), int(yc - c.height / 2 + 60 * (1 - p))), c)
+    img.paste(c, (int(CX - c.width / 2), int(yc - c.height / 2 + 60 * (1 - p))), c)
 
 
 def s_card(o, title):
@@ -241,25 +248,27 @@ def s_card(o, title):
 def s_top(items, sub="La sélection de la semaine."):
     def fn(img, d, lt):
         bg(d)
-        rise(d, lt, 0.0, 260, f"{len(items)} codes.", F("syne", 120), OFF)
-        rise(d, lt, 0.12, 390, sub, fit(d, sub, W - 160, 60, "syne", "Bold"), LILAS)
+        rise(d, lt, 0.0, 380, f"{len(items)} codes.", fit(d, f"{len(items)} codes.", SW, 110), OFF)
+        rise(d, lt, 0.12, 480, sub, fit(d, sub, SW, 56, "syne", "Bold"), LILAS)
         for i, o in enumerate(items):
-            y = 640 + i * 360
+            y = 580 + i * 255
             p = eo(prog(lt, 0.4 + i * 0.3, 0.3))
             if p <= 0:
                 continue
-            x0, a = 90 + 80 * (1 - p), int(255 * p)
-            d.rounded_rectangle((x0, y, x0 + 900, y + 300), radius=36, fill=SLATE + (a,), outline=LINE + (a,), width=3)
-            d.text((x0 + 50, y + 40), str(i + 1), font=F("syne", 110), fill=LILAS + (a,))
-            d.text((x0 + 200, y + 48), o["brand"], font=fit(d, o["brand"], 330, 60), fill=OFF + (a,))
+            x0, a = SAFE_L + 60 * (1 - p), int(255 * p)
+            d.rounded_rectangle((x0, y, x0 + SW, y + 230), radius=32, fill=SLATE + (a,), outline=LINE + (a,), width=3)
+            d.text((x0 + 40, y + 34), str(i + 1), font=F("syne", 100), fill=LILAS + (a,))
+            disc = o.get("disc") or ""
+            fd = F("syne", 56)
+            dw = tsize(d, disc, fd)[1] + 30 if disc else 0
+            d.text((x0 + 165, y + 30), o["brand"], font=fit(d, o["brand"], SW - 205, 54), fill=OFF + (a,))
             code = o["code"] or "Lien direct"
-            d.text((x0 + 200, y + 130), code, font=fit(d, code, 620, 56, "mono", "Bold"), fill=OFF + (a,))
+            d.text((x0 + 165, y + 102), code, font=fit(d, code, SW - 205 - dw, 52, "mono", "Bold"), fill=OFF + (a,))
             if o.get("creator"):
-                d.text((x0 + 200, y + 215), "via " + o["creator"], font=fit(d, "via " + o["creator"], 620, 34, "inter", "Medium"), fill=GREY + (a,))
-            if o.get("disc"):
-                fd = F("syne", 70)
-                b, w, _ = tsize(d, o["disc"], fd)
-                d.text((x0 + 860 - w - b[0], y + 50), o["disc"], font=fd, fill=GREEN + (a,))
+                d.text((x0 + 165, y + 172), "via " + o["creator"], font=fit(d, "via " + o["creator"], SW - 205, 32, "inter", "Medium"), fill=GREY + (a,))
+            if disc:
+                b, w, _ = tsize(d, disc, fd)
+                d.text((x0 + SW - 35 - w - b[0], y + 96), disc, font=fd, fill=GREEN + (a,))
     return fn
 
 
@@ -284,6 +293,9 @@ def eob(x, k=1.8):
     return 1 + (k + 1) * (x - 1) ** 3 + k * (x - 1) ** 2
 
 
+HOOK_Y = 490  # 1re ligne de l'accroche (centre), sous « CODE DU JOUR »
+
+
 def s_hook(o):
     """1re image pleine et lisible tout de suite : le créateur, le gain, la marque. Aucun fondu d'entrée."""
     if o.get("creator"):
@@ -293,27 +305,66 @@ def s_hook(o):
         who = ["Code promo", o["brand"]]
     gain = f"{o['disc']} chez {o['brand']}" if o.get("disc") else first_clause(o.get("benefit") or o["brand"], 34)
 
+    def two_lines(d, text):
+        """Coupe un texte en deux lignes les plus égales possible (None s'il n'a qu'un mot)."""
+        words = text.split()
+        if len(words) < 2:
+            return None
+        ref = F("syne", 100)
+        return min(([" ".join(words[:k]), " ".join(words[k:])] for k in range(1, len(words))),
+                   key=lambda ls: max(tsize(d, l, ref)[1] for l in ls))
+
+    def layout(d):
+        """Choisit la mise en page la plus grosse qui tient dans la zone sûre : nom du créateur et gain
+        sur une ou deux lignes. Le gain reste plus petit que le nom."""
+        whos = [who]
+        split = two_lines(d, who[1])
+        if split:
+            whos.append([who[0]] + split)
+        gains = [[gain]]
+        if o.get("disc"):
+            gains.append([o["disc"], f"chez {o['brand']}"])
+            if two_lines(d, f"chez {o['brand']}"):
+                gains.append([o["disc"]] + two_lines(d, f"chez {o['brand']}"))
+        elif two_lines(d, gain):
+            gains.append(two_lines(d, gain))
+        best = None
+        for wl in whos:
+            fw = min(fit(d, ln, SW - 40, 130).size for ln in wl)
+            for gl in gains:
+                fg = min(min(fit(d, g, SW - 40, 104).size for g in gl), int(fw * 0.85))
+                bottom = HOOK_Y + len(wl) * fw * 1.1 + 50 + len(gl) * fg * 1.15
+                if bottom > 1210:
+                    continue
+                # le gain doit rester lisible sur un téléphone, et pas écrasé par le nom
+                ok = fg >= 54 and fg >= 0.5 * fw
+                score = (1000 if ok else 0) + fw + 1.2 * fg - 6 * (len(wl) + len(gl))  # gros, puis peu de lignes
+                if best is None or score > best[0]:
+                    best = (score, wl, F("syne", fw), gl, F("syne", fg))
+        return best[1:]
+
     def fn(img, d, lt):
         bg(d)
-        text_c(d, 520, "CODE DU JOUR", F("inter", 40, "Bold"), GREY)
-        # deux lignes de même taille : « Le code » / « de Micode »
-        lines = who
-        fw = F("syne", min(fit(d, ln, W - 140, 130).size for ln in lines))
-        y = 700
+        text_c(d, 370, "CODE DU JOUR", F("inter", 40, "Bold"), GREY)
+        lines, fw, glines, fg = layout(d)
+        y = HOOK_Y
         for ln in lines:
             text_c(d, y, ln, fw, OFF)
             y += int(fw.size * 1.1)
-        fg = fit(d, gain, W - 140, 104)
-        text_c(d, y + 70, gain, fg, LILAS)
+        y += 50
+        for g in glines:
+            text_c(d, y, g, fg, LILAS)
+            last, y = y, y + int(fg.size * 1.15)
         # soulignement qui se trace sous le gain
-        gw = tsize(d, gain, fg)[1]
+        gw = max(tsize(d, g, fg)[1] for g in glines)
+        uy = last + int(fg.size * 0.77)
         u = eo(prog(lt, 0.15, 0.45))
-        d.rounded_rectangle((W / 2 - gw / 2, y + 150, W / 2 - gw / 2 + gw * u, y + 162), radius=6, fill=VIO)
-        if o.get("detail") and o.get("disc"):
+        d.rounded_rectangle((CX - gw / 2, uy, CX - gw / 2 + gw * u, uy + 12), radius=6, fill=VIO)
+        if o.get("detail") and o.get("disc") and uy + 90 < 1220:
             det = short(o["detail"], 44)
-            text_c(d, y + 240, det, fit(d, det, W - 160, 44, "inter", "SemiBold"), GREY)
+            text_c(d, uy + 90, det, fit(d, det, SW, 44, "inter", "SemiBold"), GREY)
         a = 0.55 + 0.45 * abs(math.sin(lt * 4))
-        text_c(d, 1560, "Le code arrive ↓", F("inter", 46, "Bold"), OFF, alpha=a)
+        text_c(d, 1290, "Le code arrive ↓", F("inter", 46, "Bold"), OFF, alpha=a)
     return fn
 
 
@@ -323,24 +374,24 @@ def s_code(o):
 
     def fn(img, d, lt):
         bg(d)
-        text_c(d, 420, title, fit(d, title, W - 140, 72, "syne", "Bold"), OFF)
-        draw_card(img, lt, 0.0, o, 960, copy_at=0.9)
+        text_c(d, 400, title, fit(d, title, SW, 72, "syne", "Bold"), OFF)
+        draw_card(img, lt, 0.0, o, 820, copy_at=0.9)
         if lt > 0.9:
-            rise(d, lt, 0.95, 1420, "Copié. Tu paies le bon prix.", F("inter", 46, "SemiBold"), GREEN, dist=20)
+            rise(d, lt, 0.95, 1230, "Copié. Tu paies le bon prix.", fit(d, "Copié. Tu paies le bon prix.", SW, 46, "inter", "SemiBold"), GREEN, dist=20)
     return fn
 
 
 def s_top_hook(items):
     def fn(img, d, lt):
         bg(d)
-        text_c(d, 520, "LA SÉLECTION DE LA SEMAINE", F("inter", 40, "Bold"), GREY)
+        text_c(d, 420, "LA SÉLECTION DE LA SEMAINE", fit(d, "LA SÉLECTION DE LA SEMAINE", SW, 40, "inter", "Bold"), GREY)
         big = f"{len(items)} codes"
-        text_c(d, 760, big, fit(d, big, W - 160, 190), OFF)
-        text_c(d, 950, "à garder.", fit(d, "à garder.", W - 160, 130), LILAS)
+        text_c(d, 640, big, fit(d, big, SW, 190), OFF)
+        text_c(d, 830, "à garder.", fit(d, "à garder.", SW, 130), LILAS)
         names = " · ".join(o["brand"] for o in items)
-        text_c(d, 1160, names, fit(d, names, W - 160, 58, "inter", "Bold"), OFF)
+        text_c(d, 1010, names, fit(d, names, SW, 58, "inter", "Bold"), OFF)
         a = 0.55 + 0.45 * abs(math.sin(lt * 4))
-        text_c(d, 1560, "Enregistre pour plus tard ↓", F("inter", 46, "Bold"), OFF, alpha=a)
+        text_c(d, 1290, "Enregistre pour plus tard ↓", fit(d, "Enregistre pour plus tard ↓", SW, 46, "inter", "Bold"), OFF, alpha=a)
     return fn
 
 
@@ -350,7 +401,7 @@ TYPE_T0, TYPE_DT = 0.20, 0.085          # frappe : une lettre toutes les 85 ms
 DOT_T = TYPE_T0 + 6 * TYPE_DT + 0.06    # point violet = 1re note de la signature sonore
 PULSE_T = DOT_T + 0.17                  # le point respire = 2e note
 TXT_T = PULSE_T + 0.45                  # les textes n'arrivent qu'après l'animation du logo
-LOGO_Y = 860
+LOGO_Y = 720
 _glow = None
 
 
@@ -358,7 +409,7 @@ def _glow_layer():
     global _glow
     if _glow is None:
         g = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        ImageDraw.Draw(g).ellipse((W / 2 - 520, LOGO_Y - 300, W / 2 + 520, LOGO_Y + 300), fill=VIO + (150,))
+        ImageDraw.Draw(g).ellipse((CX - 480, LOGO_Y - 300, CX + 480, LOGO_Y + 300), fill=VIO + (150,))
         _glow = g.filter(ImageFilter.GaussianBlur(140))
     return _glow
 
@@ -374,7 +425,7 @@ def s_outro():
         a_in = eob(prog(lt, 0.0, 0.32))
         yc = LOGO_Y + 120 * (1 - clamp(a_in))
         sc = 0.92 + 0.08 * a_in
-        x0, x1 = W / 2 - (W / 2 - 90) * sc, W / 2 + (W / 2 - 90) * sc
+        x0, x1 = CX - (SW / 2) * sc, CX + (SW / 2) * sc
         y0, y1 = yc - 115 * sc, yc + 115 * sc
         A = int(255 * clamp(a_in))
         d.rounded_rectangle((x0, y0, x1, y1), radius=int(70 * sc), fill=SLATE + (A,), outline=VIO + (A,), width=5)
@@ -382,7 +433,7 @@ def s_outro():
         d.ellipse((mx - mr, my - mr, mx + mr, my + mr), outline=GREY + (A,), width=int(8 * sc))
         d.line((mx + mr * 0.7, my + mr * 0.7, mx + mr * 1.5, my + mr * 1.5), fill=GREY + (A,), width=int(9 * sc))
         # « Backed » se tape, lettre par lettre
-        f = fit(d, "Backed.", (W - 180) - 330, 170)
+        f = fit(d, "Backed.", SW - 300, 170)
         word = "Backed"
         tx = x0 + 165 * sc
         for i, ch in enumerate(word):
@@ -428,28 +479,28 @@ def s_outro():
             b, w, h = tsize(d, lab, fc)
             cw = (w + 70) * clamp(pc, 0, 1.2)
             cy = y1 + 95
-            d.rounded_rectangle((W / 2 - cw / 2, cy - 46, W / 2 + cw / 2, cy + 46), radius=46, fill=(16, 52, 33), outline=GREEN, width=3)
+            d.rounded_rectangle((CX - cw / 2, cy - 46, CX + cw / 2, cy + 46), radius=46, fill=(16, 52, 33), outline=GREEN, width=3)
             if pc > 0.6:
                 text_c(d, cy, lab, fc, GREEN, alpha=prog(lt, TXT_T + 0.1, 0.15))
         t0 = TXT_T + 0.25
-        rise(d, lt, t0, 1215, "Paie le bon prix.", fit(d, "Paie le bon prix.", W - 160, 96), LILAS, dist=30, dur=0.35)
+        rise(d, lt, t0, 1060, "Paie le bon prix.", fit(d, "Paie le bon prix.", SW, 96), LILAS, dist=30, dur=0.35)
         p = eob(prog(lt, t0 + 0.2, 0.35))
         if p > 0.02:
             pw = 290 * clamp(p, 0, 1.15)
-            pill = (W / 2 - pw, 1300, W / 2 + pw, 1420)
+            pill = (CX - pw, 1120, CX + pw, 1240)
             d.rounded_rectangle(pill, radius=60, fill=VIO)
-            text_c(d, 1360, "backed.fr", F("inter", 58, "Bold"), OFF, alpha=prog(lt, t0 + 0.3, 0.15))
+            text_c(d, 1180, "backed.fr", F("inter", 58, "Bold"), OFF, alpha=prog(lt, t0 + 0.3, 0.15))
             sh = prog(lt, t0 + 0.55, 0.5)
             if 0 < sh < 1:
                 layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
                 bx = pill[0] - 120 + (pill[2] - pill[0] + 240) * sh
-                ImageDraw.Draw(layer).polygon([(bx, 1300), (bx + 60, 1300), (bx + 10, 1420), (bx - 50, 1420)], fill=(255, 255, 255, 90))
+                ImageDraw.Draw(layer).polygon([(bx, 1120), (bx + 60, 1120), (bx + 10, 1240), (bx - 50, 1240)], fill=(255, 255, 255, 90))
                 mask = Image.new("L", (W, H), 0)
                 ImageDraw.Draw(mask).rounded_rectangle(pill, radius=60, fill=255)
                 layer.putalpha(Image.composite(layer.getchannel("A"), Image.new("L", (W, H), 0), mask))
                 img.paste(layer, (0, 0), layer)
         cta = "Abonne-toi : un code chaque jour."
-        rise(d, lt, t0 + 0.45, 1600, cta, fit(d, cta, W - 160, 54, "inter", "Bold"), OFF, dist=20, dur=0.35)
+        rise(d, lt, t0 + 0.45, 1310, cta, fit(d, cta, SW, 50, "inter", "Bold"), OFF, dist=20, dur=0.35)
     return fn
 
 
