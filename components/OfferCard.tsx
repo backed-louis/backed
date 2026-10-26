@@ -17,9 +17,7 @@ export default function OfferCard({ offer, isPopular = false }: { offer: Offer; 
   const [copied, setCopied] = useState(false)
 
   const trackAndOpen = (e?: React.MouseEvent) => {
-    if (offer.slug) {
-      fetch(`/api/track/${offer.slug}`).catch(() => {})
-    }
+    fetch(`/api/track/${offer.id}`).catch(() => {}) // l'offre affichée, pas la première au même slug
     if (offer.sourceUrl) window.open(offer.sourceUrl, '_blank')
   }
 
@@ -29,9 +27,7 @@ export default function OfferCard({ offer, isPopular = false }: { offer: Offer; 
     navigator.clipboard.writeText(offer.code)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-    if (offer.slug) {
-      fetch(`/api/track/${offer.slug}`).catch(() => {})
-    }
+    fetch(`/api/track/${offer.id}`).catch(() => {}) // l'offre affichée, pas la première au même slug
   }
 
   return (

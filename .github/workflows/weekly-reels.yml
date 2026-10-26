@@ -1,7 +1,7 @@
 name: Vidéos de la semaine
 
-# Chaque samedi à 8h (heure de Paris en hiver), génère les vidéos et les textes
-# de la semaine suivante (dimanche → samedi) à partir des offres Airtable.
+# Chaque samedi à 8h (heure de Paris en hiver), génère le top 3 du jour (clics des 7 derniers
+# jours) et les vidéos « Code du jour » du dimanche au vendredi suivants, à partir d'Airtable.
 # Les fichiers sont à télécharger dans l'onglet Actions, en bas du run (« Artifacts »).
 on:
   schedule:

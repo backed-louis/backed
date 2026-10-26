@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache'
+import { clickStats, parClassement, parisDate, type ClickRecord, type ClickStats, type Snapshot } from './classement'
 
 const BASE_ID = process.env.AIRTABLE_BASE_ID
 const API_KEY = process.env.AIRTABLE_API_KEY
@@ -21,13 +22,13 @@ async function waitTurn() {
 const RETRY_429 = [5000, 10000, 20000] // 35 s au total : couvre le blocage de 30 s
 const RETRY_5XX = [1000, 2000, 4000]
 
-async function fetchTable(table: string, params: Record<string, string> = {}) {
+async function fetchTable(table: string, params: Record<string, string | string[]> = {}) {
   const allRecords: any[] = []
   let offset: string | undefined
 
   do {
     const url = new URL(`${API_URL}/${encodeURIComponent(table)}`)
-    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
+    Object.entries(params).forEach(([k, v]) => ([] as string[]).concat(v).forEach((one) => url.searchParams.append(k, one)))
     if (offset) url.searchParams.set('offset', offset)
 
     let res: Response | undefined
@@ -84,7 +85,8 @@ export interface Offer {
   homepagePosition: number | null
   sourceUrl: string
   slug: string
-  clicks: number
+  clicks: number // clics au total (regroupés par marque + créateur, voir lib/classement.ts)
+  weekClicks: number // clics des 7 derniers jours
   endDate: string | null
   blackFriday: boolean
 }
@@ -114,11 +116,12 @@ export interface Brand {
 
 // ─── Données Airtable, mises en cache une fois pour tout le site ─────────────
 
-type RawData = { offers: any[]; brands: any[]; creators: any[]; categories: any[] }
+type RawData = { offers: any[]; brands: any[]; creators: any[]; categories: any[]; clickRecords: ClickRecord[]; snapshots: Snapshot[] }
 
 type MapsResult = {
   brandsMap: Record<string, { name: string; slug: string; description: string; logo: string | null; website: string | null; category: string }>
   creatorsMap: Record<string, string>
+  stats: ClickStats
   categoriesMap: Record<string, string>
   categoriesList: Category[]
 }
@@ -133,13 +136,39 @@ async function fetchAll(): Promise<RawData> {
   const brands = (await fetchTable('Brands')).records
   const creators = (await fetchTable('Creators')).records
   const categories = (await fetchTable('Categories')).records
-  return { offers, brands, creators, categories }
+  const { clickRecords, snapshots } = await fetchClicks()
+  return { offers, brands, creators, categories, clickRecords, snapshots }
+}
+
+// Clics de toutes les offres (actives ou non, pour retrouver les clics mal attribués) et
+// relevés des 15 derniers jours. En cas d'échec, le classement se rabat sur le champ Clicks.
+async function fetchClicks(): Promise<Pick<RawData, 'clickRecords' | 'snapshots'>> {
+  try {
+    const clicked = (await fetchTable('Offers', { filterByFormula: '{Clicks}>0', 'fields[]': ['Slug', 'Clicks'] })).records
+    const suivi = (await fetchTable('Suivi quotidien', {
+      filterByFormula: "IS_AFTER({Date}, DATEADD(TODAY(), -15, 'days'))",
+      'fields[]': ['Date', 'Clics par offre'],
+    })).records
+    return {
+      clickRecords: clicked.map((r: any) => ({ id: r.id, slug: r.fields['Slug'] || '', clicks: r.fields['Clicks'] || 0 })),
+      snapshots: suivi.flatMap((r: any) => {
+        try {
+          return [{ date: r.fields['Date'] || '', clicks: JSON.parse(r.fields['Clics par offre'] || '{}') }]
+        } catch {
+          return []
+        }
+      }),
+    }
+  } catch (err) {
+    console.error('Clics de la semaine indisponibles, classement sur le champ Clicks :', err)
+    return { clickRecords: [], snapshots: [] }
+  }
 }
 
 // Une seule entrée de cache partagée par toutes les pages et toutes les fonctions
 // Vercel, renouvelée au plus une fois par heure (comme l'ISR du site). Tant que le
 // renouvellement échoue, Next continue de servir la dernière version réussie.
-const cachedFetchAll = unstable_cache(fetchAll, ['airtable-data-v2'], { revalidate: 3600, tags: ['airtable'] })
+const cachedFetchAll = unstable_cache(fetchAll, ['airtable-data-v3'], { revalidate: 3600, tags: ['airtable'] })
 
 // En plus, dans chaque instance : une seule lecture en cours à la fois, et la
 // dernière lecture réussie en secours si Airtable ne répond pas.
@@ -215,7 +244,9 @@ function buildMapsFrom(data: RawData): MapsResult {
     creatorsMap[r.id] = r.fields['Name'] || ''
   })
 
-  return { brandsMap, creatorsMap, categoriesMap, categoriesList }
+  const stats = clickStats(data.clickRecords || [], data.snapshots || [], parisDate())
+
+  return { brandsMap, creatorsMap, stats, categoriesMap, categoriesList }
 }
 
 async function buildMaps(): Promise<MapsResult> {
@@ -224,10 +255,12 @@ async function buildMaps(): Promise<MapsResult> {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function mapOffer(r: any, brandsMap: any, creatorsMap: any): Offer {
+function mapOffer(r: any, brandsMap: any, creatorsMap: any, stats?: ClickStats): Offer {
   const brandId = r.fields['Brand']?.[0]
   const creatorId = r.fields['Creator']?.[0]
   const brand = brandsMap[brandId] ?? { name: '', slug: '', description: '', logo: null, website: null, category: '' }
+  const key = r.fields['Slug'] || r.id
+  const ownClicks = r.fields['Clicks'] || 0
 
   return {
     id: r.id,
@@ -244,7 +277,8 @@ function mapOffer(r: any, brandsMap: any, creatorsMap: any): Offer {
     homepagePosition: r.fields['Homepage Position'] ?? null,
     sourceUrl: r.fields['Source URL'] || '',
     slug: r.fields['Slug'] || '',
-    clicks: r.fields['Clicks'] || 0,
+    clicks: Math.max(ownClicks, stats?.total[key] ?? 0),
+    weekClicks: stats?.week[key] ?? 0,
     endDate: r.fields['End Date'] || null,
     blackFriday: Boolean(r.fields['Black Friday']),
   }
@@ -309,34 +343,23 @@ function dedupeRecords(records: any[]): any[] {
 
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
-export async function getFeaturedOffers(): Promise<Offer[]> {
-  const data = await loadData()
-  const { brandsMap, creatorsMap } = buildMapsFrom(data)
+// Section « Les codes les plus copiés » de la page d'accueil : le vrai classement des offres
+// actives avec un code (clics de la semaine, puis au total), une seule offre par marque.
+// Il y a toujours 6 offres tant que le site en a 6 : à défaut de clics, l'ordre alphabétique départage.
+export async function getFeaturedOffers(limit = 6): Promise<Offer[]> {
+  return topOffers(await getAllOffers(), limit)
+}
 
-  const positioned = data.offers
-    .filter((r: any) => (r.fields['Homepage Position'] ?? 0) >= 1)
-    .sort((a: any, b: any) => a.fields['Homepage Position'] - b.fields['Homepage Position'])
-    .slice(0, 6)
-
-  const curated = dedupeRecords(positioned)
-    .map((r: any) => mapOffer(r, brandsMap, creatorsMap))
-    .filter(hasValidBrand)
-  if (curated.length >= 6) return curated
-
-  // Complément automatique : les offres actives les plus cliquées, avec un code,
-  // une seule par marque, pour que la section ne soit jamais vide.
-  const usedBrands = new Set(curated.map((o) => o.brandSlug))
-  const filler = (await getAllOffers())
-    .filter((o) => o.code && !usedBrands.has(o.brandSlug))
-    .sort((a, b) => b.clicks - a.clicks)
+export function topOffers(offers: Offer[], limit: number): Offer[] {
+  const seen = new Set<string>()
   const picked: Offer[] = []
-  for (const o of filler) {
-    if (curated.length + picked.length >= 6) break
-    if (usedBrands.has(o.brandSlug)) continue
-    usedBrands.add(o.brandSlug)
+  for (const o of offers.filter((o) => o.code.trim()).sort(parClassement)) {
+    if (picked.length >= limit) break
+    if (seen.has(o.brandSlug)) continue
+    seen.add(o.brandSlug)
     picked.push(o)
   }
-  return [...curated, ...picked]
+  return picked
 }
 
 export async function getCategories(): Promise<Category[]> {
@@ -346,10 +369,10 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getAllOffers(): Promise<Offer[]> {
   const data = await loadData()
-  const { brandsMap, creatorsMap } = buildMapsFrom(data)
+  const { brandsMap, creatorsMap, stats } = buildMapsFrom(data)
 
   return dedupeRecords(data.offers)
-    .map((r: any) => mapOffer(r, brandsMap, creatorsMap))
+    .map((r: any) => mapOffer(r, brandsMap, creatorsMap, stats))
     .filter(hasValidBrand)
 }
 

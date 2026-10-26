@@ -4,7 +4,8 @@ Usage :
   AIRTABLE_API_KEY=... AIRTABLE_BASE_ID=... python3 scripts/reels/generate_week.py --out out/semaine
   python3 scripts/reels/generate_week.py --fixture scripts/reels/fixture.json --out out/test
 
-Sortie : une vidéo par jour (dimanche → vendredi : 1 code, samedi : top 3) + publications.md
+Sortie : le top 3 du jour (le samedi où le script tourne, classé sur les clics des 7 derniers jours),
+puis une vidéo « Code du jour » pour chaque jour du dimanche au vendredi suivants, + publications.md
 avec les textes TikTok, Instagram et WhatsApp de chaque jour.
 """
 import argparse
@@ -31,7 +32,7 @@ def fetch_table(table, params=None):
         q = dict(params or {})
         if offset:
             q["offset"] = offset
-        url = f"https://api.airtable.com/v0/{base}/{urllib.parse.quote(table)}?{urllib.parse.urlencode(q)}"
+        url = f"https://api.airtable.com/v0/{base}/{urllib.parse.quote(table)}?{urllib.parse.urlencode(q, doseq=True)}"
         req = urllib.request.Request(url, headers={"Authorization": f"Bearer {key}"})
         with urllib.request.urlopen(req, timeout=30) as r:
             data = json.load(r)
@@ -46,11 +47,45 @@ def load_from_airtable():
         "offers": fetch_table("Offers", {"filterByFormula": ACTIVE_NOT_EXPIRED}),
         "brands": fetch_table("Brands"),
         "creators": fetch_table("Creators"),
+        # Clics de toutes les offres (même inactives) et relevés quotidiens : voir click_stats.
+        "clicked": fetch_table("Offers", {"filterByFormula": "{Clicks}>0", "fields[]": ["Slug", "Clicks"]}),
+        "suivi": fetch_table("Suivi quotidien", {"filterByFormula": "IS_AFTER({Date}, DATEADD(TODAY(), -15, 'days'))",
+                                                 "fields[]": ["Date", "Clics par offre"]}),
     }
 
 
+# ------------------------------------------------------------------ classement
+def click_stats(data, today):
+    """Clics des 7 derniers jours et au total, par Slug (marque + créateur), comme lib/classement.ts.
+
+    Semaine = clics actuels − relevé « Suivi quotidien » d'il y a 7 jours (le plus récent qui a au
+    moins 7 jours, sinon le plus ancien). Regrouper par Slug rend à l'offre affichée les clics que
+    le site comptait par erreur sur une ancienne offre au même slug (jusqu'au 26 octobre 2026).
+    Sans relevés (fixture), la semaine vaut 0 et le classement se fait sur le total."""
+    snaps = []
+    for r in data.get("suivi", []):
+        f = r.get("fields", {})
+        try:
+            snaps.append((str(f.get("Date") or ""), json.loads(f.get("Clics par offre") or "{}")))
+        except ValueError:
+            pass
+    snaps = sorted(s for s in snaps if s[0] and s[0] <= today.isoformat())
+    limit = (today - dt.timedelta(days=7)).isoformat()
+    old = [s for s in snaps if s[0] <= limit]
+    ref = (old[-1] if old else snaps[0]) if snaps else None
+    week, total = {}, {}
+    for r in data.get("clicked", []):
+        f = r.get("fields", {})
+        key, clicks = f.get("Slug") or r["id"], f.get("Clicks") or 0
+        total[key] = total.get(key, 0) + clicks
+        if ref:
+            week[key] = week.get(key, 0) + max(0, clicks - (ref[1].get(r["id"]) or 0))
+    return week, total, (ref[0] if ref else None)
+
+
 # ------------------------------------------------------------------ sélection
-def pick_offers(data, n_daily=6, n_top=3, valid_until=None):
+def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None):
+    week, total, since = click_stats(data, today)
     brands = {r["id"]: r["fields"] for r in data["brands"]}
     creators = {r["id"]: r["fields"].get("Name", "") for r in data["creators"]}
     offers = []
@@ -62,24 +97,31 @@ def pick_offers(data, n_daily=6, n_top=3, valid_until=None):
         if not (name and slug and code):  # même garde-fou que le site + on ne montre que des codes
             continue
         end = str(f.get("End Date") or "")
-        if end and valid_until and end < valid_until:  # l'offre doit tenir jusqu'à la fin de la semaine
-            continue
         benefit = str(f.get("Benefit") or "").strip()
         pct = render.percent_of(benefit)
         offers.append({
             "brand": name, "slug": slug, "code": code, "benefit": benefit, "pct": pct,
             "disc": f"-{pct} %" if pct else "", "detail": benefit,
             "creator": creators.get((f.get("Creator") or [None])[0], ""),
-            "clicks": f.get("Clicks") or 0, "created": r.get("createdTime", ""),
+            "week": week.get(f.get("Slug") or r["id"], 0),
+            "clicks": max(f.get("Clicks") or 0, total.get(f.get("Slug") or r["id"], 0)),
+            "created": r.get("createdTime", ""), "end": end,
         })
-    # Les plus cliquées d'abord, puis les plus récentes ; une seule offre par marque.
-    offers.sort(key=lambda o: (o["clicks"], o["created"]), reverse=True)
-    seen, unique = set(), []
-    for o in offers:
-        if o["brand"].lower() not in seen:
-            seen.add(o["brand"].lower())
-            unique.append(o)
-    return unique[:n_daily], unique[:n_top], len(data["offers"]), len(creators)
+    # Les plus copiées cette semaine, puis au total, puis les plus récentes ; une seule offre par marque.
+    offers.sort(key=lambda o: (o["week"], o["clicks"], o["created"]), reverse=True)
+
+    def one_per_brand(items, n):
+        seen, unique = set(), []
+        for o in items:
+            if o["brand"].lower() not in seen:
+                seen.add(o["brand"].lower())
+                unique.append(o)
+        return unique[:n]
+
+    # Codes du jour : l'offre doit tenir jusqu'à la fin de la semaine. Top 3 : publié le jour même.
+    daily = one_per_brand([o for o in offers if not (o["end"] and valid_until and o["end"] < valid_until)], n_daily)
+    top = one_per_brand(offers, n_top)
+    return daily, top, len(data["offers"]), len(creators), since
 
 
 # ------------------------------------------------------------------ textes
@@ -112,11 +154,32 @@ def texts_offer(o, weekday):
 
 
 def texts_top(items):
+    def gain(o):
+        return render.first_clause(o["benefit"], 80).rstrip(" .") if o["benefit"] else ""
+
+    def via(o):
+        return f", partagé par {o['creator']}" if o["creator"] else ""
+
     lines = "\n".join(f"{i + 1}. {o['brand']} — {o['code']}" for i, o in enumerate(items))
-    tiktok = f"Les {len(items)} codes les plus copiés sur Backed. 🔥\nEnregistre pour plus tard.\n\n#codepromo #bonplan #youtube"
-    insta = f"Top {len(items)} de la semaine 🔥\n{lines}\n\nEnregistre ce post. Tous les codes → lien en bio\n\n#codepromo #bonplan #youtube"
-    wa = f"Les {len(items)} codes les plus copiés sur Backed 🔥\n{lines}\nTous sur backed.fr"
+    rich_insta = "\n\n".join(f"{i + 1}. {o['brand']}" + (f" : {gain(o)}" if gain(o) else "") + f"\nCode {o['code']}{via(o)}"
+                              for i, o in enumerate(items))
+    rich_wa = "\n\n".join(f"{i + 1}. {o['brand']}" + (f" : {gain(o)}" if gain(o) else "")
+                           + f"\nCode : {o['code']}{via(o)}\n→ backed.fr/marque/{o['slug']}" for i, o in enumerate(items))
+    tiktok = (f"Les {len(items)} codes les plus copiés sur Backed cette semaine. 🔥\n{lines}\n"
+              "Enregistre pour plus tard.\n\n#codepromo #bonplan #youtube")
+    insta = (f"Les {len(items)} codes les plus copiés de la semaine 🔥\n\n{rich_insta}\n\n"
+             "Enregistre ce post. Tous les codes → lien en bio\n\n#codepromo #bonplan #youtube")
+    wa = (f"🔥 Les {len(items)} codes les plus copiés sur Backed cette semaine\n\n{rich_wa}\n\n"
+          "Copie le code, colle-le au paiement : tu paies moins et tu soutiens le créateur ⚡\nTous les codes → backed.fr")
     return tiktok, insta, wa, "10h"
+
+
+def ranking_note(items, since):
+    """Ce sur quoi repose le top 3, pour vérifier avant de publier (pas publié)."""
+    base = f"clics depuis le relevé du {since}, puis au total" if since else "clics au total (pas encore de relevé)"
+    rows = "\n".join(f"| {i + 1} | {o['brand']} | {o['code']} | {o['week']} | {o['clicks']} |" for i, o in enumerate(items))
+    return (f"Classement : {base}, une offre par marque.\n\n"
+            f"| # | Marque | Code | Clics 7 jours | Clics au total |\n|---|---|---|---|---|\n{rows}\n")
 
 
 def block(title, video, tiktok, insta, wa, wa_time):
@@ -140,8 +203,9 @@ def main():
 
     data = json.load(open(a.fixture, encoding="utf-8")) if a.fixture else load_from_airtable()
     start = dt.date.fromisoformat(a.start) if a.start else next_sunday(dt.date.today())
-    week_end = (start + dt.timedelta(days=6)).isoformat()
-    daily, top, n_offers, n_creators = pick_offers(data, valid_until=week_end)
+    week_end = (start + dt.timedelta(days=5)).isoformat()  # vendredi : dernier « Code du jour »
+    top_day = start - dt.timedelta(days=1)  # le samedi où le script tourne
+    daily, top, n_offers, n_creators, since = pick_offers(data, dt.date.today(), valid_until=week_end)
     if not daily:
         sys.exit("Aucune offre active avec code et marque : rien à générer.")
     # Pas de chiffre qui bouge chaque jour dans les vidéos : elles sont générées le samedi pour toute la semaine.
@@ -150,8 +214,17 @@ def main():
 
     md = [f"# Publications Backed — semaine du {date_fr(start)}\n",
           f"Généré automatiquement depuis Airtable le {dt.date.today().isoformat()} : {n_offers} offres actives, "
-          "les plus cliquées en premier, une par marque, et seulement celles valables jusqu'à la fin de la semaine. "
+          "les plus copiées en premier (clics des 7 derniers jours, puis au total), une par marque, et pour les codes "
+          "du jour seulement celles valables jusqu'au vendredi. "
           "Le nombre de nouvelles offres par jour n'a pas d'importance : 1 vidéo par jour, toujours.\n"]
+    # Le top 3 d'abord : il se publie aujourd'hui (samedi), avec le classement de la semaine qui se termine.
+    if len(top) >= 2:
+        name = f"00-{top_day.isoformat()}-top{len(top)}.mp4"
+        if not a.no_video:
+            dur = render.encode(render.top_shots(top, proof, sub="Les plus copiés cette semaine."), os.path.join(a.out, name), variante=3)
+            print(f"✅ {name} ({dur:.1f} s)", flush=True)
+        md.append(block(f"{date_fr(top_day)} (aujourd'hui) — Top {len(top)} de la semaine", name, *texts_top(top)))
+        md.append(ranking_note(top, since))
     for i, o in enumerate(daily):
         day = start + dt.timedelta(days=i)
         name = f"{i + 1:02d}-{day.isoformat()}-{o['slug']}.mp4"
@@ -163,13 +236,8 @@ def main():
         day = start + dt.timedelta(days=i)
         md.append(f"## {date_fr(day)} — pas de nouvelle vidéo\n\nPas assez d'offres valables toute la semaine : "
                   "republie la vidéo qui a le mieux marché, ou saute ce jour.\n")
-    if len(top) >= 2:
-        day = start + dt.timedelta(days=6)  # le top 3 reste toujours le samedi
-        name = f"07-{day.isoformat()}-top{len(top)}.mp4"
-        if not a.no_video:
-            dur = render.encode(render.top_shots(top, proof, sub="Les plus copiés sur Backed."), os.path.join(a.out, name), variante=len(daily) % 4)
-            print(f"✅ {name} ({dur:.1f} s)", flush=True)
-        md.append(block(f"{date_fr(day)} — Top {len(top)}", name, *texts_top(top)))
+    md.append(f"## {date_fr(start + dt.timedelta(days=6))} — Top 3\n\nIl sera généré ce samedi-là à 8h, "
+              "avec les clics de la semaine : télécharge le zip de ce jour-là.\n")
 
     with open(os.path.join(a.out, "publications.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(md))
