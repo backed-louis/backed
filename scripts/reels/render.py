@@ -368,6 +368,35 @@ def s_hook(o):
     return fn
 
 
+def s_hook_phrase(label, lines, answer):
+    """Accroche en une phrase (concepts Black Friday) : une question en blanc, puis la réponse en lilas,
+    dont la 1re ligne est un gros chiffre (« +10 % »). `lines` et `answer` sont des listes de lignes ;
+    le bloc est centré verticalement dans la zone sûre."""
+    def fn(img, d, lt):
+        bg(d)
+        text_c(d, 370, label, fit(d, label, SW, 40, "inter", "Bold"), GREY)
+        fw = F("syne", min(fit(d, ln, SW - 40, 120).size for ln in lines))
+        fas = [fit(d, a, SW - 40, 200 if i == 0 else 96) for i, a in enumerate(answer)]
+        height = len(lines) * fw.size * 1.1 + 70 + sum(f.size * 1.1 for f in fas) + 40
+        y = 460 + (1220 - 460 - height) / 2 + fw.size / 2
+        for ln in lines:
+            text_c(d, y, ln, fw, OFF)
+            y += fw.size * 1.1
+        y += 70 - fw.size * 0.55
+        for i, (a, fa) in enumerate(zip(answer, fas)):
+            y += fa.size * 0.55
+            text_c(d, y, a, fa, LILAS if i == 0 else OFF)
+            if i == 0:
+                aw, uy = tsize(d, a, fa)[1], y + fa.size * 0.6
+                y += 40  # place pour le soulignement
+            y += fa.size * 0.55
+        u = eo(prog(lt, 0.25, 0.5))
+        d.rounded_rectangle((CX - aw / 2, uy, CX - aw / 2 + aw * u, uy + 12), radius=6, fill=VIO)
+        a = 0.55 + 0.45 * abs(math.sin(lt * 4))
+        text_c(d, 1290, "Le code arrive ↓", F("inter", 46, "Bold"), OFF, alpha=a)
+    return fn
+
+
 def s_code(o):
     """La carte du code, copiée tout de suite."""
     title = "Le code à copier"
@@ -516,6 +545,11 @@ def offer_shots(o, proof):
         title = f"Le code de {o['creator']}." if o.get("creator") else f"Code {o['brand']}."
     # Nouveau format (oct. 2026) : accroche pleine dès la 1re image, carte du code, outro logo.
     return [(1.6, s_hook(o)), (2.2, s_code(o)), (OUTRO_DUR, s_outro())]
+
+
+def phrase_shots(o, label, lines, answer):
+    """Une vidéo à accroche-phrase (ex. Black Friday « Le code en plus ») : phrase, carte du code, fin."""
+    return [(1.9, s_hook_phrase(label, lines, answer)), (2.2, s_code(o)), (OUTRO_DUR, s_outro())]
 
 
 def top_shots(items, proof, sub="La sélection de la semaine."):
