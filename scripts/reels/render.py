@@ -7,7 +7,7 @@ import os
 import re
 import subprocess
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 W, H, FPS = 1080, 1920, 30
 NIGHT = (7, 8, 15)
@@ -134,6 +134,66 @@ def short(text, n):
     return text if len(text) <= n else text[: n - 1].rstrip() + "…"
 
 
+# ------------------------------------------------------------------ logos des marques
+_tiles = {}
+
+
+def _round_mask(size, radius):
+    m = Image.new("L", (size * 4, size * 4), 0)
+    ImageDraw.Draw(m).rounded_rectangle((0, 0, size * 4 - 1, size * 4 - 1), radius=radius * 4, fill=255)
+    return m.resize((size, size), Image.LANCZOS)
+
+
+def logo_tile(logo, size):
+    """Logo de la marque en tuile carrée arrondie, comme une icône d'appli : plein cadre si l'icône est
+    déjà un carré opaque, sinon posé sur fond blanc (sombre si le logo est clair, pour qu'il reste visible)."""
+    key = (id(logo), size)
+    if key in _tiles:
+        return _tiles[key]
+    lg = logo.convert("RGBA")
+    a = lg.getchannel("A")
+    w, h = lg.size
+    corners = [a.getpixel(p) for p in ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1))]
+    if min(corners) > 200 and abs(w - h) <= max(2, w // 50):
+        tile = lg.resize((size, size), Image.LANCZOS)
+    else:
+        box = a.point(lambda v: 255 if v > 16 else 0).getbbox()
+        if box:
+            lg = lg.crop(box)
+        vis = lg.getchannel("A").point(lambda v: 255 if v > 128 else 0)
+        light = vis.getbbox() is not None and ImageStat.Stat(lg.convert("L"), mask=vis).mean[0] > 215
+        tile = Image.new("RGBA", (size, size), SLATE + (255,) if light else (255, 255, 255, 255))
+        s = size * 0.68 / max(lg.size)
+        lg = lg.resize((max(1, round(lg.width * s)), max(1, round(lg.height * s))), Image.LANCZOS)
+        tile.alpha_composite(lg, ((size - lg.width) // 2, (size - lg.height) // 2))
+    tile.putalpha(ImageChops.multiply(tile.getchannel("A"), _round_mask(size, int(size * 0.22))))
+    _tiles[key] = tile
+    return tile
+
+
+def letter_tile(name, size):
+    """Tuile de secours quand on n'a pas de logo net : l'initiale de la marque sur fond violet."""
+    key = ("lettre", name, size)
+    if key not in _tiles:
+        t = Image.new("RGBA", (size, size), VIO + (255,))
+        d = ImageDraw.Draw(t)
+        ch = (name.strip()[:1] or "?").upper()
+        f = F("syne", size * 0.58)
+        b, w, h = tsize(d, ch, f)
+        d.text((size / 2 - w / 2 - b[0], size / 2 - h / 2 - b[1]), ch, font=f, fill=OFF)
+        t.putalpha(_round_mask(size, int(size * 0.22)))
+        _tiles[key] = t
+    return _tiles[key]
+
+
+def faded(tile, alpha):
+    if alpha >= 1:
+        return tile
+    t = tile.copy()
+    t.putalpha(t.getchannel("A").point(lambda v: int(v * clamp(alpha))))
+    return t
+
+
 # ------------------------------------------------------------------ scènes
 def s_price(pct):
     """Prix barré sur un panier d'exemple de 100 €, affiché comme tel."""
@@ -209,7 +269,13 @@ def draw_card(img, lt, start, o, yc, copy_at=None):
     disc = o.get("disc") or ""
     fd = F("syne", 80)
     dw = tsize(d, disc, fd)[1] + 40 if disc else 0
-    d.text((50, 40), o["brand"], font=fit(d, o["brand"], cw - 100, 72), fill=OFF)
+    bx = 50
+    if o.get("logo") is not None:
+        c.alpha_composite(logo_tile(o["logo"], 84), (50, 34))
+        bx = 50 + 84 + 26
+    fbr = fit(d, o["brand"], cw - 50 - bx, 72)
+    b, w, h = tsize(d, o["brand"], fbr)
+    d.text((bx - b[0], 76 - h / 2 - b[1]), o["brand"], font=fbr, fill=OFF)
     if disc:
         b, w, h = tsize(d, disc, fd)
         d.text((cw - 50 - w - b[0], 150 - h / 2 - b[1]), disc, font=fd, fill=LILAS)
@@ -261,7 +327,14 @@ def s_top(items, sub="La sélection de la semaine."):
             disc = o.get("disc") or ""
             fd = F("syne", 56)
             dw = tsize(d, disc, fd)[1] + 30 if disc else 0
-            d.text((x0 + 165, y + 30), o["brand"], font=fit(d, o["brand"], SW - 205, 54), fill=OFF + (a,))
+            bx = x0 + 165
+            if o.get("logo") is not None:
+                t = faded(logo_tile(o["logo"], 62), p)
+                img.paste(t, (int(bx), y + 26), t)
+                bx += 62 + 18
+            fbr = fit(d, o["brand"], x0 + SW - 40 - bx, 54)
+            b, w, h = tsize(d, o["brand"], fbr)
+            d.text((bx - b[0], y + 57 - h / 2 - b[1]), o["brand"], font=fbr, fill=OFF + (a,))
             code = o["code"] or "Lien direct"
             d.text((x0 + 165, y + 102), code, font=fit(d, code, SW - 205 - dw, 52, "mono", "Bold"), fill=OFF + (a,))
             if o.get("creator"):
@@ -293,7 +366,28 @@ def eob(x, k=1.8):
     return 1 + (k + 1) * (x - 1) ** 3 + k * (x - 1) ** 2
 
 
-HOOK_Y = 490  # 1re ligne de l'accroche (centre), sous « CODE DU JOUR »
+HEAD_Y = 380  # en-tête de l'accroche : logo de la marque, « CODE DU JOUR » et nom de la marque
+HOOK_Y = 585  # 1re ligne de l'accroche (centre), sous l'en-tête
+
+
+def brand_header(img, d, o, label="CODE DU JOUR", yc=HEAD_Y, T=156):
+    """Le logo de la marque à gauche, « CODE DU JOUR » et le nom de la marque à droite : on reconnaît
+    la marque dès la 1re image. Sans logo, les deux lignes seules, centrées."""
+    fl = F("inter", 36, "Bold")
+    if o.get("logo") is None:
+        text_c(d, yc - 36, label, fl, GREY)
+        text_c(d, yc + 32, o["brand"], fit(d, o["brand"], SW, 70), OFF)
+        return
+    gap = 34
+    fb = fit(d, o["brand"], SW - T - gap, 70)
+    tw = max(tsize(d, label, fl)[1], tsize(d, o["brand"], fb)[1])
+    x = CX - (T + gap + tw) / 2
+    tile = logo_tile(o["logo"], T)
+    img.paste(tile, (int(x), int(yc - T / 2)), tile)
+    x += T + gap
+    for s, f, col, y in ((label, fl, GREY, yc - 38), (o["brand"], fb, OFF, yc + 30)):
+        b, w, h = tsize(d, s, f)
+        d.text((x - b[0], y - h / 2 - b[1]), s, font=f, fill=col)
 
 
 def s_hook(o):
@@ -303,7 +397,7 @@ def s_hook(o):
         who = ["Le code", f"d'{c}" if c[:1].lower() in "aeiouyhéèêàâîôû" else f"de {c}"]
     else:
         who = ["Code promo", o["brand"]]
-    gain = f"{o['disc']} chez {o['brand']}" if o.get("disc") else first_clause(o.get("benefit") or o["brand"], 34)
+    gain = f"{o['disc']} chez {o['brand']}" if o.get("disc") else first_clause(o.get("benefit") or o["brand"], 46)
 
     def two_lines(d, text):
         """Coupe un texte en deux lignes les plus égales possible (None s'il n'a qu'un mot)."""
@@ -345,7 +439,7 @@ def s_hook(o):
 
     def fn(img, d, lt):
         bg(d)
-        text_c(d, 370, "CODE DU JOUR", F("inter", 40, "Bold"), GREY)
+        brand_header(img, d, o)
         lines, fw, glines, fg = layout(d)
         y = HOOK_Y
         for ln in lines:
@@ -415,10 +509,17 @@ def s_top_hook(items):
         bg(d)
         text_c(d, 420, "LA SÉLECTION DE LA SEMAINE", fit(d, "LA SÉLECTION DE LA SEMAINE", SW, 40, "inter", "Bold"), GREY)
         big = f"{len(items)} codes"
-        text_c(d, 640, big, fit(d, big, SW, 190), OFF)
-        text_c(d, 830, "à garder.", fit(d, "à garder.", SW, 130), LILAS)
+        text_c(d, 620, big, fit(d, big, SW, 190), OFF)
+        text_c(d, 800, "à garder.", fit(d, "à garder.", SW, 130), LILAS)
+        # les logos des marques, puis leurs noms : on voit tout de suite de quelles marques il s'agit
+        T, gap = 150, 40
+        x = CX - (len(items) * T + (len(items) - 1) * gap) / 2
+        for o in items:
+            t = logo_tile(o["logo"], T) if o.get("logo") is not None else letter_tile(o["brand"], T)
+            img.paste(t, (int(x), 990 - T // 2), t)
+            x += T + gap
         names = " · ".join(o["brand"] for o in items)
-        text_c(d, 1010, names, fit(d, names, SW, 58, "inter", "Bold"), OFF)
+        text_c(d, 1145, names, fit(d, names, SW, 50, "inter", "Bold"), OFF)
         a = 0.55 + 0.45 * abs(math.sin(lt * 4))
         text_c(d, 1290, "Enregistre pour plus tard ↓", fit(d, "Enregistre pour plus tard ↓", SW, 46, "inter", "Bold"), OFF, alpha=a)
     return fn
@@ -426,6 +527,7 @@ def s_top_hook(items):
 
 # ------------------------------------------------------------------ outro : le logo se tape dans la barre de recherche
 OUTRO_DUR = 3.4
+SIGNATURE = ("Avant de payer,", "passe par Backed.")   # la phrase de Backed, partout (vidéos, visuels, textes)
 TYPE_T0, TYPE_DT = 0.20, 0.085          # frappe : une lettre toutes les 85 ms
 DOT_T = TYPE_T0 + 6 * TYPE_DT + 0.06    # point violet = 1re note de la signature sonore
 PULSE_T = DOT_T + 0.17                  # le point respire = 2e note
@@ -512,24 +614,26 @@ def s_outro():
             if pc > 0.6:
                 text_c(d, cy, lab, fc, GREEN, alpha=prog(lt, TXT_T + 0.1, 0.15))
         t0 = TXT_T + 0.25
-        rise(d, lt, t0, 1060, "Paie le bon prix.", fit(d, "Paie le bon prix.", SW, 96), LILAS, dist=30, dur=0.35)
-        p = eob(prog(lt, t0 + 0.2, 0.35))
+        # la phrase de la marque : « Avant de payer, passe par Backed. »
+        fs = F("syne", min(fit(d, SIGNATURE[0], SW, 84).size, fit(d, SIGNATURE[1], SW, 84).size))
+        rise(d, lt, t0, 1040, SIGNATURE[0], fs, OFF, dist=30, dur=0.35)
+        rise(d, lt, t0 + 0.12, 1130, SIGNATURE[1], fs, LILAS, dist=30, dur=0.35)
+        P0, P1 = 1200, 1306
+        p = eob(prog(lt, t0 + 0.3, 0.35))
         if p > 0.02:
-            pw = 290 * clamp(p, 0, 1.15)
-            pill = (CX - pw, 1120, CX + pw, 1240)
-            d.rounded_rectangle(pill, radius=60, fill=VIO)
-            text_c(d, 1180, "backed.fr", F("inter", 58, "Bold"), OFF, alpha=prog(lt, t0 + 0.3, 0.15))
-            sh = prog(lt, t0 + 0.55, 0.5)
+            pw = 270 * clamp(p, 0, 1.15)
+            pill = (CX - pw, P0, CX + pw, P1)
+            d.rounded_rectangle(pill, radius=53, fill=VIO)
+            text_c(d, (P0 + P1) / 2, "backed.fr", F("inter", 56, "Bold"), OFF, alpha=prog(lt, t0 + 0.4, 0.15))
+            sh = prog(lt, t0 + 0.65, 0.5)
             if 0 < sh < 1:
                 layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
                 bx = pill[0] - 120 + (pill[2] - pill[0] + 240) * sh
-                ImageDraw.Draw(layer).polygon([(bx, 1120), (bx + 60, 1120), (bx + 10, 1240), (bx - 50, 1240)], fill=(255, 255, 255, 90))
+                ImageDraw.Draw(layer).polygon([(bx, P0), (bx + 60, P0), (bx + 10, P1), (bx - 50, P1)], fill=(255, 255, 255, 90))
                 mask = Image.new("L", (W, H), 0)
-                ImageDraw.Draw(mask).rounded_rectangle(pill, radius=60, fill=255)
+                ImageDraw.Draw(mask).rounded_rectangle(pill, radius=53, fill=255)
                 layer.putalpha(Image.composite(layer.getchannel("A"), Image.new("L", (W, H), 0), mask))
                 img.paste(layer, (0, 0), layer)
-        cta = "Abonne-toi : un code chaque jour."
-        rise(d, lt, t0 + 0.45, 1310, cta, fit(d, cta, SW, 50, "inter", "Bold"), OFF, dist=20, dur=0.35)
     return fn
 
 
