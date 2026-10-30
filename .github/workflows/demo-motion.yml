@@ -57,6 +57,6 @@ jobs:
           git rm -rfq --cached .
           git clean -fdq -e out
           cp /tmp/motion/* .
-          git add -A .
+          for f in /tmp/motion/*; do git add -- "$(basename "$f")"; done
           git commit -qm "Démo motion du $(date -u +%F) (run ${{ github.run_number }})"
           git push -f origin demo-motion
