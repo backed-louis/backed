@@ -1,8 +1,10 @@
 name: Vidéos de la semaine
 
 # Chaque samedi à 8h (heure de Paris en hiver), génère le top 3 du jour (clics des 7 derniers
-# jours) et les vidéos « Code du jour » du dimanche au vendredi suivants, à partir d'Airtable.
+# jours) et les vidéos « Code du jour » du dimanche au vendredi suivants, à partir d'Airtable,
+# avec pour chaque jour l'image de story et la carte WhatsApp, et le carrousel de la semaine.
 # Les fichiers sont à télécharger dans l'onglet Actions, en bas du run (« Artifacts »).
+# Un aperçu léger (planches JPEG + publications.md) est gardé sur la branche semaine-apercu.
 on:
   schedule:
     - cron: '0 7 * * 6'
@@ -12,6 +14,9 @@ on:
         description: 'Premier jour de la semaine (AAAA-MM-JJ). Vide = prochain dimanche.'
         required: false
         default: ''
+
+permissions:
+  contents: write
 
 jobs:
   reels:
@@ -36,9 +41,9 @@ jobs:
           START: ${{ github.event.inputs.start }}
         run: |
           if [ -n "$START" ]; then
-            python3 scripts/reels/generate_week.py --out out/semaine --start "$START"
+            python3 scripts/reels/generate_week.py --out out/semaine --preview out/apercu --start "$START"
           else
-            python3 scripts/reels/generate_week.py --out out/semaine
+            python3 scripts/reels/generate_week.py --out out/semaine --preview out/apercu
           fi
           cat out/semaine/publications.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload videos
@@ -47,3 +52,16 @@ jobs:
           name: backed-semaine-${{ github.run_number }}
           path: out/semaine
           retention-days: 30
+      - name: Garder l'aperçu dans le dépôt (branche semaine-apercu)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          cp -r out/apercu /tmp/apercu
+          # Branche sans historique, remplacée à chaque run : seul le dernier aperçu compte.
+          git checkout --orphan semaine-apercu
+          git rm -rfq --cached .
+          git clean -fdq -e out
+          cp /tmp/apercu/* .
+          git add -- *.jpg *.md *.txt
+          git commit -qm "Aperçu du $(date -u +%F) (run ${{ github.run_number }})"
+          git push -f origin semaine-apercu
