@@ -1,0 +1,586 @@
+<!-- Motion « Le réflexe Backed » : 1080×1920, rendu image par image par rendu.py (window.render(t)).
+     Les polices, le logo et les données sont injectés par rendu.py (marqueurs /*FONTS*/ et /*DATA*/).
+     Tout le texte reste dans la zone sûre TikTok / Reels (x 120–920, y 300–1360, axe x = 520). -->
+<meta charset="utf-8">
+<style>
+/*FONTS*/
+:root {
+  --night: #07080f; --slate: #14151f; --line: #2c2e3e;
+  --vio: #8b00ff; --lilas: #b266ff; --off: #f4f2ee; --grey: #8c8fa3; --green: #2ecc71; --green2: #4cd964;
+  --syne: "Syne", sans-serif; --inter: "Inter", sans-serif; --mono: "Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+#frame { position: absolute; inset: 0; overflow: hidden; background: var(--night); font-family: var(--inter); color: var(--off); }
+.orb { position: absolute; border-radius: 50%; pointer-events: none; }
+#grain { position: absolute; left: 0; top: 0; opacity: .07; mix-blend-mode: overlay; pointer-events: none; }
+#vignette { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 62% at 48% 46%, transparent 55%, rgba(0,0,0,.55) 100%); pointer-events: none; }
+
+/* accroche */
+.line { position: absolute; left: 0; width: 1040px; text-align: center; font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+.word { display: inline-block; overflow: hidden; vertical-align: bottom; padding: 0 .04em .1em; margin-bottom: -.1em; }
+.word > span { display: inline-block; }
+.kicker { position: absolute; left: 0; width: 1040px; text-align: center; font: 700 28px var(--mono); letter-spacing: .32em; color: var(--grey); }
+
+/* étapes */
+.st { position: absolute; left: 0; top: 300px; width: 1040px; text-align: center; }
+.st .n { font: 700 26px var(--mono); letter-spacing: .3em; color: var(--lilas); }
+.st .t { font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; margin-top: 12px; white-space: nowrap; }
+
+/* téléphone */
+#stage { position: absolute; inset: 0; perspective: 2400px; perspective-origin: 520px 900px; }
+#phone { position: absolute; left: 0; top: 0; width: 540px; height: 1110px; border-radius: 84px; transform-origin: 270px 555px;
+  background: linear-gradient(150deg, #34364a 0%, #12131b 28%, #0b0c12 60%, #262838 100%);
+  box-shadow: 0 0 0 2px #3c3e52 inset, 0 0 0 5px #0b0c12 inset, 0 80px 140px rgba(0,0,0,.65), 0 0 120px rgba(139,0,255,.28); }
+#phone .btn { position: absolute; width: 6px; border-radius: 3px; background: #2a2c3c; }
+#screen { position: absolute; left: 15px; top: 15px; width: 510px; height: 1080px; border-radius: 70px; overflow: hidden; background: var(--night); }
+#glare { position: absolute; inset: 15px; border-radius: 70px; pointer-events: none;
+  background: linear-gradient(118deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,.03) 26%, transparent 42%); }
+#island { position: absolute; left: 180px; top: 20px; width: 150px; height: 42px; border-radius: 21px; background: #000; }
+.sb { position: absolute; top: 26px; font: 600 22px var(--inter); }
+#nav { position: absolute; left: 0; top: 78px; width: 510px; height: 74px; border-bottom: 1px solid var(--line); }
+.wm { font-family: var(--syne); font-weight: 800; white-space: nowrap; }
+.wm i { display: inline-block; border-radius: 50%; background: var(--vio); }
+#ui-title { position: absolute; left: 28px; top: 178px; }
+#search { position: absolute; left: 20px; top: 296px; width: 470px; height: 82px; border-radius: 20px; background: var(--slate); border: 2px solid var(--line); }
+#search .ph, #search .tx { position: absolute; left: 66px; white-space: nowrap; }
+#search .ph { top: 27px; font: 500 21px var(--inter); color: var(--grey); }
+#search .tx { top: 21px; font: 600 28px var(--inter); }
+#caret { position: absolute; top: 22px; width: 3px; height: 38px; background: var(--lilas); border-radius: 2px; }
+#chips { position: absolute; left: 20px; top: 398px; display: flex; gap: 9px; }
+.chip { font: 600 16px var(--inter); padding: 8px 16px; border-radius: 20px; border: 1px solid var(--line); color: var(--grey); }
+.chip.on { background: var(--vio); border-color: var(--vio); color: var(--off); }
+.skel { position: absolute; left: 20px; width: 470px; height: 200px; border-radius: 22px; background: var(--slate); border: 1px solid var(--line); overflow: hidden; }
+.skel b { position: absolute; display: block; border-radius: 8px; background: #20212f; }
+#res-label { position: absolute; left: 24px; top: 458px; font: 500 17px var(--inter); color: var(--grey); }
+
+/* carte de l'offre (dans le téléphone, et en grand quand elle en sort) */
+.card { position: absolute; width: 470px; border-radius: 24px; background: var(--slate); border: 1px solid var(--line); padding: 24px; }
+#card { left: 20px; top: 492px; }
+#pop { left: 0; top: 0; transform-origin: 0 0; box-shadow: 0 50px 110px rgba(0,0,0,.6), 0 0 90px rgba(139,0,255,.35); border-color: #3a3c52; }
+.logo { width: 66px; height: 66px; border-radius: 16px; background: #fff; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.logo img { width: 100%; height: 100%; object-fit: contain; padding: 8px; }
+.logo span { font-family: var(--syne); font-weight: 800; font-size: 32px; }
+.c-brand { font-family: var(--syne); font-weight: 800; font-size: 34px; margin-top: 16px; letter-spacing: -.01em; }
+.c-desc { font-size: 17px; color: var(--grey); margin-top: 6px; line-height: 1.4; }
+.codebtn { display: inline-block; margin-top: 18px; padding: 11px 18px; border-radius: 13px; font: 700 20px var(--mono); letter-spacing: .08em;
+  background: rgba(139,0,255,.16); border: 1.5px solid rgba(178,102,255,.55); color: var(--lilas); position: relative; }
+.codebtn .ok { position: absolute; inset: -1.5px; display: flex; align-items: center; justify-content: center; border-radius: 13px; opacity: 0;
+  background: #11331f; border: 1.5px solid rgba(76,217,100,.5); color: var(--green2); font: 700 20px var(--mono); letter-spacing: .04em; }
+.c-benefit { margin-top: 14px; padding: 12px 15px; border-radius: 14px; background: rgba(76,217,100,.08); border: 1px solid rgba(76,217,100,.22);
+  color: var(--green2); font: 700 17px var(--inter); line-height: 1.45; }
+.c-credit { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 15px; color: var(--grey); }
+.c-credit b { color: var(--off); font-weight: 600; }
+
+/* doigt */
+#finger { position: absolute; left: 0; top: 0; width: 80px; height: 80px; margin: -40px 0 0 -40px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.95) 0 34%, rgba(255,255,255,.5) 35% 52%, rgba(255,255,255,0) 53%); }
+#ripple { position: absolute; left: 0; top: 0; width: 80px; height: 80px; margin: -40px 0 0 -40px; border-radius: 50%; border: 3px solid rgba(255,255,255,.9); }
+
+/* le code qui s'envole */
+#fly { position: absolute; left: 0; top: 0; transform-origin: 0 0; padding: 11px 18px; border-radius: 13px; font: 700 20px var(--mono); letter-spacing: .08em; white-space: nowrap;
+  color: var(--off); background: linear-gradient(135deg, #2a0d52, #160a2c); border: 1.5px solid var(--lilas);
+  box-shadow: 0 0 0 1px rgba(139,0,255,.4), 0 18px 40px rgba(0,0,0,.55), 0 0 60px rgba(139,0,255,.55); }
+
+/* paiement */
+#checkout { position: absolute; left: 140px; top: 450px; width: 760px; border-radius: 40px; transform-origin: 380px 360px;
+  background: linear-gradient(160deg, #1a1b28, #101119); border: 1.5px solid #34364a; padding: 40px 46px 44px;
+  box-shadow: 0 60px 120px rgba(0,0,0,.6), 0 0 120px rgba(139,0,255,.18); }
+.ck-k { font: 700 22px var(--mono); letter-spacing: .26em; color: var(--grey); }
+.ck-t { font-family: var(--syne); font-weight: 800; font-size: 50px; margin-top: 8px; letter-spacing: -.02em; }
+.row { display: flex; align-items: center; justify-content: space-between; font-size: 28px; }
+.thumb { width: 84px; height: 84px; border-radius: 20px; background: linear-gradient(135deg, #2b2d40, #1b1c29); border: 1px solid var(--line); position: relative; }
+.thumb::after { content: ""; position: absolute; left: 18px; right: 18px; top: 34px; height: 22px; border-radius: 8px; background: #3a3c52; }
+.hr { height: 1px; background: var(--line); margin: 24px 0; }
+#field { flex: 1; height: 82px; border-radius: 18px; background: var(--night); border: 2px solid var(--line); position: relative; margin-right: 16px; }
+#field .ph { position: absolute; left: 26px; top: 24px; font: 500 26px var(--inter); color: #5c5f75; }
+#field .tx { position: absolute; left: 26px; top: 22px; font: 700 28px var(--mono); letter-spacing: .08em; color: var(--off); }
+#apply { width: 190px; height: 82px; border-radius: 18px; background: var(--vio); display: flex; align-items: center; justify-content: center; font: 700 26px var(--inter); position: relative; overflow: hidden; }
+#apply .ok { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--green); font-size: 34px; }
+#disc-row { color: var(--green2); font-weight: 700; overflow: hidden; }
+#total-row { align-items: center; }
+#old { font: 600 30px var(--inter); color: var(--grey); position: relative; margin-right: 22px; white-space: nowrap; }
+#old i { position: absolute; left: -4px; top: 50%; height: 4px; border-radius: 2px; background: var(--lilas); }
+#new { font-family: var(--syne); font-weight: 800; font-size: 64px; letter-spacing: -.02em; white-space: nowrap; }
+#save-row { display: flex; justify-content: center; margin-top: 26px; }
+#save { padding: 15px 30px; border-radius: 40px; background: #123a24; border: 2px solid var(--green); font: 700 30px var(--inter); color: var(--green2); white-space: nowrap; }
+#credit { position: absolute; left: 0; width: 1040px; text-align: center; font: 600 34px var(--inter); color: var(--off); white-space: nowrap; }
+#credit b { color: var(--lilas); font-weight: 700; }
+
+/* fin */
+#bar { position: absolute; left: 120px; top: 605px; width: 800px; height: 230px; border-radius: 70px; background: var(--slate); border: 5px solid var(--vio); transform-origin: 400px 115px; }
+#mag { position: absolute; left: 62px; top: 80px; width: 60px; height: 60px; border-radius: 50%; border: 8px solid var(--grey); }
+#mag::after { content: ""; position: absolute; left: 44px; top: 44px; width: 30px; height: 9px; border-radius: 5px; background: var(--grey); transform: rotate(45deg); transform-origin: 0 50%; }
+#typed { position: absolute; left: 165px; top: 0; height: 225px; display: flex; align-items: center; white-space: nowrap; }
+#typed span { display: inline-block; font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; line-height: 1; transform-origin: 50% 60%; }
+#dot { position: absolute; border-radius: 50%; background: var(--vio); }
+.ring { position: absolute; border-radius: 50%; border: 6px solid var(--lilas); }
+.spark { position: absolute; }
+#ocaret { position: absolute; width: 10px; height: 112px; border-radius: 4px; background: var(--vio); }
+.sig { position: absolute; left: 0; width: 1040px; text-align: center; font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+#pill { position: absolute; left: 520px; width: 540px; height: 106px; border-radius: 53px; background: var(--vio); overflow: hidden; }
+#pill span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 54px var(--inter); }
+#pill i { position: absolute; top: -10px; width: 60px; height: 130px; background: rgba(255,255,255,.35); transform: skewX(-22deg); }
+#free { position: absolute; left: 0; width: 1040px; text-align: center; font: 600 32px var(--inter); color: var(--grey); }
+#flash { position: absolute; inset: 0; background: radial-gradient(circle at 520px 900px, rgba(139,0,255,.9), rgba(139,0,255,0) 60%); pointer-events: none; }
+</style>
+
+<div id="frame">
+  <div class="orb" id="orb1"></div><div class="orb" id="orb2"></div>
+
+  <div id="hook">
+    <div class="kicker" id="kicker" style="top:470px">LE RÉFLEXE BACKED</div>
+    <div class="line" id="l1"></div><div class="line" id="l2"></div><div class="line" id="l3" style="color:var(--lilas)"></div>
+  </div>
+
+  <div class="st" id="st1"><div class="n">01 / 03</div><div class="t">Cherche ta marque</div></div>
+  <div class="st" id="st2"><div class="n">02 / 03</div><div class="t">Copie le code</div></div>
+  <div class="st" id="st3"><div class="n">03 / 03</div><div class="t">Colle-le au paiement</div></div>
+
+  <div id="stage">
+    <div id="phone">
+      <div class="btn" style="left:-4px;top:250px;height:90px"></div><div class="btn" style="left:-4px;top:360px;height:90px"></div>
+      <div class="btn" style="right:-4px;top:300px;height:140px"></div>
+      <div id="screen">
+        <div class="sb" style="left:56px">19:00</div>
+        <div class="sb" style="right:52px;display:flex;gap:7px;align-items:flex-end;top:30px">
+          <i style="width:5px;height:9px;background:#f4f2ee;border-radius:2px"></i><i style="width:5px;height:13px;background:#f4f2ee;border-radius:2px"></i>
+          <i style="width:5px;height:17px;background:#f4f2ee;border-radius:2px"></i>
+          <i style="width:34px;height:17px;border:2px solid #f4f2ee;border-radius:5px;margin-left:8px;position:relative"><b style="position:absolute;left:2px;top:2px;bottom:2px;width:20px;background:#f4f2ee;border-radius:2px"></b></i>
+        </div>
+        <div id="island"></div>
+        <div id="nav">
+          <div class="wm" style="position:absolute;left:28px;top:16px;font-size:34px">Backed<i style="width:8px;height:8px;margin-left:3px"></i></div>
+          <div style="position:absolute;right:30px;top:26px;width:30px;display:grid;gap:6px"><b style="height:3px;background:#f4f2ee;border-radius:2px"></b><b style="height:3px;background:#f4f2ee;border-radius:2px"></b><b style="height:3px;background:#f4f2ee;border-radius:2px"></b></div>
+        </div>
+        <div id="ui-title">
+          <div style="font:700 14px var(--inter);letter-spacing:.18em;color:var(--lilas)">CATALOGUE</div>
+          <div class="wm" style="font-size:33px;margin-top:8px;letter-spacing:-.02em">Explorer les offres</div>
+          <div style="font-size:18px;color:var(--grey);margin-top:6px">Les codes de tes créateurs YouTube</div>
+        </div>
+        <div id="search">
+          <div style="position:absolute;left:22px;top:26px;width:24px;height:24px;border-radius:50%;border:3px solid var(--grey)"></div>
+          <div style="position:absolute;left:42px;top:47px;width:11px;height:3.5px;border-radius:2px;background:var(--grey);transform:rotate(45deg);transform-origin:0 50%"></div>
+          <div class="ph" id="ph">Rechercher une marque…</div>
+          <div class="tx" id="tx"></div><div id="caret"></div>
+        </div>
+        <div id="chips"><span class="chip on">Toutes</span><span class="chip">Tech</span><span class="chip">Mode</span><span class="chip">Sport</span><span class="chip">Food</span></div>
+        <div id="skels"></div>
+        <div id="res-label"></div>
+        <div class="card" id="card"></div>
+      </div>
+      <div id="glare"></div>
+    </div>
+  </div>
+
+  <div class="card" id="pop"></div>
+
+  <div id="checkout">
+    <div class="ck-k">EXEMPLE DE PANIER</div>
+    <div class="ck-t">Paiement</div>
+    <div class="row" style="margin-top:26px"><div style="display:flex;align-items:center;gap:24px"><div class="thumb"></div><div><div style="font-weight:700" id="ck-brand"></div><div style="font-size:22px;color:var(--grey);margin-top:4px">1 article</div></div></div><div id="ck-sub" style="font-weight:600"></div></div>
+    <div class="hr"></div>
+    <div style="font:600 22px var(--inter);color:var(--grey);margin-bottom:14px">Code promo</div>
+    <div class="row"><div id="field"><div class="ph" id="fph">Saisis ton code</div><div class="tx" id="ftx"></div></div><div id="apply">Appliquer<div class="ok" id="applyok">✓</div></div></div>
+    <div class="row" id="disc-row"><div id="disc-l"></div><div id="disc-v"></div></div>
+    <div class="hr"></div>
+    <div class="row" id="total-row"><div style="font:700 32px var(--inter)">Total</div><div style="display:flex;align-items:baseline"><div id="old"><span id="old-v"></span><i id="strike"></i></div><div id="new"></div></div></div>
+    <div id="save-row"><div id="save"></div></div>
+  </div>
+  <div id="credit"></div>
+
+  <div id="fly"></div>
+  <div id="ripple"></div><div id="finger"></div>
+
+  <div id="outro">
+    <div class="orb" id="oglow"></div>
+    <div id="bar"><div id="mag"></div><div id="typed"></div></div>
+    <div id="dot"></div><div class="ring" id="ring1"></div><div class="ring" id="ring2"></div><div id="sparks"></div><div id="ocaret"></div>
+    <div class="sig" id="sig1"></div><div class="sig" id="sig2" style="color:var(--lilas)"></div>
+    <div id="pill"><span>backed.fr</span><i id="shine"></i></div>
+    <div id="free">Gratuit · sans compte</div>
+  </div>
+  <div id="flash"></div>
+  <canvas id="grain" width="540" height="960"></canvas>
+  <div id="vignette"></div>
+</div>
+
+<script>
+window.DEMO = /*DATA*/{
+  marque: "Emma", code: "YVANCASTA", createur: "Yvan Casta", description: "Matelas et literie premium en ligne",
+  avantage: "-10 % supplémentaires sur les produits en promotion", remise: 10, prix: 249, logo: null
+}/*END*/;
+
+// ------------------------------------------------------------------ outils
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const prog = (t, s, d) => clamp((t - s) / d);
+const lerp = (a, b, p) => a + (b - a) * p;
+const eo = x => 1 - Math.pow(1 - x, 3);
+const eo5 = x => 1 - Math.pow(1 - x, 5);
+const expo = x => x >= 1 ? 1 : 1 - Math.pow(2, -10 * x);
+const eio = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const back = (x, k = 1.7) => 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2);
+const spring = x => x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.exp(-6.5 * x) * Math.cos(9 * x);
+const eur = v => v.toFixed(2).replace(".", ",") + " €";
+const CX = 520;
+
+function textWidth(el) { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().width; }
+function fitSize(el, maxw, max) { el.style.fontSize = "100px"; return Math.min(max, 100 * maxw / textWidth(el)); }
+function words(el, text) {
+  el.innerHTML = text.split(" ").map(w => `<span class="word"><span>${w}</span></span>`).join(" ");
+  return [...el.querySelectorAll(".word > span")];
+}
+function show(el, on) { el.style.display = on ? "" : "none"; }
+
+// ------------------------------------------------------------------ minutage (secondes)
+const T = {
+  enter: 1.95, settle: 3.15, tapSearch: 3.45, type: 3.62, typeDt: .14, results: 4.25,
+  flat: 4.95, pop: 5.6, step2: 5.75, tapCode: 6.45, lift: 6.6, recede: 6.75, exit: 7.5,
+  ckIn: 7.6, step3: 7.85, dive: 8.3, land: 8.8, apply: 8.92, disc: 9.05, strike: 9.25, count: 9.35, save: 9.9, credit: 10.25,
+  ckOut: 10.9, flash: 11.05, outro: 11.3, end: 14.7,
+};
+
+const D = window.DEMO;
+const L = {};
+
+function cardHTML() {
+  const logo = D.logo ? `<img src="${D.logo}">` : `<span>${D.marque.slice(0, 1).toUpperCase()}</span>`;
+  return `<div class="logo" style="${D.logo ? "" : "background:var(--vio);color:var(--off)"}">${logo}</div>
+    <div class="c-brand">${D.marque}</div><div class="c-desc">${D.description || ""}</div>
+    <div class="codebtn"><span>${D.code}</span><div class="ok">✓ Copié !</div></div>
+    ${D.avantage ? `<div class="c-benefit">${D.avantage}</div>` : ""}
+    ${D.createur ? `<div class="c-credit">Partagé par <b>${D.createur}</b></div>` : ""}`;
+}
+
+function setup() {
+  // accroche
+  $("l1").textContent = "Avant de payer"; $("l2").textContent = "en ligne,"; $("l3").textContent = "fais ça.";
+  const s12 = Math.min(fitSize($("l1"), 790, 130), fitSize($("l2"), 790, 130));
+  const s3 = fitSize($("l3"), 790, 200);
+  const top = 560;
+  [["l1", s12, top], ["l2", s12, top + s12 * 1.1], ["l3", s3, top + s12 * 2.2 + 10]].forEach(([id, s, y]) => {
+    $(id).style.fontSize = s + "px"; $(id).style.top = y + "px";
+  });
+  L.w1 = words($("l1"), "Avant de payer"); L.w2 = words($("l2"), "en ligne,"); words($("l3"), "fais ça.");
+  ["st1", "st2", "st3"].forEach(id => { const t = $(id).querySelector(".t"); t.style.fontSize = fitSize(t, 790, 64) + "px"; });
+  // téléphone
+  let sk = "";
+  for (let i = 0; i < 3; i++) sk += `<div class="skel" style="top:${458 + i * 222}px"><b style="left:24px;top:24px;width:66px;height:66px;border-radius:16px"></b><b style="left:24px;top:110px;width:180px;height:24px"></b><b style="left:24px;top:148px;width:300px;height:16px"></b></div>`;
+  $("skels").innerHTML = sk;
+  $("card").innerHTML = cardHTML(); $("pop").innerHTML = cardHTML();
+  $("res-label").textContent = `1 résultat pour « ${D.marque} »`;
+  $("fly").textContent = D.code;
+  // paiement
+  const prix = D.prix || 249, r = D.remise || 0;
+  L.prix = prix; L.save = Math.round(prix * r) / 100;
+  $("ck-brand").textContent = `Ton panier ${D.marque}`;
+  $("ck-sub").textContent = eur(prix);
+  $("disc-l").textContent = r ? `Code ${D.code} (−${r} %)` : `Code ${D.code}`;
+  $("disc-v").textContent = r ? "−" + eur(L.save) : "appliqué";
+  $("old-v").textContent = eur(prix);
+  $("save").textContent = r ? `Tu économises ${eur(L.save)}` : "Code appliqué ✓";
+  $("credit").innerHTML = D.createur ? `Tu paies moins, et tu soutiens <b>${D.createur}</b>.` : "Tu paies moins.";
+  $("credit").style.fontSize = fitSize($("credit"), 790, 36) + "px";
+  // fin
+  $("typed").innerHTML = "Backed".split("").map(c => `<span>${c}</span>`).join("");
+  const ts = fitSize($("typed"), 470, 150);
+  [...$("typed").children].forEach(s => s.style.fontSize = ts + "px");
+  $("typed").style.fontSize = ts + "px";
+  L.ts = ts;
+  $("sparks").innerHTML = Array.from({ length: 10 }, () => `<div class="spark"></div>`).join("");
+  $("sig1").textContent = "Avant de payer,"; $("sig2").textContent = "passe par Backed.";
+  const sz = Math.min(fitSize($("sig1"), 790, 92), fitSize($("sig2"), 790, 92));
+  $("sig1").style.fontSize = $("sig2").style.fontSize = sz + "px";
+  L.sigTop = 940; L.sig = sz;
+  $("sig1").style.top = L.sigTop + "px"; $("sig2").style.top = (L.sigTop + sz * 1.12) + "px";
+  // grain
+  const g = $("grain").getContext("2d"), img = g.createImageData(540, 960);
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < img.data.length; i += 4) { const v = rnd() * 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+  g.putImageData(img, 0, 0);
+  $("grain").style.width = "1620px"; $("grain").style.height = "2880px";
+  measure();
+}
+
+// ------------------------------------------------------------------ caméra du téléphone
+const PH = { w: 540, h: 1110 };
+const CAM = [
+  { t: T.enter, x: CX, y: 2150, s: .9, rx: 30, ry: -22, rz: 7 },
+  { t: T.settle, x: CX, y: 1165, s: 1.25, rx: 9, ry: -8, rz: 0 },
+  { t: T.flat, x: CX, y: 1160, s: 1.25, rx: 4, ry: -3, rz: 0 },
+  { t: T.pop, x: CX, y: 1170, s: 1.22, rx: 0, ry: 0, rz: 0 },
+  { t: T.recede, x: CX, y: 1170, s: 1.22, rx: 0, ry: 0, rz: 0 },
+  { t: T.exit, x: CX, y: 1300, s: 1.08, rx: 14, ry: 6, rz: -2 },
+  { t: T.exit + .75, x: CX - 60, y: 2450, s: .9, rx: 34, ry: 10, rz: -6 },
+];
+const EASE = [spring, eo, eio, x => x, eio, x => x * x * x];
+function cam(t) {
+  if (t <= CAM[0].t) return CAM[0];
+  for (let i = 0; i < CAM.length - 1; i++) {
+    const a = CAM[i], b = CAM[i + 1];
+    if (t <= b.t) {
+      const p = EASE[i]((t - a.t) / (b.t - a.t)), o = {};
+      for (const k of ["x", "y", "s", "rx", "ry", "rz"]) o[k] = lerp(a[k], b[k], p);
+      return o;
+    }
+  }
+  return CAM[CAM.length - 1];
+}
+function placePhone(c) {
+  $("phone").style.transform = `translate3d(${c.x - PH.w / 2}px, ${c.y - PH.h / 2}px, 0) rotateX(${c.rx}deg) rotateY(${c.ry}deg) rotateZ(${c.rz}deg) scale(${c.s})`;
+}
+
+// la carte qui sort du téléphone : de sa place à l'écran jusqu'au centre, 1,62 fois plus grande
+const POP_S = 1.62, POP_CY = 880;
+function popAt(p) {
+  const a = L.cardRect, w = $("pop").offsetWidth, h = $("pop").offsetHeight;
+  const s0 = a.width / w;
+  const x = lerp(a.left, CX - w * POP_S / 2, p), y = lerp(a.top, POP_CY - h * POP_S / 2, p) - Math.sin(p * Math.PI) * 40;
+  return { x, y, s: lerp(s0, POP_S, p) };
+}
+function placePop(q, extra = "") { $("pop").style.transform = `translate(${q.x}px, ${q.y}px) scale(${q.s}) ${extra}`; }
+
+function rectAt(c, el) { placePhone(c); return el.getBoundingClientRect(); }
+function measure() {
+  $("card").style.opacity = 1; $("card").style.transform = "none";
+  L.search = rectAt(cam(T.tapSearch), $("search"));
+  L.cardRect = rectAt(cam(T.pop), $("card"));
+  placePop(popAt(1));
+  L.btn = $("pop").querySelector(".codebtn").getBoundingClientRect();
+  L.btnS = POP_S;
+  $("checkout").style.transform = "none";
+  $("disc-row").style.maxHeight = "none"; $("disc-row").style.marginTop = "26px";
+  L.flyW = $("fly").offsetWidth; L.flyH = $("fly").offsetHeight;
+  const ft = $("ftx"); ft.textContent = D.code; L.ftx = ft.getBoundingClientRect(); ft.textContent = "";
+  $("save").style.transform = "none";
+  const h = $("checkout").offsetHeight;
+  const top = Math.max(450, Math.round(450 + (1350 - 450 - h - 110) / 2));
+  $("checkout").style.top = top + "px";
+  L.ckBottom = top + h;
+  const ft2 = $("ftx"); ft2.textContent = D.code; L.ftx = ft2.getBoundingClientRect(); ft2.textContent = "";
+}
+
+// ------------------------------------------------------------------ une image
+function render(t) {
+  // fond vivant : deux halos qui dérivent, grain qui change à chaque image
+  const glow = t > T.outro ? .95 : .6;
+  $("orb1").style.cssText = `width:1100px;height:1100px;left:${-180 + 60 * Math.sin(t * .35)}px;top:${200 + 50 * Math.cos(t * .3)}px;background:radial-gradient(circle, rgba(139,0,255,${.34 * glow}), rgba(139,0,255,0) 62%)`;
+  $("orb2").style.cssText = `width:900px;height:900px;left:${420 + 50 * Math.cos(t * .28)}px;top:${1000 + 60 * Math.sin(t * .32)}px;background:radial-gradient(circle, rgba(178,102,255,${.18 * glow}), rgba(178,102,255,0) 62%)`;
+  const f = Math.floor(t * 30);
+  $("grain").style.transform = `translate(${-((f * 137) % 540)}px, ${-((f * 251) % 960)}px)`;
+
+  // ---------- accroche
+  const hookOn = t < 2.45;
+  show($("hook"), hookOn);
+  if (hookOn) {
+    const out = eio(prog(t, 1.85, .45));
+    $("kicker").style.opacity = eo(prog(t, 0, .4)) * (1 - out);
+    const rise = (spans, start) => spans.forEach((s, i) => { s.style.transform = `translateY(${(1 - expo(prog(t, start + i * .07, .55))) * 115}%)`; });
+    rise(L.w1, .05); rise(L.w2, .3);
+    const p3 = prog(t, .72, .6);
+    ["l1", "l2", "l3"].forEach((id, i) => {
+      const q = eio(prog(t, 1.85 + i * .06, .4));
+      const base = id === "l3" ? eo(p3) : 1;
+      $(id).style.opacity = base * (1 - q);
+      const bl = (id === "l3" ? (1 - eo(p3)) * 16 : 0) + q * 12;
+      $(id).style.filter = bl > .05 ? `blur(${bl}px)` : "none";
+      const sc = id === "l3" ? 1.22 - .22 * eo5(p3) : 1;
+      $(id).style.transform = `translateY(${-q * 160}px) scale(${sc})`;
+    });
+    $("l3").style.transformOrigin = "520px 50%";
+    $("l3").style.textShadow = `0 0 ${46 + 26 * Math.sin(t * 5)}px rgba(139,0,255,${.6 * eo(p3)})`;
+  }
+
+  // ---------- étapes (titre en haut de la zone sûre)
+  // un titre sort (0,25 s) avant que le suivant n'entre : jamais deux titres l'un sur l'autre
+  [[2.55, T.step2, "st1"], [T.step2 + .22, T.step3, "st2"], [T.step3 + .22, T.ckOut + .1, "st3"]].forEach(([a, b, id]) => {
+    const el = $(id), pin = expo(prog(t, a, .6)), pout = eio(prog(t, b - .05, .25));
+    el.style.opacity = t < a || t > b + .3 ? 0 : pin * (1 - pout);
+    el.style.transform = `translateY(${(1 - pin) * 50 - pout * 50}px)`;
+    el.style.filter = (1 - pin) + pout > .01 ? `blur(${(1 - pin) * 8 + pout * 8}px)` : "none";
+  });
+
+  // ---------- téléphone
+  const phoneOn = t > T.enter - .05 && t < T.exit + .8;
+  show($("stage"), phoneOn);
+  if (phoneOn) {
+    placePhone(cam(t));
+    const dim = eio(prog(t, T.pop, .6)) * .7 + eio(prog(t, T.recede, .6)) * .3;
+    $("phone").style.filter = dim > .01 ? `blur(${dim * 7}px) brightness(${1 - dim * .6})` : "none";
+    $("phone").style.opacity = 1 - eio(prog(t, T.exit + .2, .5));
+    const n = Math.max(0, Math.min(D.marque.length, Math.floor((t - T.type) / T.typeDt) + 1));
+    const focus = t > T.tapSearch;
+    $("search").style.borderColor = focus ? "var(--vio)" : "var(--line)";
+    $("search").style.boxShadow = focus ? "0 0 0 5px rgba(139,0,255,.22)" : "none";
+    const typing = t > T.type;
+    $("ph").style.display = typing ? "none" : "";
+    $("tx").textContent = typing ? D.marque.slice(0, n) : "";
+    $("caret").style.left = (66 + (typing ? $("tx").offsetWidth : 0) + 3) + "px";
+    $("caret").style.opacity = focus && (typing && t < T.type + D.marque.length * T.typeDt + .2 || Math.floor(t * 2.6) % 2 === 0) ? 1 : 0;
+    const sw = eio(prog(t, T.results, .35));
+    [...$("skels").children].forEach((s, i) => {
+      s.style.opacity = (1 - sw) * (.75 + .25 * Math.sin(t * 6 - i));
+      s.style.transform = `translateY(${sw * 60}px)`;
+    });
+    const r1 = expo(prog(t, T.results + .2, .5)), r2 = expo(prog(t, T.results + .3, .6));
+    $("res-label").style.opacity = r1; $("res-label").style.transform = `translateY(${(1 - r1) * 20}px)`;
+    $("card").style.opacity = r2 * (t > T.pop + .02 ? .25 : 1);
+    $("card").style.transform = `translateY(${(1 - r2) * 60}px) scale(${.97 + .03 * r2})`;
+  }
+
+  // ---------- la carte sort du téléphone
+  const popOn = t > T.pop && t < T.exit + .8;
+  show($("pop"), popOn);
+  if (popOn) {
+    const p = eio(prog(t, T.pop, .65));
+    const q = popAt(p);
+    const rec = eio(prog(t, T.recede, .7)), ex = Math.pow(prog(t, T.exit, .7), 3);
+    const s = q.s * (1 - rec * .12), y = q.y + rec * 80 + ex * 1200;
+    placePop({ x: q.x + (q.s - s) * $("pop").offsetWidth / 2, y, s }, `rotate(${-ex * 6}deg)`);
+    $("pop").style.filter = rec > .01 ? `blur(${rec * 6}px) brightness(${1 - rec * .5})` : "none";
+    $("pop").style.opacity = 1 - eio(prog(t, T.exit + .25, .45));
+    const ok = $("pop").querySelector(".ok"), cp = eo(prog(t, T.tapCode, .25));
+    ok.style.opacity = t >= T.tapCode ? cp : 0;
+    ok.style.transform = `scale(${t >= T.tapCode ? .9 + .1 * back(cp) : 1})`;
+  }
+
+  // ---------- doigt
+  let fOn = false;
+  for (const [at, r] of [[T.tapSearch, L.search], [T.tapCode, L.btn]]) {
+    const d = t - at;
+    if (d > -.45 && d < .5) {
+      fOn = true;
+      const x = r.left + r.width / 2, y = r.top + r.height / 2, inP = eo(prog(d, -.45, .35)), outP = prog(d, .15, .3);
+      $("finger").style.transform = `translate(${x + (1 - inP) * 60}px, ${y + (1 - inP) * 90}px) scale(${d > -.05 && d < .12 ? .82 : 1})`;
+      $("finger").style.opacity = inP * (1 - outP) * .95;
+      const rp = prog(d, 0, .5);
+      $("ripple").style.transform = `translate(${x}px, ${y}px) scale(${1 + rp * 1.8})`;
+      $("ripple").style.opacity = d >= 0 ? (1 - rp) * .9 : 0;
+    }
+  }
+  show($("finger"), fOn); show($("ripple"), fOn);
+
+  // ---------- le code s'envole, puis plonge dans le champ du paiement
+  const flyOn = t > T.lift - .02 && t < T.land + .3;
+  show($("fly"), flyOn);
+  if (flyOn) {
+    const b = L.btn, S1 = 2.5, p1 = eio(prog(t, T.lift, .75));
+    let x = lerp(b.left, CX - L.flyW * S1 / 2, p1);
+    let y = lerp(b.top, 560 - L.flyH * S1 / 2, p1) - Math.sin(p1 * Math.PI) * 70;
+    let s = lerp(b.width / L.flyW, S1, p1), rot = lerp(0, -3, p1);
+    if (t > T.lift + .75) { y += Math.sin((t - T.lift - .75) * 3.2) * 10; rot = -3 + Math.sin((t - T.lift - .75) * 2.4) * 1.2; }
+    const p2 = eio(prog(t, T.dive, T.land - T.dive));
+    if (p2 > 0) {
+      const S2 = L.ftx.height / (L.flyH * .5);
+      x = lerp(x, L.ftx.left - 18 * S2, p2);
+      y = lerp(y, L.ftx.top + L.ftx.height / 2 - L.flyH * S2 / 2, p2);
+      s = lerp(s, S2, p2); rot = lerp(rot, 0, p2);
+    }
+    $("fly").style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${s})`;
+    $("fly").style.opacity = 1 - prog(t, T.land, .2);
+  }
+
+  // ---------- paiement
+  const ckOn = t > T.ckIn && t < T.flash + .2;
+  show($("checkout"), ckOn); show($("credit"), ckOn);
+  if (ckOn) {
+    const pin = spring(prog(t, T.ckIn, 1.1)), pinY = eo5(prog(t, T.ckIn, .95)), pout = eio(prog(t, T.ckOut, .45));
+    $("checkout").style.transform = `perspective(2000px) translateY(${(1 - pinY) * 900 - pout * 120}px) rotateX(${(1 - pin) * 26}deg) scale(${(.92 + .08 * pin) * (1 - pout * .08)})`;
+    $("checkout").style.opacity = clamp(pin * 1.6) * (1 - pout);
+    $("checkout").style.filter = pout > .01 ? `blur(${pout * 10}px)` : "none";
+    const landed = t >= T.land;
+    $("fph").style.display = landed || t > T.dive + .3 ? "none" : "";
+    $("ftx").textContent = landed ? D.code : "";
+    $("field").style.borderColor = landed ? "var(--green)" : (t > T.dive ? "var(--vio)" : "var(--line)");
+    $("field").style.boxShadow = t > T.dive ? `0 0 0 5px ${landed ? "rgba(46,204,113,.18)" : "rgba(139,0,255,.22)"}` : "none";
+    $("field").style.transform = landed ? `scale(${1 + .04 * Math.sin(prog(t, T.land, .3) * Math.PI)})` : "none";
+    const ok = eo(prog(t, T.apply, .25));
+    $("applyok").style.opacity = ok; $("applyok").style.transform = `scale(${.6 + .4 * back(ok)})`;
+    const dr = expo(prog(t, T.disc, .45));
+    $("disc-row").style.opacity = dr; $("disc-row").style.maxHeight = (dr * 60) + "px"; $("disc-row").style.marginTop = (dr * 26) + "px";
+    const st = eio(prog(t, T.strike, .35));
+    $("strike").style.width = `calc(${st * 100}% + 8px)`;
+    $("old").style.opacity = t < T.strike ? 0 : .3 + .7 * clamp(st * 2);
+    const cnt = eo(prog(t, T.count, .7));
+    $("new").innerHTML = (L.prix - L.save * cnt).toFixed(2).replace(".", ",") + `<span style="font-family:var(--inter);font-weight:800;font-size:.78em;margin-left:.14em">€</span>`;
+    $("new").style.color = cnt > 0 && cnt < 1 ? "var(--lilas)" : "var(--off)";
+    const sv = prog(t, T.save, .7);
+    $("save").style.opacity = clamp(sv * 3) * (1 - pout);
+    $("save").style.transform = `scale(${sv > 0 ? .5 + .5 * spring(sv) : .5})`;
+    const cr = expo(prog(t, T.credit, .6));
+    $("credit").style.top = (L.ckBottom + 46) + "px";
+    $("credit").style.opacity = cr * (1 - pout);
+    $("credit").style.transform = `translateY(${(1 - cr) * 30}px)`;
+    $("credit").style.filter = cr < .99 ? `blur(${(1 - cr) * 6}px)` : "none";
+  }
+
+  // ---------- passage à la fin
+  const fl = prog(t, T.flash, .5);
+  $("flash").style.opacity = fl > 0 && fl < 1 ? Math.sin(fl * Math.PI) * .55 : 0;
+
+  // ---------- fin : « Backed » se tape dans la barre de recherche (mêmes temps que les vidéos du jour)
+  const lt = t - T.outro;
+  show($("outro"), lt > -.05);
+  if (lt > -.05) {
+    const TYPE_T0 = .20, TYPE_DT = .085, DOT_T = TYPE_T0 + 6 * TYPE_DT + .06, PULSE_T = DOT_T + .17, TXT_T = PULSE_T + .45;
+    const g = .5 + .25 * eo(prog(lt, 0, .6)) + .35 * eo(prog(lt, DOT_T, .15)) * (1 - prog(lt, DOT_T + .15, .8));
+    $("oglow").style.cssText = `left:0px;top:${720 - 380}px;width:1040px;height:760px;background:radial-gradient(ellipse, rgba(139,0,255,${.5 * g}), rgba(139,0,255,0) 65%)`;
+    const ain = back(prog(lt, 0, .38));
+    $("bar").style.opacity = clamp(prog(lt, 0, .25));
+    $("bar").style.transform = `translateY(${(1 - clamp(ain)) * 120}px) scale(${.92 + .08 * ain})`;
+    const spans = [...$("typed").children];
+    spans.forEach((sp, i) => {
+      const p = prog(lt, TYPE_T0 + i * TYPE_DT, .12);
+      sp.style.opacity = clamp(p * 1.5);
+      sp.style.transform = `scale(${1.35 - .35 * eo(p)})`;
+    });
+    const by = 605 + (1 - clamp(ain)) * 120;
+    const last = spans[5], ts = L.ts;
+    const textEnd = 120 + 165 + last.offsetLeft + last.offsetWidth;
+    const r = ts * .105, dx = textEnd + ts * .03 + r, dy = by + 112 + ts * .34 - r;
+    const pd = prog(lt, DOT_T, .3);
+    const rr = pd > .001 ? r * back(pd, 2.4) * (1 + .22 * Math.sin(Math.PI * prog(lt, PULSE_T, .25))) : 0;
+    $("dot").style.cssText = `left:${dx - rr}px;top:${dy - rr}px;width:${2 * rr}px;height:${2 * rr}px`;
+    [["ring1", DOT_T, 5], ["ring2", PULSE_T, 3.2]].forEach(([id, at, amp]) => {
+      const rp = prog(lt, at, .45), R = r * (1 + amp * eo(rp));
+      $(id).style.cssText = `left:${dx - R}px;top:${dy - R}px;width:${2 * R}px;height:${2 * R}px;opacity:${rp > 0 && rp < 1 ? (1 - rp) * .86 : 0}`;
+    });
+    const spk = prog(lt, DOT_T, .4);
+    [...$("sparks").children].forEach((el, k) => {
+      const ang = k * 2 * Math.PI / 10 + .3, dist = r * (1.5 + 6 * eo(spk)), q = 18 * (1 - spk);
+      el.style.cssText = `left:${dx + Math.cos(ang) * dist - q / 2}px;top:${dy + Math.sin(ang) * dist - q / 2}px;width:${q}px;height:${q}px;opacity:${spk > 0 && spk < 1 ? 1 - spk : 0};background:${k % 2 ? "var(--lilas)" : "var(--vio)"}`;
+    });
+    const n = Math.min(6, Math.floor(Math.max(0, lt - TYPE_T0) / TYPE_DT) + 1);
+    const cxp = lt < DOT_T ? 120 + 165 + (lt > TYPE_T0 ? spans[n - 1].offsetLeft + spans[n - 1].offsetWidth : 0) + 12 : dx + r + 16;
+    const ca = 1 - prog(lt, PULSE_T + .15, .2);
+    $("ocaret").style.cssText = `left:${cxp}px;top:${by + 112 - 56}px;opacity:${ca > 0 && lt > TYPE_T0 - .05 && (lt < DOT_T || Math.floor(lt * 3.2) % 2 === 0) ? ca * clamp(ain) : 0}`;
+    const t0 = TXT_T - .15;
+    [["sig1", t0], ["sig2", t0 + .12]].forEach(([id, at]) => {
+      const p = expo(prog(lt, at, .55));
+      $(id).style.opacity = p; $(id).style.transform = `translateY(${(1 - p) * 50}px)`;
+      $(id).style.filter = p < .99 ? `blur(${(1 - p) * 10}px)` : "none";
+    });
+    const pillTop = L.sigTop + L.sig * 2.35 + 30;
+    const pp = back(prog(lt, t0 + .3, .45));
+    $("pill").style.top = pillTop + "px";
+    $("pill").style.opacity = clamp(pp * 2);
+    $("pill").style.transform = `translateX(-50%) scale(${clamp(pp, 0, 1.2) * .3 + .7})`;
+    const sh = prog(lt, t0 + .75, .6);
+    $("shine").style.left = (-120 + 760 * sh) + "px";
+    $("shine").style.opacity = sh > 0 && sh < 1 ? 1 : 0;
+    const fr = expo(prog(lt, t0 + .55, .5));
+    $("free").style.top = (pillTop + 140) + "px";
+    $("free").style.opacity = fr; $("free").style.transform = `translateY(${(1 - fr) * 20}px)`;
+  }
+}
+
+document.fonts.ready.then(() => {
+  setup();
+  const imgs = [...document.querySelectorAll(".logo img")];
+  Promise.all(imgs.map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))).then(() => {
+    measure(); render(0); window.READY = true;
+  });
+});
+</script>
