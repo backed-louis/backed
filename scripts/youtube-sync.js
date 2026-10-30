@@ -25,6 +25,7 @@ const NON_BRAND_HOSTS = [
   'youtube.com', 'youtu.be', 'bit.ly', 'urlr.me', 'cutt.ly', 'shorturl.at', 'tinyurl.com',
   'amzn.to', 'go.link', 'onelink.me', 'adjust.com', 'taap.it', 'sldrsn.com', 'flg.top',
   'pwgam.es', 'ubi.li', 'wehy.pe', 'bnent.eu', 'geolink.xtb.com', 'skyy.fr', 'linktr.ee',
+  'short.gy', 'urls.fr', 'lnk.to', 'geni.us', 'rebrand.ly', 'tidd.ly', 'ow.ly', 'hfly.co',
 ]
 
 // ─── État chargé une seule fois au démarrage ─────────────────────────────────
@@ -107,7 +108,7 @@ async function loadState() {
   // Toutes les offres, actives ET inactives : une offre déjà connue n'est jamais recréée.
   // Si le créateur la repartage dans une nouvelle vidéo, on la met à jour (« Vu le », réactivation).
   // Attention : via l'API, un champ lié renvoie des IDs d'enregistrements (pas des noms).
-  const offers = await base('Offers').select({ fields: ['Code', 'Brand', 'Creator', 'Source URL', 'Status', 'Vu le', 'End Date', 'Created time', 'Black Friday'] }).all()
+  const offers = await base('Offers').select({ fields: ['Code', 'Brand', 'Creator', 'Source URL', 'Status', 'Vu le', 'End Date', 'Created time', 'Black Friday', 'Benefit'] }).all()
   for (const r of offers) {
     const creatorId = r.fields['Creator']?.[0]
     if (!creatorId) continue
@@ -123,6 +124,7 @@ async function loadState() {
       seen: r.fields['Vu le'] || null,
       end: r.fields['End Date'] || null,
       bf: Boolean(r.fields['Black Friday']),
+      benefit: r.fields['Benefit'] || '',
     })
   }
 
@@ -373,9 +375,11 @@ async function createOffer(code, brand, benefit, sourceUrl, endDate, creatorId, 
     else if (!end && existing.end && existing.end < todayString()) fields['End Date'] = null // nouvelle campagne sans date
     if (!existing.active) fields['Status'] = 'Active'
     if (blackFriday && !existing.bf) fields['Black Friday'] = true
+    // Avantage vague (« Offre spéciale ») remplacé par l'avantage chiffré de la nouvelle vidéo.
+    if (benefit && /\d/.test(benefit) && !/\d/.test(existing.benefit || '')) fields['Benefit'] = benefit
     if (Object.keys(fields).length) {
       await base('Offers').update([{ id: existing.id, fields }])
-      Object.assign(existing, { active: true, seen: fields['Vu le'] || existing.seen, end: 'End Date' in fields ? fields['End Date'] : existing.end, bf: existing.bf || blackFriday })
+      Object.assign(existing, { active: true, seen: fields['Vu le'] || existing.seen, end: 'End Date' in fields ? fields['End Date'] : existing.end, bf: existing.bf || blackFriday, benefit: fields['Benefit'] || existing.benefit })
       refreshedOffersCount++
       console.log(`  🔄 Offre repartagée, mise à jour : ${label} (${brand}) — ${Object.keys(fields).join(', ')}`)
     } else {
