@@ -69,10 +69,11 @@ def page_html(data):
     for fam, f in (("Syne", "Syne.ttf"), ("Inter", "Inter.ttf"), ("Mono", "Mono.ttf")):
         b64 = base64.b64encode(open(os.path.join(REELS, "fonts", f), "rb").read()).decode()
         faces.append(f'@font-face{{font-family:"{fam}";src:url(data:font/ttf;base64,{b64}) format("truetype");font-weight:100 900;}}')
-    html = html.replace("/*FONTS*/", "\n".join(faces))
+    html = html.replace("/*FONTS*/", "\n".join(faces), 1)
     if data:
-        a, b = html.index("/*DATA*/"), html.index("/*END*/") + len("/*END*/")
-        html = html[:a] + json.dumps(data, ensure_ascii=False) + html[b:]
+        a = html.index("window.DEMO = /*DATA*/") + len("window.DEMO = ")
+        b = html.index("/*END*/", a) + len("/*END*/")
+        html = html[:a] + json.dumps(data, ensure_ascii=False).replace("</", "<\\/") + html[b:]
     return html
 
 
@@ -80,6 +81,7 @@ def page_html(data):
 def ouvrir(p, html):
     browser = p.chromium.launch()
     page = browser.new_page(viewport={"width": 1080, "height": 1920}, device_scale_factor=1)
+    page.on("pageerror", lambda e: print(f"⚠️ erreur dans la page : {e}", flush=True))
     page.set_content(html)
     page.wait_for_function("window.READY === true", timeout=30000)
     return browser, page
