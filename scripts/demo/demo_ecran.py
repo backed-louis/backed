@@ -30,7 +30,7 @@ UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.
 
 
 # ------------------------------------------------------------------ tournage
-async def film(url, marque, out):
+async def film(url, marque, out, saison=False):
     from playwright.async_api import async_playwright
     frames, events = [], {}
     async with async_playwright() as p:
@@ -41,6 +41,9 @@ async def film(url, marque, out):
         page = await ctx.new_page()
         await page.route("**/api/track/**", lambda r: r.abort())  # la démo ne compte pas de clics
         await page.goto(url + "/explorer", wait_until="networkidle")
+        if not saison:  # démo intemporelle : sans le décor de saison (Halloween, Noël, Black Friday)
+            await page.evaluate("document.documentElement.removeAttribute('data-saison')")
+            await page.add_style_tag(content=".sd{display:none!important}")
         await page.wait_for_timeout(800)
 
         cdp = await ctx.new_cdp_session(page)
@@ -220,12 +223,13 @@ def main():
     ap.add_argument("--marque", default="Emma")
     ap.add_argument("--out", default="out/demo")
     ap.add_argument("--tournage", help="Remonter à partir d'un tournage.json existant (sans refilmer)")
+    ap.add_argument("--saison", action="store_true", help="Garder le décor de saison du site")
     a = ap.parse_args()
     if a.tournage:
         data = json.load(open(a.tournage))
         ev, frames = data["events"], [tuple(x) for x in data["frames"]]
     else:
-        ev, frames = asyncio.run(film(a.url, a.marque, a.out))
+        ev, frames = asyncio.run(film(a.url, a.marque, a.out, a.saison))
     print(f"🎥 {len(frames)} images filmées, code copié : {ev.get('code')}", flush=True)
     path, total = monter(frames, ev, a.out, a.marque)
     print(f"✅ {path} ({total:.1f} s)")
