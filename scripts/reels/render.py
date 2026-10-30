@@ -129,6 +129,18 @@ def first_clause(text, n=48):
     return short(t, n)
 
 
+def hook_gain(text, n=40):
+    """Gain court pour l'accroche, coupé à une limite naturelle plutôt qu'au milieu d'un mot :
+    « -10€ dès 30€ d'achat pour les nouveaux clients » → « -10€ dès 30€ d'achat »."""
+    t = first_clause(text, 500)
+    if len(t) > n:
+        for sep in (" pour ", " sur ", " avec ", " à partir ", " dès ", " chez ", " sans "):
+            head = t.split(sep)[0]
+            if 8 <= len(head) <= n:
+                return head
+    return short(t, n)
+
+
 def short(text, n):
     text = " ".join((text or "").split())
     return text if len(text) <= n else text[: n - 1].rstrip() + "…"
@@ -397,7 +409,7 @@ def s_hook(o):
         who = ["Le code", f"d'{c}" if c[:1].lower() in "aeiouyhéèêàâîôû" else f"de {c}"]
     else:
         who = ["Code promo", o["brand"]]
-    gain = f"{o['disc']} chez {o['brand']}" if o.get("disc") else first_clause(o.get("benefit") or o["brand"], 46)
+    gain = f"{o['disc']} chez {o['brand']}" if o.get("disc") else hook_gain(o.get("benefit") or o["brand"])
 
     def two_lines(d, text):
         """Coupe un texte en deux lignes les plus égales possible (None s'il n'a qu'un mot)."""
