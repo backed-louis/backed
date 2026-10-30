@@ -1,0 +1,55 @@
+name: Démo écran
+
+# Filme backed.fr sur un écran de téléphone (on cherche une marque, on copie le code) et monte une
+# vidéo verticale 1080×1920 dans la DA Backed. Les clics de la démo ne sont pas comptés.
+# Vidéo à télécharger en bas du run (« Artifacts ») ; elle est aussi gardée sur la branche demo-ecran.
+on:
+  workflow_dispatch:
+    inputs:
+      marque:
+        description: 'Marque à chercher (elle doit avoir un code sur Backed)'
+        required: true
+        default: 'Emma'
+
+permissions:
+  contents: write
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install --quiet Pillow==11.3.0 numpy==2.1.3 scipy==1.14.1 playwright==1.49.1
+          python -m playwright install --with-deps chromium
+      - name: Filmer et monter
+        env:
+          MARQUE: ${{ github.event.inputs.marque }}
+        run: python3 scripts/demo/demo_ecran.py --marque "$MARQUE" --out out/demo
+      - name: Upload video
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-ecran-${{ github.run_number }}
+          path: out/demo/*.mp4
+          retention-days: 30
+      - name: Garder la démo dans le dépôt (branche demo-ecran)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          cp -r out/demo /tmp/demo
+          git checkout --orphan demo-ecran
+          git rm -rfq --cached .
+          git clean -fdq -e out
+          cp /tmp/demo/* .
+          git add -- *.mp4 *.jpg *.json
+          git commit -qm "Démo écran du $(date -u +%F) (run ${{ github.run_number }})"
+          git push -f origin demo-ecran
