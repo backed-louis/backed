@@ -18,6 +18,8 @@ const MAX_PER_RUN = 40
 const BAD_HOSTS = [
   'google.com', 'instagram.com', 'facebook.com', 'tiktok.com', 'x.com', 'twitter.com',
   'youtube.com', 'youtu.be', 'linktr.ee', 'urls.fr', 'bit.ly', 'amzn.to', 'tinyurl.com',
+  'short.gy', 'cutt.ly', 'shorturl.at', 'taap.it', 'urlr.me', 'lnk.to', 'geni.us', 'rebrand.ly',
+  'tidd.ly', 'ow.ly', 'hfly.co', 'onelink.me', 'go.link',
 ]
 
 const airtable = (path, init = {}) =>
@@ -68,10 +70,11 @@ async function websiteAnswers(url) {
   }
 }
 
-async function askClaude(name, categories, hint) {
+async function askClaude(name, categories, hint, offer) {
   const prompt = [
     `Tu complètes la fiche d'une marque pour Backed, un site français qui recense les codes promo partagés par les créateurs YouTube.`,
     `Marque : "${name}"${hint ? ` (lien vu dans une vidéo : ${hint})` : ''}`,
+    offer ? `Offre partagée par un créateur pour cette marque : « ${offer} ». Sers-t'en pour reconnaître la marque.` : '',
     ``,
     `Réponds UNIQUEMENT en JSON :`,
     `{"description": "...", "website": "https://..." ou null, "category": "..." ou null}`,
@@ -107,6 +110,12 @@ async function main() {
   const categoryId = new Map(categories.map((c) => [String(c.fields['Name'] || '').toLowerCase(), c.id]))
   const categoryNames = categories.map((c) => c.fields['Name']).filter(Boolean)
   const brands = await fetchAll('Brands', ['Name', 'Description', 'Website', 'Category'])
+  // Une offre de chaque marque aide Claude à la reconnaître (ex. « 20 % sur l'offre carrosserie » pour Delko).
+  const offerOf = new Map()
+  for (const r of await fetchAll('Offers', ['Brand', 'Benefit'])) {
+    const b = r.fields['Brand']?.[0]
+    if (b && r.fields['Benefit'] && !offerOf.has(b)) offerOf.set(b, String(r.fields['Benefit']).slice(0, 160))
+  }
 
   const todo = brands.filter((b) => {
     const f = b.fields
@@ -127,7 +136,7 @@ async function main() {
 
     if (needsDescription || needsCategory || needsWebsite) {
       try {
-        const answer = await askClaude(f['Name'], categoryNames, f['Website'])
+        const answer = await askClaude(f['Name'], categoryNames, cleanWebsite(f['Website']) || null, offerOf.get(b.id))
         if (needsDescription && typeof answer.description === 'string' && answer.description.trim()) {
           fields['Description'] = answer.description.trim().slice(0, 140)
         }
