@@ -107,7 +107,7 @@ def plans(page, out):
         final = os.path.join(out, f"plan{k}.mp4")
         tmp = os.path.join(out, f"plan{k}.tmp.mp4")
         ff = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(FPS), "-c:v", "mjpeg",
-                               "-i", "-", "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-pix_fmt", "yuv420p",
+                               "-i", "-", "-c:v", "libx264", "-preset", "slow", "-crf", "19", "-pix_fmt", "yuv420p",
                                "-r", str(FPS), "-movflags", "+faststart", tmp], stdin=subprocess.PIPE)
         for i in range(round(CUTS[k] * FPS), round(CUTS[k + 1] * FPS)):
             page.evaluate(f"render({i / FPS})")
