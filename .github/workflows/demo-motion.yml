@@ -1,0 +1,58 @@
+name: Démo motion
+
+# Motion « Le réflexe Backed » (1080×1920, ~15 s) : on cherche une marque, on copie le code de son
+# créateur, le prix baisse au paiement. Animation dessinée (scripts/motion/demo.html), avec l'offre
+# réelle la plus copiée de la marque et son vrai logo, rendue image par image puis mise en musique.
+# Vidéo à télécharger en bas du run (« Artifacts ») ; elle est aussi gardée sur la branche demo-motion.
+on:
+  workflow_dispatch:
+    inputs:
+      marque:
+        description: 'Marque à montrer (elle doit avoir un code actif sur Backed)'
+        required: true
+        default: 'Emma'
+
+permissions:
+  contents: write
+
+jobs:
+  motion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install --quiet Pillow==11.3.0 numpy==2.1.3 scipy==1.14.1 playwright==1.49.1
+          python -m playwright install --with-deps chromium
+      - name: Rendre la vidéo
+        env:
+          AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          MARQUE: ${{ github.event.inputs.marque }}
+        run: python3 scripts/motion/rendu.py --marque "$MARQUE" --out out/motion
+      - name: Upload video
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-motion-${{ github.run_number }}
+          path: out/motion/*.mp4
+          retention-days: 30
+      - name: Garder la vidéo dans le dépôt (branche demo-motion)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          mkdir -p /tmp/motion && cp out/motion/*.mp4 out/motion/apercu.jpg /tmp/motion/
+          git checkout --orphan demo-motion
+          git rm -rfq --cached .
+          git clean -fdq -e out
+          cp /tmp/motion/* .
+          git add -- *.mp4 *.jpg
+          git commit -qm "Démo motion du $(date -u +%F) (run ${{ github.run_number }})"
+          git push -f origin demo-motion
