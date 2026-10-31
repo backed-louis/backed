@@ -65,3 +65,14 @@ jobs:
           git add -- *.jpg *.md *.txt
           git commit -qm "Aperçu du $(date -u +%F) (run ${{ github.run_number }})"
           git push -f origin semaine-apercu
+      - name: Garder tous les fichiers de la semaine (branche semaine-fichiers)
+        run: |
+          # Les vidéos et visuels complets, pour que Claude puisse les renvoyer sans le zip.
+          cp -r out/semaine /tmp/semaine
+          git checkout --orphan semaine-fichiers
+          git rm -rfq --cached .
+          git clean -fdq -e out
+          cp -r /tmp/semaine/* .
+          git add -- *.mp4 *.png *.md carrousel
+          git commit -qm "Fichiers de la semaine du $(date -u +%F) (run ${{ github.run_number }})"
+          git push -f origin semaine-fichiers
