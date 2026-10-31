@@ -1,13 +1,15 @@
 name: Vidéos de la semaine
 
-# Chaque samedi à 8h (heure de Paris en hiver), génère le top 3 du jour (clics des 7 derniers
-# jours) et les vidéos « Code du jour » du dimanche au vendredi suivants, à partir d'Airtable,
+# Chaque vendredi vers 18h (heure de Paris en hiver), génère le top 3 du lendemain samedi (clics des
+# 7 derniers jours) et les vidéos « Code du jour » du dimanche au vendredi suivants, à partir d'Airtable,
 # avec pour chaque jour l'image de story et la carte WhatsApp, et le carrousel de la semaine.
+# Le vendredi soir plutôt que le samedi matin : GitHub retarde parfois les tâches planifiées de plusieurs
+# heures, et le lot doit être prêt au réveil le samedi.
 # Les fichiers sont à télécharger dans l'onglet Actions, en bas du run (« Artifacts »).
 # Un aperçu léger (planches JPEG + publications.md) est gardé sur la branche semaine-apercu.
 on:
   schedule:
-    - cron: '0 7 * * 6'
+    - cron: '23 17 * * 5'
   workflow_dispatch:
     inputs:
       start:
