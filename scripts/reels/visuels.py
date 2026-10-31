@@ -235,7 +235,6 @@ def end_slide(sub="Enregistre ce post pour ton prochain achat."):
     pill(d, 540, 870, "backed.fr", 60)
     tc(d, 540, 1040, "Les codes promo de tes créateurs YouTube.", fit(d, "Les codes promo de tes créateurs YouTube.", 900, 40, "inter", "SemiBold"), OFF)
     tc(d, 540, 1100, "Gratuit · sans compte", F("inter", 40, "SemiBold"), GREY)
-    tc(d, 540, 1160, "Aussi sur YouTube, Instagram et TikTok", fit(d, "Aussi sur YouTube, Instagram et TikTok", 900, 36, "inter", "Medium"), GREY)
     tc(d, 540, 1240, sub, fit(d, sub, 900, 36, "inter", "Medium"), GREY)
     return img
 
