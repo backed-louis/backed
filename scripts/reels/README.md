@@ -7,10 +7,11 @@ vidéo, chaque visuel et chaque texte.
 
 ## Automatique
 
-Le workflow **Vidéos de la semaine** tourne chaque samedi à 8h (heure de Paris en hiver).
+Le workflow **Vidéos de la semaine** tourne chaque vendredi vers 18h (heure de Paris en hiver), pour que le lot
+soit prêt au réveil le samedi (GitHub retarde parfois les tâches planifiées de plusieurs heures).
 Chaque run prépare :
 
-- le top 3 du jour même (samedi) : les 3 codes les plus copiés des 7 derniers jours, vidéo `00-…-top3.mp4`
+- le top 3 du samedi (le lendemain) : les 3 codes les plus copiés des 7 derniers jours, vidéo `00-…-top3.mp4`
   et textes en tête de `publications.md`, avec le tableau des clics qui a servi au classement ;
 - du dimanche au vendredi suivants : 1 vidéo « Code du jour » par jour ;
 - pour chaque jour (et le top 3) : une image de story Instagram (`…-story.png`, avec la place du sticker lien

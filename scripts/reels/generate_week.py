@@ -4,7 +4,7 @@ Usage :
   AIRTABLE_API_KEY=... AIRTABLE_BASE_ID=... python3 scripts/reels/generate_week.py --out out/semaine
   python3 scripts/reels/generate_week.py --fixture scripts/reels/fixture.json --out out/test
 
-Sortie : le top 3 du jour (le samedi où le script tourne, classé sur les clics des 7 derniers jours),
+Sortie : le top 3 du samedi qui suit (le script tourne le vendredi soir ; classé sur les clics des 7 derniers jours),
 puis une vidéo « Code du jour » pour chaque jour du dimanche au vendredi suivants. Pour chaque jour :
 la vidéo, l'image de story et la carte WhatsApp ; pour la semaine : le carrousel (dossier carrousel/).
 publications.md donne les textes TikTok, Instagram, YouTube Shorts et WhatsApp de chaque jour.
@@ -283,11 +283,11 @@ def main():
     data = json.load(open(a.fixture, encoding="utf-8")) if a.fixture else load_from_airtable()
     start = dt.date.fromisoformat(a.start) if a.start else next_sunday(dt.date.today())
     week_end = (start + dt.timedelta(days=5)).isoformat()  # vendredi : dernier « Code du jour »
-    top_day = start - dt.timedelta(days=1)  # le samedi où le script tourne
+    top_day = start - dt.timedelta(days=1)  # le samedi (le lendemain du vendredi où le script tourne)
     daily, top, n_offers, n_creators, since = pick_offers(data, dt.date.today(), valid_until=week_end)
     if not daily:
         sys.exit("Aucune offre active avec code et marque : rien à générer.")
-    # Pas de chiffre qui bouge chaque jour dans les vidéos : elles sont générées le samedi pour toute la semaine.
+    # Pas de chiffre qui bouge chaque jour dans les vidéos : elles sont générées le vendredi pour toute la semaine.
     proof = "Les codes promo de tes créateurs YouTube"
     os.makedirs(a.out, exist_ok=True)
     # Logos haute définition, téléchargés maintenant (le champ Logo d'Airtable est souvent un favicon de 32 px)
@@ -303,7 +303,7 @@ def main():
           "les plus copiées en premier (clics des 7 derniers jours, puis au total), une par marque, et pour les codes "
           "du jour seulement celles valables jusqu'au vendredi. "
           "Le nombre de nouvelles offres par jour n'a pas d'importance : 1 vidéo par jour, toujours.\n"]
-    # Le top 3 d'abord : il se publie aujourd'hui (samedi), avec le classement de la semaine qui se termine.
+    # Le top 3 d'abord : il se publie le samedi, avec le classement de la semaine qui se termine.
     if len(top) >= 2:
         name = f"00-{top_day.isoformat()}-top{len(top)}.mp4"
         shots = render.top_shots(top, proof, sub="Les plus copiés cette semaine.")
@@ -316,7 +316,7 @@ def main():
         visuels.save(story_img, os.path.join(a.out, f"{stem}-story.png"))
         vid_rows.append(video_stills(shots))
         vis_rows.append([story_img, wa_img])
-        md.append(block(f"{date_fr(top_day)} (aujourd'hui) — Top {len(top)} de la semaine", name, *texts_top(top),
+        md.append(block(f"{date_fr(top_day)} — Top {len(top)} de la semaine", name, *texts_top(top),
                         yt=texts_youtube_top(top), story=f"{stem}-story.png", wa_img=f"{stem}-whatsapp.png", link="backed.fr"))
         md.append(ranking_note(top, since))
     # Carrousel de la semaine : les codes du jour, à publier le dimanche (Instagram, et TikTok en mode photo)
@@ -350,8 +350,8 @@ def main():
         day = start + dt.timedelta(days=i)
         md.append(f"## {date_fr(day)} — pas de nouvelle vidéo\n\nPas assez d'offres valables toute la semaine : "
                   "republie la vidéo qui a le mieux marché, ou saute ce jour.\n")
-    md.append(f"## {date_fr(start + dt.timedelta(days=6))} — Top 3\n\nIl sera généré ce samedi-là à 8h, "
-              "avec les clics de la semaine : télécharge le zip de ce jour-là.\n")
+    md.append(f"## {date_fr(start + dt.timedelta(days=6))} — Top 3\n\nIl sera généré la veille au soir (vendredi), "
+              "avec les clics de la semaine : c'est le premier fichier du lot suivant.\n")
 
     with open(os.path.join(a.out, "publications.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(md))
