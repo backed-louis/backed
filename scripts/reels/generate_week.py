@@ -23,6 +23,7 @@ import render  # noqa: E402
 import visuels  # noqa: E402
 
 SIGN = " ".join(render.SIGNATURE)  # « Avant de payer, passe par Backed. »
+YOUTUBE = "youtube.com/@backed-fr"   # la chaîne YouTube de Backed
 SIGN_LINK = SIGN.rstrip(".")       # devant une flèche : « Avant de payer, passe par Backed → lien en bio »
 
 ACTIVE_NOT_EXPIRED = "AND({Status}=\"Active\", OR({End Date}=\"\", IS_AFTER({End Date}, DATEADD(TODAY(), -1, 'days'))))"
@@ -183,7 +184,8 @@ def texts_top(items):
     insta = (f"Les {len(items)} codes les plus copiés de la semaine 🔥\n\n{rich_insta}\n\n"
              f"Enregistre ce post. {SIGN_LINK} → lien en bio\n\n#codepromo #bonplan #youtube")
     wa = (f"🔥 Les {len(items)} codes les plus copiés sur Backed cette semaine\n\n{rich_wa}\n\n"
-          f"Copie le code, colle-le au paiement : tu paies moins et tu soutiens le créateur ⚡\n{SIGN_LINK} → backed.fr")
+          f"Copie le code, colle-le au paiement : tu paies moins et tu soutiens le créateur ⚡\n"
+          f"Le code du jour en vidéo sur YouTube → {YOUTUBE}\n{SIGN_LINK} → backed.fr")
     return tiktok, insta, wa, "10h"
 
 
