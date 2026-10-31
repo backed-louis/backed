@@ -189,7 +189,7 @@ def texts_top(items):
 
 def texts_youtube(o):
     """Titre (100 caractères max) et description du Short YouTube."""
-    gain = o["disc"] or render.first_clause(o.get("benefit") or "", 50).rstrip(" .…")
+    gain = o["disc"] or render.hook_gain(o.get("benefit") or "", 50).rstrip(" .…")
     title = f"Code promo {o['brand']}" + (f" : {gain}" if gain else "")
     if o["creator"] and len(title) + len(o["creator"]) + 14 <= 100:
         title += f" (code de {o['creator']})"
