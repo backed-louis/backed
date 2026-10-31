@@ -3,6 +3,7 @@ import { Inter, Syne } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import SaisonDecor from '@/components/SaisonDecor'
+import { SITE_URL, SOCIAL_URLS } from '@/lib/links'
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
@@ -47,10 +48,22 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
 }
+// Backed et ses comptes (YouTube, Instagram, TikTok, WhatsApp) : Google peut les relier au site.
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Backed',
+  url: SITE_URL,
+  logo: `${SITE_URL}/icon.png`,
+  description: 'Les codes promo de tes créateurs YouTube, au même endroit. Gratuit, sans compte.',
+  sameAs: SOCIAL_URLS,
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`${inter.variable} ${syne.variable}`}>
       <body style={{ fontFamily: 'var(--font-inter)' }}>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
         {children}
         <SaisonDecor />
         <Analytics />

@@ -1,7 +1,8 @@
 'use client'
 import Link from 'next/link'
 import { WhatsAppIcon } from '@/components/WhatsAppBanner'
-import { WHATSAPP_CHANNEL_URL } from '@/lib/links'
+import { WHATSAPP_CHANNEL_URL, YOUTUBE_URL } from '@/lib/links'
+import { YouTubeIcon } from '@/components/Footer'
 import { SaisonNote } from '@/components/Saison'
 import { SaisonHero } from '@/components/SaisonDecor'
 interface HeroProps {
@@ -123,19 +124,28 @@ export default function Hero({ offerCount, creatorCount }: HeroProps) {
             Voir les créateurs
           </Link>
         </div>
-        <a
-          href={WHATSAPP_CHANNEL_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            marginTop: 28, fontSize: 14, color: 'var(--text-2)',
-          }}
-        >
-          <span style={{ color: '#25D366', display: 'inline-flex' }}><WhatsAppIcon size={16} /></span>
-          1 code par jour sur WhatsApp
-          <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>Rejoindre →</span>
-        </a>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '12px 28px', marginTop: 28 }}>
+          <a
+            href={WHATSAPP_CHANNEL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--text-2)' }}
+          >
+            <span style={{ color: '#25D366', display: 'inline-flex' }}><WhatsAppIcon size={16} /></span>
+            1 code par jour sur WhatsApp
+            <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>Rejoindre →</span>
+          </a>
+          <a
+            href={YOUTUBE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--text-2)' }}
+          >
+            <span style={{ color: '#FF0033', display: 'inline-flex' }}><YouTubeIcon size={16} /></span>
+            Le code du jour en vidéo sur YouTube
+            <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>S&apos;abonner →</span>
+          </a>
+        </div>
       </div>
     </section>
   )

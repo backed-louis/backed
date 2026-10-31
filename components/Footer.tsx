@@ -1,4 +1,13 @@
 'use client'
+import { INSTAGRAM_URL, TIKTOK_URL, WHATSAPP_CHANNEL_URL, YOUTUBE_URL } from '@/lib/links'
+
+export function YouTubeIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 00.5 6.2 31.4 31.4 0 000 12a31.4 31.4 0 00.5 5.8 3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1A31.4 31.4 0 0024 12a31.4 31.4 0 00-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z" />
+    </svg>
+  )
+}
 
 function InstagramIcon() {
   return (
@@ -69,16 +78,19 @@ export default function Footer() {
               Backed
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-3)', maxWidth: 220, lineHeight: 1.7, marginBottom: 20 }}>
-              Backed. Paie le bon prix. Les codes promo de tes créateurs YouTube, au même endroit.
+              Avant de payer, passe par Backed. Les codes promo de tes créateurs YouTube, au même endroit.
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <a href="https://instagram.com/backedfr" target="_blank" rel="noopener noreferrer" aria-label="Instagram" style={socialStyle} onMouseEnter={handleSocialEnter} onMouseLeave={handleSocialLeave}>
+              <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" aria-label="YouTube" style={socialStyle} onMouseEnter={handleSocialEnter} onMouseLeave={handleSocialLeave}>
+                <YouTubeIcon />
+              </a>
+              <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" aria-label="Instagram" style={socialStyle} onMouseEnter={handleSocialEnter} onMouseLeave={handleSocialLeave}>
                 <InstagramIcon />
               </a>
-              <a href="https://tiktok.com/@backedfr" target="_blank" rel="noopener noreferrer" aria-label="TikTok" style={socialStyle} onMouseEnter={handleSocialEnter} onMouseLeave={handleSocialLeave}>
+              <a href={TIKTOK_URL} target="_blank" rel="noopener noreferrer" aria-label="TikTok" style={socialStyle} onMouseEnter={handleSocialEnter} onMouseLeave={handleSocialLeave}>
                 <TikTokIcon />
               </a>
-              <a href="https://whatsapp.com/channel/0029VbCzNIoGehEN4EMwe70h" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" style={socialStyle} onMouseEnter={handleSocialEnter} onMouseLeave={handleSocialLeave}>
+              <a href={WHATSAPP_CHANNEL_URL} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" style={socialStyle} onMouseEnter={handleSocialEnter} onMouseLeave={handleSocialLeave}>
                 <WhatsAppIcon />
               </a>
             </div>
