@@ -16,6 +16,10 @@ on:
         description: 'Premier jour de la semaine (AAAA-MM-JJ). Vide = prochain dimanche.'
         required: false
         default: ''
+      marques:
+        description: 'Lot spécial : marques imposées, séparées par des virgules, un jour chacune à partir du premier jour (pas de top 3 ni de carrousel). Vide = lot normal.'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -41,11 +45,14 @@ jobs:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
           START: ${{ github.event.inputs.start }}
+          MARQUES: ${{ github.event.inputs.marques }}
         run: |
-          if [ -n "$START" ]; then
-            python3 scripts/reels/generate_week.py --out out/semaine --preview out/apercu --start "$START"
+          ARGS="--out out/semaine --preview out/apercu"
+          [ -n "$START" ] && ARGS="$ARGS --start $START"
+          if [ -n "$MARQUES" ]; then
+            python3 scripts/reels/generate_week.py $ARGS --marques "$MARQUES"
           else
-            python3 scripts/reels/generate_week.py --out out/semaine --preview out/apercu
+            python3 scripts/reels/generate_week.py $ARGS
           fi
           cat out/semaine/publications.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload videos
@@ -55,6 +62,7 @@ jobs:
           path: out/semaine
           retention-days: 30
       - name: Garder l'aperçu dans le dépôt (branche semaine-apercu)
+        if: ${{ github.event.inputs.marques == '' || github.event.inputs.marques == null }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
@@ -67,14 +75,21 @@ jobs:
           git add -- *.jpg *.md *.txt
           git commit -qm "Aperçu du $(date -u +%F) (run ${{ github.run_number }})"
           git push -f origin semaine-apercu
-      - name: Garder tous les fichiers de la semaine (branche semaine-fichiers)
+      - name: Garder tous les fichiers de la semaine (branche semaine-fichiers, ou lot-special)
+        env:
+          MARQUES: ${{ github.event.inputs.marques }}
         run: |
           # Les vidéos et visuels complets, pour que Claude puisse les renvoyer sans le zip.
+          BRANCHE=semaine-fichiers
+          [ -n "$MARQUES" ] && BRANCHE=lot-special
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
           cp -r out/semaine /tmp/semaine
-          git checkout --orphan semaine-fichiers
+          git checkout --orphan $BRANCHE
           git rm -rfq --cached .
           git clean -fdq -e out
           cp -r /tmp/semaine/* .
-          git add -- *.mp4 *.png *.md carrousel
-          git commit -qm "Fichiers de la semaine du $(date -u +%F) (run ${{ github.run_number }})"
-          git push -f origin semaine-fichiers
+          git add -- *.mp4 *.png *.md
+          [ -d carrousel ] && git add -- carrousel
+          git commit -qm "Fichiers du $(date -u +%F) (run ${{ github.run_number }})"
+          git push -f origin $BRANCHE

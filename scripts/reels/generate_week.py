@@ -13,6 +13,7 @@ import argparse
 import datetime as dt
 import json
 import os
+import re
 import sys
 import urllib.parse
 import urllib.request
@@ -90,7 +91,11 @@ def click_stats(data, today):
 
 
 # ------------------------------------------------------------------ sélection
-def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None):
+SHIPPING = re.compile(r"(\d{1,2})\s?%[^.,;]*?(livraison|frais de port)", re.I)
+
+
+def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None):
+    """`only` : liste de marques imposées (dans cet ordre) pour les codes du jour ; pas de top 3."""
     week, total, since = click_stats(data, today)
     brands = {r["id"]: r["fields"] for r in data["brands"]}
     creators = {r["id"]: r["fields"].get("Name", "") for r in data["creators"]}
@@ -105,8 +110,13 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None):
         end = str(f.get("End Date") or "")
         benefit = str(f.get("Benefit") or "").strip()
         pct = render.percent_of(benefit)
+        # « -15 % sur la livraison » : la remise porte sur les frais de port, pas sur la commande.
+        ship = SHIPPING.search(benefit)
+        gain = f"-{ship.group(1)} % sur la livraison" if ship else ""
+        if ship:
+            pct = None
         offers.append({
-            "brand": name, "slug": slug, "code": code, "benefit": benefit, "pct": pct,
+            "brand": name, "slug": slug, "code": code, "benefit": benefit, "pct": pct, "gain": gain,
             "website": b.get("Website") or "", "logo_urls": logos.airtable_urls(b.get("Logo")),
             "disc": f"-{pct} %" if pct else "", "detail": benefit,
             "creator": creators.get((f.get("Creator") or [None])[0], ""),
@@ -125,6 +135,11 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None):
                 unique.append(o)
         return unique[:n]
 
+    if only:
+        wanted = [m.strip().lower() for m in only if m.strip()]
+        daily = [next(o for o in offers if o["brand"].lower() == m) for m in wanted
+                 if any(o["brand"].lower() == m for o in offers)]
+        return daily, [], len(data["offers"]), len(creators), since
     # Codes du jour : l'offre doit tenir jusqu'à la fin de la semaine. Top 3 : publié le jour même.
     daily = one_per_brand([o for o in offers if not (o["end"] and valid_until and o["end"] < valid_until)], n_daily)
     top = one_per_brand(offers, n_top)
@@ -150,12 +165,13 @@ def texts_offer(o, weekday):
     url = f"backed.fr/marque/{o['slug']}"
     # Les captions commencent par « Code promo <marque> » : c'est ce que les gens tapent dans la
     # recherche TikTok / Instagram (premier visiteur venu de la recherche : « code promo betclic »).
-    accroche = f"Code promo {o['brand']} : -{o['pct']} %." if o["pct"] else f"Code promo {o['brand']}."
+    accroche = (f"Code promo {o['brand']} : -{o['pct']} %." if o["pct"] else
+                f"Code promo {o['brand']} : {o['gain']}." if o.get("gain") else f"Code promo {o['brand']}.")
     via = f"le code de {o['creator']}" if o["creator"] else f"chez {o['brand']}"
     tags = f"#codepromo #codepromo{tag(o['brand'])[1:]} {tag(o['brand'])}" + (f" {tag(o['creator'])}" if o["creator"] else "") + " #bonplan"
     # Avantage en clair, jamais coupé au milieu : s'il ne tient pas, la caption reste « Code promo <marque>. »
     gain = render.first_clause(o.get("benefit") or "", 60).rstrip(" .")
-    accroche_tt = accroche if o["pct"] or not gain or gain.endswith("…") else f"Code promo {o['brand']} : {gain}."
+    accroche_tt = accroche if o["pct"] or o.get("gain") or not gain or gain.endswith("…") else f"Code promo {o['brand']} : {gain}."
     tiktok = f"{accroche_tt} ⚡\nCode {o['code']}, {via}.\n{SIGN_LINK} → backed.fr\n\n{tags}"
     insta = (f"{accroche} ⚡\n{render.short(o['benefit'], 120)}\nCode {o['code']}"
              + (f", partagé par {o['creator']}" if o["creator"] else "")
@@ -189,7 +205,7 @@ def texts_top(items):
 
 def texts_youtube(o):
     """Titre (100 caractères max) et description du Short YouTube."""
-    gain = o["disc"] or render.hook_gain(o.get("benefit") or "", 50).rstrip(" .…")
+    gain = o["disc"] or o.get("gain") or render.hook_gain(o.get("benefit") or "", 50).rstrip(" .…")
     title = f"Code promo {o['brand']}" + (f" : {gain}" if gain else "")
     if o["creator"] and len(title) + len(o["creator"]) + 14 <= 100:
         title += f" (code de {o['creator']})"
@@ -278,13 +294,16 @@ def main():
     ap.add_argument("--no-video", action="store_true", help="Ne génère que publications.md")
     ap.add_argument("--preview", help="Dossier où écrire un aperçu léger (planches JPEG + publications.md)")
     ap.add_argument("--no-logo", action="store_true", help="Ne télécharge pas les logos des marques")
+    ap.add_argument("--marques", help="Marques imposées, séparées par des virgules, un jour chacune à partir de --start "
+                                      "(lot spécial : pas de top 3 ni de carrousel)")
     a = ap.parse_args()
 
     data = json.load(open(a.fixture, encoding="utf-8")) if a.fixture else load_from_airtable()
     start = dt.date.fromisoformat(a.start) if a.start else next_sunday(dt.date.today())
     week_end = (start + dt.timedelta(days=5)).isoformat()  # vendredi : dernier « Code du jour »
     top_day = start - dt.timedelta(days=1)  # le samedi (le lendemain du vendredi où le script tourne)
-    daily, top, n_offers, n_creators, since = pick_offers(data, dt.date.today(), valid_until=week_end)
+    only = a.marques.split(",") if a.marques else None
+    daily, top, n_offers, n_creators, since = pick_offers(data, dt.date.today(), valid_until=week_end, only=only)
     if not daily:
         sys.exit("Aucune offre active avec code et marque : rien à générer.")
     # Pas de chiffre qui bouge chaque jour dans les vidéos : elles sont générées le vendredi pour toute la semaine.
@@ -320,16 +339,17 @@ def main():
                         yt=texts_youtube_top(top), story=f"{stem}-story.png", wa_img=f"{stem}-whatsapp.png", link="backed.fr"))
         md.append(ranking_note(top, since))
     # Carrousel de la semaine : les codes du jour, à publier le dimanche (Instagram, et TikTok en mode photo)
-    period = period_fr(start, start + dt.timedelta(days=max(0, len(daily) - 1)))
-    slides = visuels.week_carousel(daily, period)
-    os.makedirs(os.path.join(a.out, "carrousel"), exist_ok=True)
-    for k, im in enumerate(slides):
-        visuels.save(im, os.path.join(a.out, "carrousel", f"{k + 1:02d}.png"))
-    vis_rows.append(slides[:4])
-    vis_rows.append(slides[4:])
-    md.append(f"## {date_fr(start)} à 11h — Carrousel de la semaine\n\n"
-              f"Images : dossier `carrousel/` ({len(slides)} images, dans l'ordre) — post Instagram, et TikTok en mode photo.\n\n"
-              f"**Légende**\n```\n{texts_carousel(daily, period)}\n```\n")
+    if not only:
+        period = period_fr(start, start + dt.timedelta(days=max(0, len(daily) - 1)))
+        slides = visuels.week_carousel(daily, period)
+        os.makedirs(os.path.join(a.out, "carrousel"), exist_ok=True)
+        for k, im in enumerate(slides):
+            visuels.save(im, os.path.join(a.out, "carrousel", f"{k + 1:02d}.png"))
+        vis_rows.append(slides[:4])
+        vis_rows.append(slides[4:])
+        md.append(f"## {date_fr(start)} à 11h — Carrousel de la semaine\n\n"
+                  f"Images : dossier `carrousel/` ({len(slides)} images, dans l'ordre) — post Instagram, et TikTok en mode photo.\n\n"
+                  f"**Légende**\n```\n{texts_carousel(daily, period)}\n```\n")
     for i, o in enumerate(daily):
         day = start + dt.timedelta(days=i)
         stem = f"{i + 1:02d}-{day.isoformat()}-{o['slug']}"
@@ -346,12 +366,13 @@ def main():
         vis_rows.append([story_img, wa_img])
         md.append(block(f"{date_fr(day)} — {o['brand']}", name, *texts_offer(o, day.weekday()), yt=texts_youtube(o),
                         story=f"{stem}-story.png", wa_img=f"{stem}-whatsapp.png", link=f"backed.fr/marque/{o['slug']}"))
-    for i in range(len(daily), 6):  # pas assez d'offres valables toute la semaine
+    for i in range(len(daily), 0 if only else 6):  # pas assez d'offres valables toute la semaine
         day = start + dt.timedelta(days=i)
         md.append(f"## {date_fr(day)} — pas de nouvelle vidéo\n\nPas assez d'offres valables toute la semaine : "
                   "republie la vidéo qui a le mieux marché, ou saute ce jour.\n")
-    md.append(f"## {date_fr(start + dt.timedelta(days=6))} — Top 3\n\nIl sera généré la veille au soir (vendredi), "
-              "avec les clics de la semaine : c'est le premier fichier du lot suivant.\n")
+    if not only:
+        md.append(f"## {date_fr(start + dt.timedelta(days=6))} — Top 3\n\nIl sera généré la veille au soir (vendredi), "
+                  "avec les clics de la semaine : c'est le premier fichier du lot suivant.\n")
 
     with open(os.path.join(a.out, "publications.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(md))
