@@ -409,7 +409,8 @@ def s_hook(o):
         who = ["Le code", f"d'{c}" if c[:1].lower() in "aeiouyhéèêàâîôû" else f"de {c}"]
     else:
         who = ["Code promo", o["brand"]]
-    gain = f"{o['disc']} chez {o['brand']}" if o.get("disc") else hook_gain(o.get("benefit") or o["brand"])
+    gain = (f"{o['disc']} chez {o['brand']}" if o.get("disc") else
+            o.get("gain") or hook_gain(o.get("benefit") or o["brand"]))
 
     def two_lines(d, text):
         """Coupe un texte en deux lignes les plus égales possible (None s'il n'a qu'un mot)."""

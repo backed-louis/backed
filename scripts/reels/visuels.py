@@ -105,7 +105,7 @@ def signature(d, cx, yc, size, maxw):
 
 def gain_of(o):
     """Ce que le code fait gagner : la remise (« -15 % ») ou la 1re proposition de l'offre."""
-    return o.get("disc") or first_clause(o.get("benefit") or "", 60).rstrip(" .")
+    return o.get("disc") or o.get("gain") or first_clause(o.get("benefit") or "", 60).rstrip(" .")
 
 
 def offer_block(img, d, o, y, cx, w, T=200, s=1.0, detail=True):
