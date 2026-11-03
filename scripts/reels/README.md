@@ -45,7 +45,7 @@ Pour lancer à la main : **Actions → Vidéos de la semaine → Run workflow**
 - Aucun compteur (nombre de codes, de créateurs) dans les vidéos, puisqu'elles sont préparées pour toute la semaine.
 - Vidéos premium (depuis novembre 2026), dans le style du motion « Le réflexe Backed » : pages HTML
   `scripts/motion/code_du_jour.html` et `top3.html`, rendues image par image dans Chromium (`scripts/motion/moteur.py`).
-  Code du jour (~9,7 s) : accroche (logo, créateur, gain), la carte de l'offre arrive en 3D et le code est copié,
+  Code du jour (~9,7 s) : accroche (« Code du jour » + logo et marque, puis une carte premium en 3D avec l'avantage et le code à moitié masqué), la carte de l'offre arrive en 3D et le code est copié,
   le code s'envole et se colle au paiement (« Tu paies moins. Et tu soutiens <créateur>. »), fin Backed.
   Top 3 (~8,7 s) : « 3 codes à garder » avec les logos, les trois codes arrivent en 3D, fin Backed.
   Tout reste dans la zone que l'interface TikTok / Reels ne recouvre pas. `--classique` : anciennes vidéos (Pillow).

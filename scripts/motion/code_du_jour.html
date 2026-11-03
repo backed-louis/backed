@@ -1,17 +1,33 @@
-<!-- Vidéo premium « Code du jour » : 1080×1920, ~9,7 s. Accroche (logo, créateur, gain), la carte de l'offre
+<!-- Vidéo premium « Code du jour » : 1080×1920, ~9,7 s. Accroche (« Code du jour » + logo et marque, puis une carte
+     premium en 3D avec l'avantage et le code à moitié masqué), la carte de l'offre
      sort en 3D et le code est copié, le code s'envole et se colle au paiement, fin Backed.
      moteur.py injecte les polices (FONTS), le style et les outils communs (COMMUN_CSS, COMMUN_JS) et l'offre (DATA). -->
 <meta charset="utf-8">
 <style>
 /*FONTS*/
 /*COMMUN_CSS*/
-#head { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 30px; }
-#head .lab { font: 700 26px var(--mono); letter-spacing: .3em; color: var(--lilas); white-space: nowrap; }
-#head .br { font-family: var(--syne); font-weight: 800; letter-spacing: -.01em; white-space: nowrap; margin-top: 6px; }
-#gain { color: var(--lilas); line-height: 1.04; }
-#sub { position: absolute; left: 0; width: 1040px; text-align: center; font: 600 38px var(--inter); color: #a6a9bc; line-height: 1.32; }
-#uline { position: absolute; height: 12px; border-radius: 6px; background: var(--vio); }
-#arrow { position: absolute; left: 0; top: 1268px; width: 1040px; text-align: center; font: 700 46px var(--inter); }
+/* accroche : en-tête, puis la carte premium (avantage + code à moitié masqué) */
+#head { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 24px; }
+#head .lab { font: 700 24px var(--mono); letter-spacing: .34em; color: var(--lilas); white-space: nowrap; }
+#head .br { font-family: var(--syne); font-weight: 800; letter-spacing: -.01em; white-space: nowrap; margin-top: 4px; }
+#hstage { position: absolute; inset: 0; perspective: 1900px; }
+#hcard { position: absolute; left: 120px; width: 800px; border-radius: 48px; overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 80% at 92% 0%, rgba(178,102,255,.55), rgba(139,0,255,0) 60%),
+    radial-gradient(ellipse 60% 70% at 0% 100%, rgba(80,30,160,.5), rgba(80,30,160,0) 65%),
+    repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0 2px, rgba(255,255,255,0) 2px 9px),
+    linear-gradient(135deg, #1e1238 0%, #120d22 45%, #0b0b14 100%);
+  box-shadow: 0 0 0 1.5px rgba(200,160,255,.45) inset, 0 70px 130px rgba(0,0,0,.7), 0 0 160px rgba(139,0,255,.38); }
+#hshine { position: absolute; top: -60%; width: 220px; height: 220%; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.2), rgba(255,255,255,0)); transform: rotate(20deg); }
+#hhero { position: absolute; left: 54px; top: 50px; display: flex; align-items: flex-start; white-space: nowrap; }
+#hhero .n { font-family: var(--syne); font-weight: 800; letter-spacing: -.05em; line-height: .9; padding: 0 .02em .06em 0; }
+#hhero .u { font-family: var(--syne); font-weight: 800; line-height: 1; margin-left: .04em; }
+#hhero .txt { font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; line-height: 1.04; padding-bottom: .05em; }
+#hrest { position: absolute; left: 56px; width: 692px; font: 600 40px var(--inter); color: #d6d3e4; line-height: 1.25; }
+#hchip { position: absolute; right: 50px; bottom: 50px; padding: 14px 22px; border-radius: 16px; font: 700 30px var(--mono); letter-spacing: .1em;
+  background: rgba(0,0,0,.38); border: 1.5px solid rgba(200,160,255,.5); color: var(--off); white-space: nowrap; }
+#hchip i { font-style: normal; color: var(--lilas); letter-spacing: .04em; }
+#hfloor { position: absolute; left: 170px; width: 700px; height: 120px; border-radius: 50%; background: radial-gradient(ellipse, rgba(139,0,255,.5), rgba(139,0,255,0) 70%); filter: blur(20px); }
 #pop { left: 0; top: 0; transform-origin: 0 0; box-shadow: 0 50px 110px rgba(0,0,0,.6), 0 0 90px rgba(139,0,255,.35); }
 #ck { position: absolute; left: 140px; top: 470px; width: 760px; border-radius: 40px; transform-origin: 380px 220px;
   background: linear-gradient(160deg, #1a1b28, #101119); border: 1.5px solid #34364a; padding: 40px 46px 42px;
@@ -31,10 +47,8 @@
 <div id="frame">
   <div id="hook">
     <div id="head"></div>
-    <div class="line" id="l1"></div><div class="line" id="l2"></div>
-    <div class="line" id="gain"></div><div class="line" id="gain2" style="color:var(--lilas)"></div>
-    <div id="sub"></div><div id="uline"></div>
-    <div id="arrow">Le code arrive ↓</div>
+    <div id="hfloor"></div>
+    <div id="hstage"><div id="hcard"><div id="hshine"></div><div id="hhero"></div><div id="hrest"></div><div id="hchip"></div></div></div>
   </div>
   <div class="st" id="st2"><div class="n" id="st2n"></div><div class="t">Le code à copier</div></div>
   <div class="st" id="st3"><div class="n">AU PAIEMENT</div><div class="t">Colle-le, c'est appliqué</div></div>
@@ -58,7 +72,7 @@ window.DATA = /*DATA*/{
 /*COMMUN_JS*/
 
 const D = window.DATA;
-const T = { hookOut: 1.45, cardIn: 1.6, st2: 1.75, tap: 2.85, lift: 3.0, recede: 3.1, exit: 3.65, ckIn: 3.75, st3: 3.9,
+const T = { hookOut: 1.35, cardIn: 1.6, st2: 1.75, tap: 2.85, lift: 3.0, recede: 3.1, exit: 3.65, ckIn: 3.75, st3: 3.9,
             dive: 4.25, land: 4.7, apply: 4.8, res: 4.9, msg: 5.05, ckOut: 5.95, flash: 6.05, outro: 6.3, end: 9.7 };
 window.DUREE = T.end; window.CUTS = [0, T.cardIn, T.ckIn, T.outro, T.end]; window.OUTRO_T = T.outro; window.CLICKS = [T.tap, T.land];
 const L = {};
@@ -79,35 +93,56 @@ function balanced(el, text, maxw, max) {
   return best[1];
 }
 
+// « -15 % sur la livraison » → { hero: "−15 %", rest: "sur la livraison" } ; sans chiffre en tête : { hero: "", rest: phrase }
+function gainParts() {
+  const src = (D.gainBig ? (D.avantage || D.gainBig) : (D.gainText || D.avantage || D.marque)).replace(/\s*\([^)]*\)/g, "").trim();
+  const m = src.match(/^([-−]?\s?\d+(?:[.,]\d+)?\s?%|[-−]\s?\d+(?:[.,]\d+)?\s?€|\d+(?:[.,]\d+)?\s?€)\s*(.*)$/i);
+  const nb = h => { h = h.replace(/\s+/g, ""); if (/%$/.test(h) && !/^[-−]/.test(h)) h = "−" + h;
+    return h.replace(/^-/, "−").replace(/([%€])$/, "\u202f$1"); };
+  const tidy = r => r.replace(/^(de\s+)?(réduction|remise|réduc)\s*/i, "").replace(/[ .]+$/, "");
+  if (m) return { hero: nb(m[1]), rest: tidy(m[2]) };
+  if (D.gainBig) return { hero: nb(D.gainBig), rest: src.length <= 60 ? tidy(src) : "" };
+  return { hero: "", rest: src };
+}
+
 function setup() {
   // en-tête : logo, « CODE DU JOUR », marque
-  $("head").innerHTML = `${tileHTML(D.logo, D.marque, 150, D.logoStyle)}<div><div class="lab">CODE DU JOUR</div><div class="br" id="hbr">${esc(D.marque)}</div></div>`;
-  $("hbr").style.fontSize = fitSize($("hbr"), 560, 70) + "px";
-  const hw = $("head").offsetWidth;
-  $("head").style.left = (CX - hw / 2) + "px"; $("head").style.top = (400 - 75) + "px";
-  // accroche : le créateur, puis le gain
-  const who = D.createur ? ["Le code", de(D.createur)] : ["Code promo", D.marque];
-  $("l1").textContent = who[0]; $("l2").textContent = who[1];
-  const s = Math.min(fitSize($("l1"), 790, 124), fitSize($("l2"), 790, 124));
-  let gl, gs;
-  if (D.gainBig) { $("gain").textContent = D.gainBig; gs = fitSize($("gain"), 790, 230); gl = [D.gainBig]; }
-  else { gl = balanced($("gain"), D.gainText || D.marque, 790, 104); gs = Math.min(...gl.map(x => { $("gain").textContent = x; return fitSize($("gain"), 790, 104); })); }
-  const subTxt = D.gainBig ? (D.avantage || "") : "";
-  $("sub").textContent = subTxt;
-  const subH = subTxt ? Math.min(2, Math.ceil(textWidth($("sub")) / 760)) * 50 : 0;
-  if (subTxt) { $("sub").style.width = "760px"; $("sub").style.left = (CX - 380) + "px"; }
-  const H = 2 * s * 1.06 + 44 + gl.length * gs * 1.04 + (subH ? 30 + subH : 0);
-  let y = 540 + Math.max(0, (1235 - 540 - H) / 2);
-  [["l1", s], ["l2", s]].forEach(([id, sz]) => { $(id).style.fontSize = sz + "px"; $(id).style.lineHeight = "1.06"; $(id).style.top = y + "px"; y += sz * 1.06; });
-  y += 44;
-  L.gainTop = y;
-  $("gain").textContent = gl[0]; $("gain").style.fontSize = gs + "px"; $("gain").style.top = y + "px"; y += gs * 1.04;
-  if (gl[1]) { $("gain2").textContent = gl[1]; $("gain2").style.fontSize = gs + "px"; $("gain2").style.top = y + "px"; $("gain2").style.lineHeight = "1.04"; y += gs * 1.04; }
-  L.gainBottom = y;
-  L.gw = Math.max(...gl.map(x => { $("gain").textContent = x; $("gain").style.fontSize = gs + "px"; return textWidth($("gain")); }));
-  $("gain").textContent = gl[0];
-  if (subTxt) $("sub").style.top = (y + 30) + "px";
-  L.w1 = words($("l1"), who[0]); L.w2 = words($("l2"), who[1]);
+  $("head").innerHTML = `${tileHTML(D.logo, D.marque, 112, D.logoStyle)}<div><div class="lab">CODE DU JOUR</div><div class="br" id="hbr">${esc(D.marque)}</div></div>`;
+  $("hbr").style.fontSize = Math.min(58, fitSize($("hbr"), 620, 58)) + "px";
+  $("head").style.left = (CX - $("head").offsetWidth / 2) + "px";
+  // la carte : l'avantage (« −15 % » en grand + « sur la livraison », ou la phrase en grand) et le code à moitié masqué
+  const g = gainParts(), PAD = 52, W = 692;
+  let y = PAD;
+  if (g.hero) {
+    const m = g.hero.match(/^(.*?)\s*([%€])$/) || [0, g.hero, ""];
+    $("hhero").innerHTML = `<span class="n grad">${esc(m[1])}</span>${m[2] ? `<span class="u grad"${m[2] === "€" ? ' style="font-family:var(--inter)"' : ""}>${m[2]}</span>` : ""}`;
+    const n = $("hhero").querySelector(".n"), u = $("hhero").querySelector(".u");
+    const size = (sz) => { n.style.fontSize = sz + "px"; if (u) { u.style.fontSize = sz * .46 + "px"; u.style.marginTop = sz * .1 + "px"; } return $("hhero").getBoundingClientRect().width; };
+    const hs = Math.min(250, 100 * 640 / size(100)); size(hs);
+    y += hs * .96;
+    if (g.rest) {
+      $("hrest").textContent = g.rest;
+      let rs = 40; $("hrest").style.fontSize = rs + "px";
+      while ($("hrest").offsetHeight > rs * 1.25 * 2 + 2 && rs > 28) { rs -= 2; $("hrest").style.fontSize = rs + "px"; }
+      y += 10; $("hrest").style.top = y + "px"; y += $("hrest").offsetHeight;
+    }
+  } else {
+    $("hhero").innerHTML = `<span class="txt grad"></span>`; const el = $("hhero").firstChild;
+    const ls = balanced(el, g.rest, W, 116);
+    const hs = Math.min(116, ...ls.map(x => { el.textContent = x; return fitSize(el, W, 116); }));
+    el.innerHTML = ls.map(esc).join("<br>"); el.style.fontSize = hs + "px";
+    y += ls.length * hs * 1.04;
+  }
+  const c = D.code, vis = Math.min(c.length, Math.max(2, Math.ceil(c.length / 2)));
+  $("hchip").innerHTML = `${esc(c.slice(0, vis))}<i>${"•".repeat(Math.min(7, c.length - vis))}</i>`;
+  const cardH = Math.round(y + 40 + $("hchip").offsetHeight + 50);
+  $("hcard").style.height = cardH + "px"; $("hcard").style.transformOrigin = `400px ${cardH / 2}px`;
+  // en-tête + carte centrés ensemble dans la zone sûre
+  const HEAD = 112, GAP = 92, top = Math.round(300 + Math.max(0, (1060 - HEAD - GAP - cardH) / 2) - 20);
+  $("head").style.top = top + "px";
+  const ct = top + HEAD + GAP;
+  $("hcard").style.top = ct + "px"; $("hstage").style.perspectiveOrigin = `520px ${ct + cardH / 2}px`;
+  $("hfloor").style.top = (ct + cardH + 10) + "px";
   // carte, code, paiement
   $("pop").innerHTML = cardHTML(D);
   $("st2n").textContent = D.createur ? `PARTAGÉ PAR ${D.createur.toUpperCase()}` : `CODE ${D.marque.toUpperCase()}`;
@@ -147,31 +182,20 @@ function measure() {
 function render(t) {
   renderBackground(t, t > T.outro ? .95 : .6);
 
-  // ---------- accroche (lisible dès la 1re image)
-  const hookOn = t < T.hookOut + .4;
+  // ---------- accroche (lisible dès la 1re image) : la carte flotte en 3D, un reflet la traverse, puis elle part
+  const hookOn = t < T.hookOut + .45;
   show($("hook"), hookOn);
   if (hookOn) {
-    const out = (i) => eio(prog(t, T.hookOut + i * .05, .3));
-    const hp = eo(prog(t, 0, .5));
-    $("head").style.transform = `translateY(${-out(0) * 140}px) scale(${1.04 - .04 * hp})`;
-    $("head").style.opacity = 1 - out(0); blur($("head"), out(0) * 10);
-    const rise = (spans, start) => spans.forEach((sp, i) => { sp.style.transform = `translateY(${(1 - expo(prog(t, start + i * .06, .45))) * 112}%)`; });
-    rise(L.w1, -.32); rise(L.w2, -.2);   // déjà presque en place sur la 1re image
-    ["l1", "l2"].forEach((id, i) => { const q = out(i + 1); $(id).style.opacity = 1 - q; $(id).style.transform = `translateY(${-q * 150}px)`; blur($(id), q * 12); });
-    const pg = prog(t, -.3, .5);   // net dès la 1re image
-    ["gain", "gain2", "sub"].forEach((id, i) => {
-      const q = out(3 + i);
-      const base = id === "sub" ? eo(prog(t, .2, .4)) : eo(pg);
-      $(id).style.opacity = base * (1 - q);
-      const sc = id === "sub" ? 1 : 1.18 - .18 * eo5(pg);
-      $(id).style.transform = `translateY(${-q * 150}px) scale(${sc})`;
-      $(id).style.transformOrigin = "520px 50%";
-      blur($(id), (id === "sub" ? 0 : (1 - eo(pg)) * 14) + q * 12);
-      if (id !== "sub") $(id).style.textShadow = `0 0 ${44 + 24 * Math.sin(t * 5)}px rgba(139,0,255,${.6 * eo(pg)})`;
-    });
-    const u = eo(prog(t, .25, .45)), uq = out(3);
-    $("uline").style.cssText = `left:${CX - L.gw / 2}px;top:${L.gainBottom + 4}px;width:${L.gw * u}px;opacity:${(1 - uq) * (u > 0 ? 1 : 0)};${D.gainBig && D.avantage ? `top:${L.gainBottom - 2}px;` : ""}`;
-    $("arrow").style.opacity = (.55 + .45 * Math.abs(Math.sin(t * 4))) * (1 - out(5)) * eo(prog(t, .2, .3));
+    const q = eio(prog(t, T.hookOut, .4)), s0 = eo(prog(t, -.25, .5));
+    $("head").style.opacity = (.75 + .25 * s0) * (1 - q);
+    $("head").style.transform = `translateY(${(1 - s0) * 16 - q * 120}px)`; blur($("head"), q * 10);
+    const f = eo(prog(t, -.25, 1.7));
+    const ry = -16 + 12 * f + Math.sin(t * 1.3) * 1.2, rx = 12 - 7 * f, rz = -2.5 + 2 * f;
+    $("hcard").style.transform = `translateY(${Math.sin(t * 1.8) * 6 - q * 140}px) rotateX(${rx - q * 50}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${1 + q * .25})`;
+    $("hcard").style.opacity = 1 - q; blur($("hcard"), q * 12);
+    $("hshine").style.left = (-300 + 1450 * eio(prog(t, .1, 1.15))) + "px";
+    $("hhero").querySelectorAll(".grad").forEach(el => sweep(el, t, .25, 1.0));
+    $("hfloor").style.opacity = (.85 + .15 * Math.sin(t * 2)) * (1 - q);
   }
 
   // ---------- titres d'étape
