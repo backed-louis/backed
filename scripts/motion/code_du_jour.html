@@ -1,0 +1,248 @@
+<!-- Vidéo premium « Code du jour » : 1080×1920, ~9,7 s. Accroche (logo, créateur, gain), la carte de l'offre
+     sort en 3D et le code est copié, le code s'envole et se colle au paiement, fin Backed.
+     moteur.py injecte les polices (FONTS), le style et les outils communs (COMMUN_CSS, COMMUN_JS) et l'offre (DATA). -->
+<meta charset="utf-8">
+<style>
+/*FONTS*/
+/*COMMUN_CSS*/
+#head { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 30px; }
+#head .lab { font: 700 26px var(--mono); letter-spacing: .3em; color: var(--lilas); white-space: nowrap; }
+#head .br { font-family: var(--syne); font-weight: 800; letter-spacing: -.01em; white-space: nowrap; margin-top: 6px; }
+#gain { color: var(--lilas); line-height: 1.04; }
+#sub { position: absolute; left: 0; width: 1040px; text-align: center; font: 600 38px var(--inter); color: #a6a9bc; line-height: 1.32; }
+#uline { position: absolute; height: 12px; border-radius: 6px; background: var(--vio); }
+#arrow { position: absolute; left: 0; top: 1268px; width: 1040px; text-align: center; font: 700 46px var(--inter); }
+#pop { left: 0; top: 0; transform-origin: 0 0; box-shadow: 0 50px 110px rgba(0,0,0,.6), 0 0 90px rgba(139,0,255,.35); }
+#ck { position: absolute; left: 140px; top: 470px; width: 760px; border-radius: 40px; transform-origin: 380px 220px;
+  background: linear-gradient(160deg, #1a1b28, #101119); border: 1.5px solid #34364a; padding: 40px 46px 42px;
+  box-shadow: 0 60px 120px rgba(0,0,0,.6), 0 0 120px rgba(139,0,255,.18); display: none; }
+#ck .k { font: 700 22px var(--mono); letter-spacing: .26em; color: var(--grey); white-space: nowrap; overflow: hidden; }
+#ck .row { display: flex; align-items: center; justify-content: space-between; margin-top: 26px; }
+#field { flex: 1; height: 86px; border-radius: 18px; background: var(--night); border: 2px solid var(--line); position: relative; margin-right: 16px; }
+#field .ph { position: absolute; left: 26px; top: 25px; font: 500 27px var(--inter); color: #5c5f75; }
+#field .tx { position: absolute; left: 26px; top: 23px; font: 700 30px var(--mono); letter-spacing: .08em; color: var(--off); white-space: nowrap; }
+#apply { width: 196px; height: 86px; border-radius: 18px; background: var(--vio); display: flex; align-items: center; justify-content: center; font: 700 27px var(--inter); position: relative; overflow: hidden; }
+#apply .ok { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--green); font-size: 36px; opacity: 0; }
+#res { color: var(--green2); font: 700 30px var(--inter); overflow: hidden; }
+#resv { font-family: var(--syne); font-weight: 800; font-size: 46px; }
+.msg { position: absolute; left: 0; width: 1040px; text-align: center; font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; white-space: nowrap; opacity: 0; }
+</style>
+
+<div id="frame">
+  <div id="hook">
+    <div id="head"></div>
+    <div class="line" id="l1"></div><div class="line" id="l2"></div>
+    <div class="line" id="gain"></div><div class="line" id="gain2" style="color:var(--lilas)"></div>
+    <div id="sub"></div><div id="uline"></div>
+    <div id="arrow">Le code arrive ↓</div>
+  </div>
+  <div class="st" id="st2"><div class="n" id="st2n"></div><div class="t">Le code à copier</div></div>
+  <div class="st" id="st3"><div class="n">AU PAIEMENT</div><div class="t">Colle-le, c'est appliqué</div></div>
+  <div class="card" id="pop"></div>
+  <div id="ck">
+    <div class="k" id="ckk"></div>
+    <div class="row"><div id="field"><div class="ph" id="fph">Code promo</div><div class="tx" id="ftx"></div></div><div id="apply">Appliquer<div class="ok" id="applyok">✓</div></div></div>
+    <div class="row" id="res"><span>✓ Code appliqué</span><span id="resv"></span></div>
+  </div>
+  <div class="msg" id="msg1">Tu paies moins.</div><div class="msg" id="msg2" style="color:var(--lilas)"></div>
+  <div id="fly"></div>
+  <div id="ripple"></div><div id="finger"></div>
+  <div id="outro"></div>
+</div>
+
+<script>
+window.DATA = /*DATA*/{
+  marque: "Delko", code: "SYLVAIN15", createur: "Sylvain Lyve", avantage: "-15 % sur l'entretien de votre voiture",
+  gainBig: "-15 %", gainText: "", logo: null, logoStyle: "pad", remise: 15
+}/*END*/;
+/*COMMUN_JS*/
+
+const D = window.DATA;
+const T = { hookOut: 1.45, cardIn: 1.6, st2: 1.75, tap: 2.85, lift: 3.0, recede: 3.1, exit: 3.65, ckIn: 3.75, st3: 3.9,
+            dive: 4.25, land: 4.7, apply: 4.8, res: 4.9, msg: 5.05, ckOut: 5.95, flash: 6.05, outro: 6.3, end: 9.7 };
+window.DUREE = T.end; window.CUTS = [0, T.cardIn, T.ckIn, T.outro, T.end]; window.OUTRO_T = T.outro; window.CLICKS = [T.tap, T.land];
+const L = {};
+const POP_S = 1.62, POP_CY = 880;
+
+function balanced(el, text, maxw, max) {
+  // une ligne si elle tient assez grande, sinon deux lignes les plus égales possible
+  el.textContent = text; const one = fitSize(el, maxw, max);
+  const ws = text.split(" ");
+  if (one >= max * .72 || ws.length < 2) return [text];
+  let best = null;
+  for (let k = 1; k < ws.length; k++) {
+    const a = ws.slice(0, k).join(" "), b = ws.slice(k).join(" ");
+    el.textContent = a; const wa = textWidth(el); el.textContent = b; const wb = textWidth(el);
+    const m = Math.max(wa, wb);
+    if (!best || m < best[0]) best = [m, [a, b]];
+  }
+  return best[1];
+}
+
+function setup() {
+  // en-tête : logo, « CODE DU JOUR », marque
+  $("head").innerHTML = `${tileHTML(D.logo, D.marque, 150, D.logoStyle)}<div><div class="lab">CODE DU JOUR</div><div class="br" id="hbr">${esc(D.marque)}</div></div>`;
+  $("hbr").style.fontSize = fitSize($("hbr"), 560, 70) + "px";
+  const hw = $("head").offsetWidth;
+  $("head").style.left = (CX - hw / 2) + "px"; $("head").style.top = (400 - 75) + "px";
+  // accroche : le créateur, puis le gain
+  const who = D.createur ? ["Le code", de(D.createur)] : ["Code promo", D.marque];
+  $("l1").textContent = who[0]; $("l2").textContent = who[1];
+  const s = Math.min(fitSize($("l1"), 790, 124), fitSize($("l2"), 790, 124));
+  let gl, gs;
+  if (D.gainBig) { $("gain").textContent = D.gainBig; gs = fitSize($("gain"), 790, 230); gl = [D.gainBig]; }
+  else { gl = balanced($("gain"), D.gainText || D.marque, 790, 104); gs = Math.min(...gl.map(x => { $("gain").textContent = x; return fitSize($("gain"), 790, 104); })); }
+  const subTxt = D.gainBig ? (D.avantage || "") : "";
+  $("sub").textContent = subTxt;
+  const subH = subTxt ? Math.min(2, Math.ceil(textWidth($("sub")) / 760)) * 50 : 0;
+  if (subTxt) { $("sub").style.width = "760px"; $("sub").style.left = (CX - 380) + "px"; }
+  const H = 2 * s * 1.06 + 44 + gl.length * gs * 1.04 + (subH ? 30 + subH : 0);
+  let y = 540 + Math.max(0, (1235 - 540 - H) / 2);
+  [["l1", s], ["l2", s]].forEach(([id, sz]) => { $(id).style.fontSize = sz + "px"; $(id).style.lineHeight = "1.06"; $(id).style.top = y + "px"; y += sz * 1.06; });
+  y += 44;
+  L.gainTop = y;
+  $("gain").textContent = gl[0]; $("gain").style.fontSize = gs + "px"; $("gain").style.top = y + "px"; y += gs * 1.04;
+  if (gl[1]) { $("gain2").textContent = gl[1]; $("gain2").style.fontSize = gs + "px"; $("gain2").style.top = y + "px"; $("gain2").style.lineHeight = "1.04"; y += gs * 1.04; }
+  L.gainBottom = y;
+  L.gw = Math.max(...gl.map(x => { $("gain").textContent = x; $("gain").style.fontSize = gs + "px"; return textWidth($("gain")); }));
+  $("gain").textContent = gl[0];
+  if (subTxt) $("sub").style.top = (y + 30) + "px";
+  L.w1 = words($("l1"), who[0]); L.w2 = words($("l2"), who[1]);
+  // carte, code, paiement
+  $("pop").innerHTML = cardHTML(D);
+  $("st2n").textContent = D.createur ? `PARTAGÉ PAR ${D.createur.toUpperCase()}` : `CODE ${D.marque.toUpperCase()}`;
+  ["st2", "st3"].forEach(id => { const t = $(id).querySelector(".t"); t.style.fontSize = fitSize(t, 790, 64) + "px"; const n = $(id).querySelector(".n"); n.style.fontSize = Math.min(26, fitSize(n, 790, 26)) + "px"; });
+  $("fly").textContent = D.code;
+  $("ckk").textContent = `TON PANIER · ${D.marque.toUpperCase()}`;
+  $("resv").textContent = D.remise ? `−${D.remise} %` : "";
+  if (D.createur) $("msg2").textContent = `Et tu soutiens ${D.createur}.`;
+  const ms = Math.min(fitSize($("msg1"), 790, 70), D.createur ? fitSize($("msg2"), 790, 70) : 70);
+  $("msg1").style.fontSize = $("msg2").style.fontSize = ms + "px";
+  L.ms = ms;
+}
+
+function popAt(p) {
+  const w = $("pop").offsetWidth, h = $("pop").offsetHeight;
+  return { x: CX - w * POP_S / 2, y: POP_CY - h * POP_S / 2, s: POP_S, w, h };
+}
+
+function measure() {
+  const q = popAt(1);
+  $("pop").style.transform = `translate(${q.x}px, ${q.y}px) scale(${q.s})`;
+  L.btn = $("pop").querySelector(".codebtn").getBoundingClientRect();
+  $("fly").style.display = "block"; L.flyW = $("fly").offsetWidth; L.flyH = $("fly").offsetHeight; $("fly").style.display = "none";
+  const ck = $("ck"); ck.style.display = "block"; ck.style.transform = "none";
+  const h = ck.offsetHeight;
+  // la carte du paiement et les deux phrases dessous, centrées ensemble dans la zone sûre
+  const group = h + 70 + (D.createur ? 2 : 1) * L.ms * 1.15;
+  const top = Math.round(460 + Math.max(0, (1330 - 460 - group) / 2));
+  ck.style.top = top + "px";
+  L.ckBottom = top + h;
+  const ft = $("ftx"); ft.textContent = D.code; L.ftx = ft.getBoundingClientRect(); ft.textContent = "";
+  ck.style.display = "none";
+  $("msg1").style.top = (L.ckBottom + 70) + "px";
+  $("msg2").style.top = (L.ckBottom + 70 + L.ms * 1.15) + "px";
+}
+
+function render(t) {
+  renderBackground(t, t > T.outro ? .95 : .6);
+
+  // ---------- accroche (lisible dès la 1re image)
+  const hookOn = t < T.hookOut + .4;
+  show($("hook"), hookOn);
+  if (hookOn) {
+    const out = (i) => eio(prog(t, T.hookOut + i * .05, .3));
+    const hp = eo(prog(t, 0, .5));
+    $("head").style.transform = `translateY(${-out(0) * 140}px) scale(${1.04 - .04 * hp})`;
+    $("head").style.opacity = 1 - out(0); blur($("head"), out(0) * 10);
+    const rise = (spans, start) => spans.forEach((sp, i) => { sp.style.transform = `translateY(${(1 - expo(prog(t, start + i * .06, .45))) * 112}%)`; });
+    rise(L.w1, -.32); rise(L.w2, -.2);   // déjà presque en place sur la 1re image
+    ["l1", "l2"].forEach((id, i) => { const q = out(i + 1); $(id).style.opacity = 1 - q; $(id).style.transform = `translateY(${-q * 150}px)`; blur($(id), q * 12); });
+    const pg = prog(t, -.3, .5);   // net dès la 1re image
+    ["gain", "gain2", "sub"].forEach((id, i) => {
+      const q = out(3 + i);
+      const base = id === "sub" ? eo(prog(t, .2, .4)) : eo(pg);
+      $(id).style.opacity = base * (1 - q);
+      const sc = id === "sub" ? 1 : 1.18 - .18 * eo5(pg);
+      $(id).style.transform = `translateY(${-q * 150}px) scale(${sc})`;
+      $(id).style.transformOrigin = "520px 50%";
+      blur($(id), (id === "sub" ? 0 : (1 - eo(pg)) * 14) + q * 12);
+      if (id !== "sub") $(id).style.textShadow = `0 0 ${44 + 24 * Math.sin(t * 5)}px rgba(139,0,255,${.6 * eo(pg)})`;
+    });
+    const u = eo(prog(t, .25, .45)), uq = out(3);
+    $("uline").style.cssText = `left:${CX - L.gw / 2}px;top:${L.gainBottom + 4}px;width:${L.gw * u}px;opacity:${(1 - uq) * (u > 0 ? 1 : 0)};${D.gainBig && D.avantage ? `top:${L.gainBottom - 2}px;` : ""}`;
+    $("arrow").style.opacity = (.55 + .45 * Math.abs(Math.sin(t * 4))) * (1 - out(5)) * eo(prog(t, .2, .3));
+  }
+
+  // ---------- titres d'étape
+  renderStep($("st2"), t, T.st2, T.st3 - .15);
+  renderStep($("st3"), t, T.st3 + .1, T.ckOut + .1);
+
+  // ---------- la carte de l'offre arrive en 3D, puis recule
+  const popOn = t > T.cardIn - .02 && t < T.exit + .7;
+  show($("pop"), popOn);
+  if (popOn) {
+    const q = popAt(1), pin = spring(prog(t, T.cardIn, .95)), py = eo5(prog(t, T.cardIn, .8));
+    const rec = eio(prog(t, T.recede, .6)), ex = Math.pow(prog(t, T.exit, .6), 3);
+    const s = q.s * (.88 + .12 * pin) * (1 - rec * .12);
+    const x = CX - q.w * s / 2, y = q.y + (1 - py) * 760 + rec * 90 + ex * 1200;
+    $("pop").style.transform = `perspective(2000px) translate(${x}px, ${y}px) rotateX(${(1 - pin) * 32}deg) rotateZ(${-ex * 6}deg) scale(${s})`;
+    $("pop").style.opacity = clamp(py * 1.5) * (1 - eio(prog(t, T.exit + .2, .4)));
+    $("pop").style.filter = rec > .01 ? `blur(${rec * 6}px) brightness(${1 - rec * .5})` : "none";
+    const ok = $("pop").querySelector(".ok"), cp = eo(prog(t, T.tap, .25));
+    ok.style.opacity = t >= T.tap ? cp : 0;
+    ok.style.transform = `scale(${t >= T.tap ? .9 + .1 * back(cp) : 1})`;
+  }
+  renderFinger(t, [[T.tap, L.btn]]);
+
+  // ---------- le code s'envole, puis plonge dans le champ du paiement
+  const flyOn = t > T.lift - .02 && t < T.land + .3;
+  show($("fly"), flyOn);
+  if (flyOn) {
+    const b = L.btn, S1 = 2.4, p1 = eio(prog(t, T.lift, .7));
+    let x = lerp(b.left, CX - L.flyW * S1 / 2, p1);
+    let y = lerp(b.top, 560 - L.flyH * S1 / 2, p1) - Math.sin(p1 * Math.PI) * 70;
+    let s = lerp(b.width / L.flyW, S1, p1), rot = lerp(0, -3, p1);
+    if (t > T.lift + .7) { y += Math.sin((t - T.lift - .7) * 3.2) * 10; rot = -3 + Math.sin((t - T.lift - .7) * 2.4) * 1.2; }
+    const p2 = eio(prog(t, T.dive, T.land - T.dive));
+    if (p2 > 0) {
+      const S2 = L.ftx.height / (L.flyH * .5);
+      x = lerp(x, L.ftx.left - 18 * S2, p2); y = lerp(y, L.ftx.top + L.ftx.height / 2 - L.flyH * S2 / 2, p2);
+      s = lerp(s, S2, p2); rot = lerp(rot, 0, p2);
+    }
+    $("fly").style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${s})`;
+    $("fly").style.opacity = 1 - prog(t, T.land, .2);
+  }
+
+  // ---------- paiement
+  const ckOn = t > T.ckIn && t < T.flash + .3;
+  show($("ck"), ckOn);
+  if (ckOn) {
+    const pin = spring(prog(t, T.ckIn, 1.0)), py = eo5(prog(t, T.ckIn, .85)), pout = eio(prog(t, T.ckOut, .4));
+    $("ck").style.transform = `perspective(2000px) translateY(${(1 - py) * 900 - pout * 120}px) rotateX(${(1 - pin) * 26}deg) scale(${(.92 + .08 * pin) * (1 - pout * .08)})`;
+    $("ck").style.opacity = clamp(py * 1.6) * (1 - pout);
+    blur($("ck"), pout * 10);
+    const landed = t >= T.land;
+    $("fph").style.display = landed || t > T.dive + .3 ? "none" : "";
+    $("ftx").textContent = landed ? D.code : "";
+    $("field").style.borderColor = landed ? "var(--green)" : (t > T.dive ? "var(--vio)" : "var(--line)");
+    $("field").style.boxShadow = t > T.dive ? `0 0 0 5px ${landed ? "rgba(46,204,113,.18)" : "rgba(139,0,255,.22)"}` : "none";
+    $("field").style.transform = landed ? `scale(${1 + .04 * Math.sin(prog(t, T.land, .3) * Math.PI)})` : "none";
+    const ok = eo(prog(t, T.apply, .25));
+    $("applyok").style.opacity = ok; $("applyok").style.transform = `scale(${.6 + .4 * back(ok)})`;
+    const r = expo(prog(t, T.res, .45));
+    $("res").style.opacity = r; $("res").style.transform = `translateY(${(1 - r) * 20}px)`;
+  }
+  [["msg1", T.msg], ["msg2", T.msg + .15]].forEach(([id, at]) => {
+    const p = expo(prog(t, at, .55)), q = eio(prog(t, T.ckOut, .4));
+    $(id).style.opacity = t > T.flash + .3 ? 0 : p * (1 - q);
+    $(id).style.transform = `translateY(${(1 - p) * 40 - q * 60}px)`;
+    blur($(id), (1 - p) * 10 + q * 10);
+  });
+
+  renderFlash(t, T.flash);
+  renderOutro(t, T.outro);
+}
+
+boot();
+</script>

@@ -1,0 +1,67 @@
+/* Styles communs des vidéos premium (motion, code du jour, top 3). Les polices sont injectées par moteur.py. */
+:root {
+  --night: #07080f; --slate: #14151f; --line: #2c2e3e;
+  --vio: #8b00ff; --lilas: #b266ff; --off: #f4f2ee; --grey: #8c8fa3; --green: #2ecc71; --green2: #4cd964;
+  --syne: "Syne", sans-serif; --inter: "Inter", sans-serif; --mono: "Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+#frame { position: absolute; inset: 0; overflow: hidden; background: var(--night); font-family: var(--inter); color: var(--off); }
+.orb { position: absolute; border-radius: 50%; pointer-events: none; }
+#grain { position: absolute; left: 0; top: 0; opacity: .07; mix-blend-mode: overlay; pointer-events: none; }
+#vignette { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 62% at 48% 46%, transparent 55%, rgba(0,0,0,.55) 100%); pointer-events: none; }
+#flash { position: absolute; inset: 0; background: radial-gradient(circle at 520px 900px, rgba(139,0,255,.9), rgba(139,0,255,0) 60%); pointer-events: none; opacity: 0; }
+
+/* textes */
+.line { position: absolute; left: 0; width: 1040px; text-align: center; font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+.word { display: inline-block; overflow: hidden; vertical-align: bottom; padding: 0 .04em .1em; margin-bottom: -.1em; }
+.word > span { display: inline-block; }
+.kicker { position: absolute; left: 0; width: 1040px; text-align: center; font: 700 27px var(--mono); letter-spacing: .3em; color: var(--lilas); white-space: nowrap; }
+.st { position: absolute; left: 0; top: 300px; width: 1040px; text-align: center; opacity: 0; }
+.st .n { font: 700 26px var(--mono); letter-spacing: .3em; color: var(--lilas); white-space: nowrap; }
+.st .t { font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; margin-top: 12px; white-space: nowrap; }
+
+/* tuile du logo de la marque */
+.tile { border-radius: 24%; background: #fff; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 18px 50px rgba(0,0,0,.5), 0 0 60px rgba(139,0,255,.28); }
+.tile img { width: 100%; height: 100%; object-fit: contain; }
+.tile.pad img { padding: 13%; }
+.tile span { font-family: var(--syne); font-weight: 800; color: var(--off); }
+.tile.lettre { background: var(--vio); }
+
+/* carte de l'offre */
+.card { position: absolute; width: 470px; border-radius: 24px; background: var(--slate); border: 1px solid #3a3c52; padding: 24px; }
+.card .c-head { display: flex; align-items: center; gap: 16px; }
+.card .c-brand { font-family: var(--syne); font-weight: 800; font-size: 34px; letter-spacing: -.01em; }
+.codebtn { display: inline-block; margin-top: 18px; padding: 11px 18px; border-radius: 13px; font: 700 22px var(--mono); letter-spacing: .08em;
+  background: rgba(139,0,255,.16); border: 1.5px solid rgba(178,102,255,.55); color: var(--lilas); position: relative; white-space: nowrap; }
+.codebtn .ok { position: absolute; inset: -1.5px; display: flex; align-items: center; justify-content: center; border-radius: 13px; opacity: 0;
+  background: #11331f; border: 1.5px solid rgba(76,217,100,.5); color: var(--green2); font: 700 22px var(--mono); letter-spacing: .04em; }
+.c-benefit { margin-top: 16px; padding: 12px 15px; border-radius: 14px; background: rgba(76,217,100,.08); border: 1px solid rgba(76,217,100,.22);
+  color: var(--green2); font: 700 18px var(--inter); line-height: 1.45; }
+.c-credit { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 16px; color: var(--grey); }
+.c-credit b { color: var(--off); font-weight: 600; }
+
+/* doigt et code qui s'envole */
+#finger { position: absolute; left: 0; top: 0; width: 80px; height: 80px; margin: -40px 0 0 -40px; border-radius: 50%; display: none;
+  background: radial-gradient(circle, rgba(255,255,255,.95) 0 34%, rgba(255,255,255,.5) 35% 52%, rgba(255,255,255,0) 53%); }
+#ripple { position: absolute; left: 0; top: 0; width: 80px; height: 80px; margin: -40px 0 0 -40px; border-radius: 50%; border: 3px solid rgba(255,255,255,.9); display: none; }
+#fly { position: absolute; left: 0; top: 0; transform-origin: 0 0; padding: 11px 18px; border-radius: 13px; font: 700 22px var(--mono); letter-spacing: .08em; white-space: nowrap; display: none;
+  color: var(--off); background: linear-gradient(135deg, #2a0d52, #160a2c); border: 1.5px solid var(--lilas);
+  box-shadow: 0 0 0 1px rgba(139,0,255,.4), 0 18px 40px rgba(0,0,0,.55), 0 0 60px rgba(139,0,255,.55); }
+
+/* fin : « Backed » se tape dans la barre de recherche */
+#outro { display: none; }
+#bar { position: absolute; left: 120px; top: 605px; width: 800px; height: 230px; border-radius: 70px; background: var(--slate); border: 5px solid var(--vio); transform-origin: 400px 115px; }
+#mag { position: absolute; left: 62px; top: 80px; width: 60px; height: 60px; border-radius: 50%; border: 8px solid var(--grey); }
+#mag::after { content: ""; position: absolute; left: 44px; top: 44px; width: 30px; height: 9px; border-radius: 5px; background: var(--grey); transform: rotate(45deg); transform-origin: 0 50%; }
+#typed { position: absolute; left: 165px; top: 0; height: 225px; display: flex; align-items: center; white-space: nowrap; }
+#typed span { display: inline-block; font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; line-height: 1; transform-origin: 50% 60%; }
+#dot { position: absolute; border-radius: 50%; background: var(--vio); }
+.ring { position: absolute; border-radius: 50%; border: 6px solid var(--lilas); }
+.spark { position: absolute; }
+#ocaret { position: absolute; width: 10px; height: 112px; border-radius: 4px; background: var(--vio); }
+.sig { position: absolute; left: 0; width: 1040px; text-align: center; font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+#pill { position: absolute; left: 520px; width: 540px; height: 106px; border-radius: 53px; background: var(--vio); overflow: hidden; }
+#pill span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 54px var(--inter); }
+#pill i { position: absolute; top: -10px; width: 60px; height: 130px; background: rgba(255,255,255,.35); transform: skewX(-22deg); }
+#free { position: absolute; left: 0; width: 1040px; text-align: center; font: 600 32px var(--inter); color: var(--grey); }

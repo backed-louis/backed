@@ -19,6 +19,7 @@ import urllib.parse
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "motion"))
 import logos  # noqa: E402
 import render  # noqa: E402
 import visuels  # noqa: E402
@@ -294,6 +295,7 @@ def main():
     ap.add_argument("--no-video", action="store_true", help="Ne génère que publications.md")
     ap.add_argument("--preview", help="Dossier où écrire un aperçu léger (planches JPEG + publications.md)")
     ap.add_argument("--no-logo", action="store_true", help="Ne télécharge pas les logos des marques")
+    ap.add_argument("--classique", action="store_true", help="Anciennes vidéos (Pillow) au lieu des vidéos premium (Chromium)")
     ap.add_argument("--marques", help="Marques imposées, séparées par des virgules, un jour chacune à partir de --start "
                                       "(lot spécial : pas de top 3 ni de carrousel)")
     a = ap.parse_args()
@@ -317,6 +319,24 @@ def main():
     print("🖼️  Logos — " + " · ".join(dict.fromkeys(logo_log)), flush=True)
     vid_rows, vis_rows = [], []
 
+    # Vidéos premium (pages HTML rendues dans Chromium, voir scripts/motion) ; --classique : anciennes vidéos Pillow.
+    mot = None
+    if not a.classique:
+        import moteur
+        mot = moteur.Moteur().__enter__()
+
+    def make_video(kind, payload, path, variante):
+        """Renvoie (durée, ou None sans vidéo ; images pour l'aperçu)."""
+        if mot:
+            tpl, data = (("code_du_jour.html", moteur.offer_data(payload)) if kind == "offre"
+                         else ("top3.html", moteur.top_data(payload)))
+            dur = None if a.no_video else mot.video(tpl, data, path, variante=variante)
+            return dur, mot.images(tpl, data)
+        shots = (render.offer_shots(payload, proof) if kind == "offre"
+                 else render.top_shots(payload, proof, sub="Les plus copiés cette semaine."))
+        dur = None if a.no_video else render.encode(shots, path, variante=variante)
+        return dur, video_stills(shots)
+
     md = [f"# Publications Backed — semaine du {date_fr(start)}\n",
           f"Généré automatiquement depuis Airtable le {dt.date.today().isoformat()} : {n_offers} offres actives, "
           "les plus copiées en premier (clics des 7 derniers jours, puis au total), une par marque, et pour les codes "
@@ -325,15 +345,14 @@ def main():
     # Le top 3 d'abord : il se publie le samedi, avec le classement de la semaine qui se termine.
     if len(top) >= 2:
         name = f"00-{top_day.isoformat()}-top{len(top)}.mp4"
-        shots = render.top_shots(top, proof, sub="Les plus copiés cette semaine.")
-        if not a.no_video:
-            dur = render.encode(shots, os.path.join(a.out, name), variante=3)
+        dur, stills = make_video("top", top, os.path.join(a.out, name), 3)
+        if dur:
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
         stem = f"00-{top_day.isoformat()}-top{len(top)}"
         wa_img, story_img = visuels.top_card(top), visuels.top_card(top, visuels.STORY)
         visuels.save(wa_img, os.path.join(a.out, f"{stem}-whatsapp.png"))
         visuels.save(story_img, os.path.join(a.out, f"{stem}-story.png"))
-        vid_rows.append(video_stills(shots))
+        vid_rows.append(stills)
         vis_rows.append([story_img, wa_img])
         md.append(block(f"{date_fr(top_day)} — Top {len(top)} de la semaine", name, *texts_top(top),
                         yt=texts_youtube_top(top), story=f"{stem}-story.png", wa_img=f"{stem}-whatsapp.png", link="backed.fr"))
@@ -354,15 +373,14 @@ def main():
         day = start + dt.timedelta(days=i)
         stem = f"{i + 1:02d}-{day.isoformat()}-{o['slug']}"
         name = f"{stem}.mp4"
-        shots = render.offer_shots(o, proof)
-        if not a.no_video:
-            dur = render.encode(shots, os.path.join(a.out, name), variante=i % 4)
+        dur, stills = make_video("offre", o, os.path.join(a.out, name), i % 4)
+        if dur:
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
         story_img, _ = visuels.story(o, date_fr(day))
         wa_img = visuels.whatsapp_card(o, date_fr(day))
         visuels.save(story_img, os.path.join(a.out, f"{stem}-story.png"))
         visuels.save(wa_img, os.path.join(a.out, f"{stem}-whatsapp.png"))
-        vid_rows.append(video_stills(shots))
+        vid_rows.append(stills)
         vis_rows.append([story_img, wa_img])
         md.append(block(f"{date_fr(day)} — {o['brand']}", name, *texts_offer(o, day.weekday()), yt=texts_youtube(o),
                         story=f"{stem}-story.png", wa_img=f"{stem}-whatsapp.png", link=f"backed.fr/marque/{o['slug']}"))
@@ -374,6 +392,8 @@ def main():
         md.append(f"## {date_fr(start + dt.timedelta(days=6))} — Top 3\n\nIl sera généré la veille au soir (vendredi), "
                   "avec les clics de la semaine : c'est le premier fichier du lot suivant.\n")
 
+    if mot:
+        mot.__exit__(None, None, None)
     with open(os.path.join(a.out, "publications.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(md))
     print(f"📝 {os.path.join(a.out, 'publications.md')}")
