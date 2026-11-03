@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, Syne } from 'next/font/google'
+import { Inter, Syne, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import SaisonDecor from '@/components/SaisonDecor'
@@ -13,6 +13,13 @@ const syne = Syne({
   subsets: ['latin'],
   variable: '--font-syne',
   weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+})
+// Les petites étiquettes en mono espacé de la DA (« CODE DU JOUR »)
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  weight: ['500', '700'],
   display: 'swap',
 })
 // Laisse le temps d'attendre la fin d'un blocage Airtable (429, 30 s) au lieu d'échouer.
@@ -61,9 +68,10 @@ const organizationSchema = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${inter.variable} ${syne.variable}`}>
+    <html lang="fr" className={`${inter.variable} ${syne.variable} ${mono.variable}`}>
       <body style={{ fontFamily: 'var(--font-inter)' }}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
+        <div className="ambience" aria-hidden><div className="ambience-grain" /><div className="ambience-vignette" /></div>
         {children}
         <SaisonDecor />
         <Analytics />

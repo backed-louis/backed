@@ -1,10 +1,12 @@
 'use client'
 import { Offer } from '@/lib/airtable'
-import { useState } from 'react'
 import Link from 'next/link'
+import { gainParts } from '@/lib/gain'
+import CodeChip from '@/components/CodeChip'
+import { BrandTile } from '@/components/PremiumCard'
 
 function toSlug(name: string) {
-  return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  return name.normalize('NFD').replace(/[̀-ͯ]/g, '')
     .toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
 }
 
@@ -13,162 +15,58 @@ function formatDate(iso: string) {
   return d && m && y ? `${d}/${m}/${y}` : iso
 }
 
+// Carte d'une offre dans la DA des vidéos : matière violette, l'avantage en grand, le code qui se dévoile et se copie.
 export default function OfferCard({ offer, isPopular = false }: { offer: Offer; isPopular?: boolean }) {
-  const [copied, setCopied] = useState(false)
-
-  const trackAndOpen = (e?: React.MouseEvent) => {
-    fetch(`/api/track/${offer.id}`).catch(() => {}) // l'offre affichée, pas la première au même slug
+  const g = gainParts(offer.benefit)
+  const track = () => { fetch(`/api/track/${offer.id}`).catch(() => {}) } // l'offre affichée, pas la première au même slug
+  const trackAndOpen = () => {
+    track()
     if (offer.sourceUrl) window.open(offer.sourceUrl, '_blank')
   }
 
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!offer.code) return
-    navigator.clipboard.writeText(offer.code)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-    fetch(`/api/track/${offer.id}`).catch(() => {}) // l'offre affichée, pas la première au même slug
-  }
-
   return (
-    <div className="offer-card" onClick={trackAndOpen}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link
-          href={`/marque/${toSlug(offer.brand)}`}
-          onClick={e => e.stopPropagation()}
-          style={{
-            width: 44, height: 44, borderRadius: 10,
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            overflow: 'hidden', flexShrink: 0,
-          }}
-        >
-          {offer.brandLogo ? (
-            <img src={offer.brandLogo} alt={offer.brand}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
-          ) : (
-            <span style={{ fontFamily: 'var(--font-syne)', fontSize: 13, fontWeight: 800, color: 'var(--text-1)' }}>
-              {offer.brand.slice(0, 2).toUpperCase()}
-            </span>
-          )}
+    <div className="offer-card pcard" onClick={trackAndOpen}>
+      <span className="pcard-shine" aria-hidden />
+      <div className="oc-head">
+        <Link href={`/marque/${toSlug(offer.brand)}`} onClick={e => e.stopPropagation()} className="oc-brand-link">
+          <BrandTile name={offer.brand} logo={offer.brandLogo} size={46} />
+          <span className="oc-brand-txt">
+            <span className="oc-brand">{offer.brand}</span>
+            {offer.category && <span className="oc-cat">{offer.category}</span>}
+          </span>
         </Link>
+        {isPopular && <span className="oc-top">🔥 Top 10 %</span>}
+      </div>
 
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {isPopular && (
-            <span style={{
-              fontSize: 11, fontWeight: 700, letterSpacing: '0.04em',
-              color: '#FF6B35',
-              background: 'rgba(255,107,53,0.12)',
-              border: '1px solid rgba(255,107,53,0.25)',
-              padding: '3px 9px', borderRadius: 'var(--r-sm)',
-              display: 'flex', alignItems: 'center', gap: 4,
-            }}>
-              🔥 Top 10 %
-            </span>
-          )}
-          {offer.category && (
-            <span style={{
-              fontSize: 11, fontWeight: 600, letterSpacing: '0.04em',
-              color: 'var(--accent-text)',
-              background: 'var(--accent-subtle)',
-              border: '1px solid var(--accent-border)',
-              padding: '3px 9px', borderRadius: 'var(--r-sm)',
-            }}>
-              {offer.category}
-            </span>
+      {offer.benefit && (
+        <div className="oc-gain">
+          {g.value ? (
+            <>
+              <span className="oc-big grad">{g.value}<span className={`oc-unit${g.unit === '€' ? ' unit-eur' : ''}`}>{g.unit}</span></span>
+              {g.rest && <span className="oc-rest">{g.rest}</span>}
+            </>
+          ) : (
+            <span className="oc-text">{g.rest}</span>
           )}
         </div>
-      </div>
+      )}
 
-      <div style={{ flex: 1 }}>
-        <Link
-          href={`/marque/${toSlug(offer.brand)}`}
-          onClick={e => e.stopPropagation()}
-          style={{ textDecoration: 'none' }}
-        >
-          <h3 style={{
-            fontFamily: 'var(--font-syne)',
-            fontSize: 18, fontWeight: 800,
-            letterSpacing: '-0.01em', marginBottom: 6,
-            color: 'var(--text-1)',
-          }}>
-            {offer.brand}
-          </h3>
-        </Link>
-        <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>
-          {offer.brandDescription}
-        </p>
-      </div>
+      {offer.brandDescription && <p className="oc-desc">{offer.brandDescription}</p>}
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
-        {offer.code && (
-          <button
-            onClick={handleCopy}
-            style={{
-              fontFamily: 'monospace',
-              fontSize: 13, fontWeight: 700, letterSpacing: '0.08em',
-              background: copied ? 'rgba(52,199,89,0.12)' : 'var(--accent-subtle)',
-              border: `1px solid ${copied ? 'rgba(52,199,89,0.3)' : 'var(--accent-border)'}`,
-              color: copied ? '#4CD964' : 'var(--accent-text)',
-              padding: '6px 12px', borderRadius: 'var(--r-md)',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            {copied ? '✓ Copié !' : offer.code}
-          </button>
-        )}
+      <div className="oc-action">
+        {offer.code && <CodeChip code={offer.code} onCopy={track} />}
         {!offer.code && offer.sourceUrl && (
-          <button
-            onClick={e => { e.stopPropagation(); trackAndOpen() }}
-            style={{
-              fontSize: 13, fontWeight: 700,
-              background: 'var(--accent-subtle)',
-              border: '1px solid var(--accent-border)',
-              color: 'var(--accent-text)',
-              padding: '6px 12px', borderRadius: 'var(--r-md)',
-              cursor: 'pointer',
-            }}
-          >
-            Profiter de l'offre ↗
+          <button type="button" className="code-chip is-revealed" onClick={e => { e.stopPropagation(); trackAndOpen() }}>
+            <span className="code-chip-code">Profiter de l&apos;offre ↗</span>
           </button>
         )}
-        {offer.benefit && (
-          <span style={{
-            fontSize: 13, fontWeight: 600,
-            color: '#4CD964',
-            background: 'rgba(52,199,89,0.1)',
-            border: '1px solid rgba(52,199,89,0.18)',
-            padding: '4px 10px', borderRadius: 'var(--r-sm)',
-            lineHeight: 1.4,
-            display: 'block',
-          }}>
-            {offer.benefit}
-          </span>
-        )}
-        {offer.endDate && (
-          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
-            Jusqu'au {formatDate(offer.endDate)}
-          </span>
-        )}
+        {offer.endDate && <span className="oc-end">Jusqu&apos;au {formatDate(offer.endDate)}</span>}
       </div>
 
       {offer.creator && (
-        <div style={{
-          borderTop: '1px solid var(--border)',
-          paddingTop: 12, fontSize: 12, color: 'var(--text-3)',
-        }}>
+        <div className="oc-credit">
           Partagé par{' '}
-          <Link
-            href={`/createur/${toSlug(offer.creator)}`}
-            onClick={e => e.stopPropagation()}
-            style={{ color: 'var(--text-2)', fontWeight: 500, textDecoration: 'none' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
-          >
-            {offer.creator}
-          </Link>
+          <Link href={`/createur/${toSlug(offer.creator)}`} onClick={e => e.stopPropagation()}>{offer.creator}</Link>
         </div>
       )}
     </div>

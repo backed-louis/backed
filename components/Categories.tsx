@@ -23,7 +23,7 @@ export default async function Categories({ offerCounts = {} }: { offerCounts?: R
   const categories = await getCategories()
 
   return (
-    <section className="section" style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
+    <section className="section" style={{ background: 'rgba(12,14,26,.55)', borderTop: '1px solid var(--border)' }}>
       <div className="container">
         <div className="section-label">Par catégorie</div>
         <h2 className="section-title" style={{ fontFamily: 'var(--font-syne)' }}>

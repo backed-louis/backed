@@ -2,6 +2,7 @@ import { getAllOffers } from '@/lib/airtable'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import OfferCard from '@/components/OfferCard'
+import PremiumCard, { BrandTile } from '@/components/PremiumCard'
 import Navbar from '@/components/Navbar'
 import WhatsAppBanner from '@/components/WhatsAppBanner'
 import { SITE_URL } from '@/lib/links'
@@ -137,55 +138,46 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
       />
       <main style={{ paddingTop: 96, minHeight: '100vh' }}>
         <div className="container">
-          <div style={{ paddingTop: 32, marginBottom: 56 }}>
-            <div style={{
-              width: 72, height: 72, borderRadius: 16,
-              background: 'var(--accent-subtle)',
-              border: '1px solid var(--accent-border)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: 20, overflow: 'hidden',
-            }}>
-              {brand.logo ? (
-                <img src={brand.logo} alt={`Logo ${brand.name}`} style={{ width: 48, height: 48, objectFit: 'contain' }} />
-              ) : (
-                <span style={{ fontFamily: 'var(--font-syne)', fontSize: 28, fontWeight: 800, color: 'var(--accent-text)' }}>
-                  {brand.name.charAt(0).toUpperCase()}
-                </span>
+          {/* En-tête dans la DA des vidéos : la marque à gauche, son meilleur code en grande carte à droite */}
+          <div className="brand-hero">
+            <div className="brand-hero-copy">
+              <BrandTile name={brand.name} logo={brand.logo} size={84} />
+              <span className="kicker" style={{ marginTop: 26 }}>
+                Code promo · {count} offre{count !== 1 ? 's' : ''} active{count !== 1 ? 's' : ''}
+              </span>
+              <h1 className="brand-hero-title">
+                Code promo <span className="grad">{brand.name}</span>
+              </h1>
+              {brand.description && <p className="brand-hero-desc">{brand.description}</p>}
+              {brand.website && (
+                <a href={brand.website} target="_blank" rel="noopener noreferrer" className="brand-hero-site">
+                  {brand.website.replace(/^https?:\/\//, '').replace(/\/$/, '')} ↗
+                </a>
               )}
             </div>
-            <div className="section-label">
-              {count} offre{count !== 1 ? 's' : ''} active{count !== 1 ? 's' : ''}
-            </div>
-            <h1 style={{
-              fontFamily: 'var(--font-syne)',
-              fontSize: 'clamp(32px, 5vw, 56px)',
-              fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 12,
-            }}>
-              Code promo {brand.name}
-            </h1>
-            {brand.description && (
-              <p style={{ color: 'var(--text-2)', fontSize: 16, marginBottom: 12, maxWidth: 640 }}>
-                {brand.description}
-              </p>
-            )}
-            {brand.website && (
-              <a href={brand.website} target="_blank" rel="noopener noreferrer" style={{
-                fontSize: 13, color: 'var(--accent)', fontWeight: 500,
-              }}>
-                {brand.website.replace(/^https?:\/\//, '')} ↗
-              </a>
+            {offers[0] && (
+              <div className="brand-hero-card">
+                <PremiumCard offer={offers[0]} kicker="Le meilleur code" header={false} />
+              </div>
             )}
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: 16, paddingBottom: 32,
-          }}>
-            {offers.map(offer => (
-              <OfferCard key={offer.id} offer={offer} />
-            ))}
-          </div>
+          {count > 1 && (
+            <>
+              <h2 className="section-title" style={{ fontFamily: 'var(--font-syne)', fontSize: 26, marginBottom: 24 }}>
+                Les autres offres {brand.name}
+              </h2>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                gap: 16, paddingBottom: 32,
+              }}>
+                {offers.slice(1).map(offer => (
+                  <OfferCard key={offer.id} offer={offer} />
+                ))}
+              </div>
+            </>
+          )}
 
           <WhatsAppBanner context={brand.name} />
 
