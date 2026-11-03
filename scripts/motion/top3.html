@@ -1,0 +1,116 @@
+<!-- Vidéo premium « Top 3 de la semaine » : 1080×1920, ~8,7 s. Accroche (3 codes à garder, logos), les trois
+     codes arrivent en 3D l'un après l'autre, fin Backed. moteur.py injecte FONTS, COMMUN_CSS, COMMUN_JS et DATA. -->
+<meta charset="utf-8">
+<style>
+/*FONTS*/
+/*COMMUN_CSS*/
+#tiles { position: absolute; left: 0; top: 0; display: flex; gap: 36px; }
+#names { position: absolute; left: 0; width: 1040px; text-align: center; font: 700 40px var(--inter); color: #c9cbd8; white-space: nowrap; }
+#save { position: absolute; left: 0; top: 1268px; width: 1040px; text-align: center; font: 700 46px var(--inter); }
+.row3 { position: absolute; left: 120px; width: 800px; height: 236px; border-radius: 34px; background: linear-gradient(160deg, #1a1b28, #111219);
+  border: 1.5px solid #34364a; box-shadow: 0 40px 90px rgba(0,0,0,.55); display: flex; align-items: center; gap: 26px; padding: 0 34px; transform-origin: 400px 118px; opacity: 0; }
+.row3 .rk { font-family: var(--inter); font-weight: 800; font-size: 96px; color: var(--lilas); width: 70px; text-align: center; line-height: 1; letter-spacing: -.04em; }
+.row3 .mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.row3 .br { font-family: var(--syne); font-weight: 800; letter-spacing: -.01em; white-space: nowrap; }
+.row3 .cd { align-self: flex-start; padding: 7px 14px; border-radius: 12px; background: var(--night); border: 1.5px solid #3a3c52; font: 700 30px var(--mono); letter-spacing: .06em; white-space: nowrap; }
+.row3 .cr { font: 500 22px var(--inter); color: var(--grey); white-space: nowrap; }
+.row3 .ds { font-family: var(--syne); font-weight: 800; font-size: 52px; color: var(--green2); white-space: nowrap; }
+.row3.first { border-color: rgba(178,102,255,.7); box-shadow: 0 40px 90px rgba(0,0,0,.55), 0 0 70px rgba(139,0,255,.35); }
+</style>
+
+<div id="frame">
+  <div id="hook">
+    <div class="kicker" id="kick" style="top:352px">LES PLUS COPIÉS CETTE SEMAINE</div>
+    <div class="line" id="l1"></div><div class="line" id="l2" style="color:var(--lilas)"></div>
+    <div id="tiles"></div><div id="names"></div>
+    <div id="save">Enregistre pour plus tard ↓</div>
+  </div>
+  <div class="st" id="st"><div class="n">TOP 3 DE LA SEMAINE</div><div class="t">Les codes les plus copiés</div></div>
+  <div id="rows"></div>
+  <div id="outro"></div>
+</div>
+
+<script>
+window.DATA = /*DATA*/{
+  items: [
+    { marque: "Cdiscount", code: "SQUEEZIE10", createur: "Squeezie", disc: "", logo: null, logoStyle: "pad" },
+    { marque: "BlaBlaCar", code: "BLABLAILHAN", createur: "ByIlhan", disc: "", logo: null, logoStyle: "pad" },
+    { marque: "Campus Coach", code: "BRUNORUN", createur: "Bruno Maltor", disc: "", logo: null, logoStyle: "pad" }
+  ]
+}/*END*/;
+/*COMMUN_JS*/
+
+const D = window.DATA, N = D.items.length;
+const T = { hookOut: 1.4, rows: 1.6, st: 1.7, rowDt: .38, rowsOut: 4.95, flash: 5.05, outro: 5.3 };
+T.end = T.outro + 3.4;
+window.DUREE = T.end; window.CUTS = [0, T.rows, T.outro, T.end]; window.OUTRO_T = T.outro; window.CLICKS = [];
+const L = {};
+
+function setup() {
+  const big = `${N} codes`;
+  $("l1").textContent = big; $("l2").textContent = "à garder.";
+  const s1 = fitSize($("l1"), 790, 200), s2 = fitSize($("l2"), 790, 140);
+  $("l1").style.fontSize = s1 + "px"; $("l1").style.top = "430px"; $("l1").style.lineHeight = "1.04";
+  $("l2").style.fontSize = s2 + "px"; $("l2").style.top = (430 + s1 * 1.04) + "px"; $("l2").style.lineHeight = "1.04";
+  L.w1 = words($("l1"), big); L.w2 = words($("l2"), "à garder.");
+  $("tiles").innerHTML = D.items.map(o => tileHTML(o.logo, o.marque, 150, o.logoStyle)).join("");
+  const tw = $("tiles").offsetWidth, tt = 430 + s1 * 1.04 + s2 * 1.04 + 70;
+  $("tiles").style.left = (CX - tw / 2) + "px"; $("tiles").style.top = tt + "px";
+  $("names").textContent = D.items.map(o => o.marque).join(" · ");
+  $("names").style.fontSize = Math.min(40, fitSize($("names"), 790, 40)) + "px";
+  $("names").style.top = (tt + 150 + 34) + "px";
+  ["st"].forEach(id => { const t = $(id).querySelector(".t"); t.style.fontSize = fitSize(t, 790, 64) + "px"; });
+  $("rows").innerHTML = D.items.map((o, i) => `<div class="row3${i === 0 ? " first" : ""}" id="r${i}" style="top:${500 + i * 262}px">
+      <div class="rk">${i + 1}</div>${tileHTML(o.logo, o.marque, 112, o.logoStyle)}
+      <div class="mid"><div class="br">${esc(o.marque)}</div><div class="cd">${esc(o.code)}</div>${o.createur ? `<div class="cr">via ${esc(o.createur)}</div>` : ""}</div>
+      ${o.disc ? `<div class="ds">${esc(o.disc)}</div>` : ""}</div>`).join("");
+  D.items.forEach((o, i) => {
+    const r = $(`r${i}`), br = r.querySelector(".br"), mid = r.querySelector(".mid");
+    br.style.fontSize = "48px";
+    const room = mid.offsetWidth;
+    if (textWidth(br) > room) br.style.fontSize = (48 * room / textWidth(br)) + "px";
+  });
+}
+
+function render(t) {
+  renderBackground(t, t > T.outro ? .95 : .6);
+
+  // ---------- accroche
+  const hookOn = t < T.hookOut + .45;
+  show($("hook"), hookOn);
+  if (hookOn) {
+    const out = (i) => eio(prog(t, T.hookOut + i * .05, .3));
+    $("kick").style.opacity = eo(prog(t, -.2, .35)) * (1 - out(0));
+    const rise = (spans, start) => spans.forEach((sp, i) => { sp.style.transform = `translateY(${(1 - expo(prog(t, start + i * .06, .45))) * 112}%)`; });
+    rise(L.w1, -.32); rise(L.w2, -.18);
+    ["l1", "l2"].forEach((id, i) => { const q = out(i + 1); $(id).style.opacity = 1 - q; $(id).style.transform = `translateY(${-q * 150}px)`; blur($(id), q * 12); });
+    [...$("tiles").children].forEach((el, i) => {
+      const p = spring(prog(t, .05 + i * .1, .7)), q = out(3);
+      el.style.transform = `translateY(${(1 - clamp(p)) * 80 - q * 150}px) scale(${.6 + .4 * p})`;
+      el.style.opacity = clamp(p * 2) * (1 - q);
+    });
+    const nq = out(4);
+    $("names").style.opacity = eo(prog(t, .35, .4)) * (1 - nq); $("names").style.transform = `translateY(${-nq * 150}px)`;
+    $("save").style.opacity = (.55 + .45 * Math.abs(Math.sin(t * 4))) * eo(prog(t, .6, .3)) * (1 - out(5));
+  }
+
+  // ---------- les trois codes arrivent en 3D
+  renderStep($("st"), t, T.st, T.rowsOut + .1);
+  D.items.forEach((o, i) => {
+    const r = $(`r${i}`), at = T.rows + .15 + i * T.rowDt;
+    const p = spring(prog(t, at, .9)), px = eo5(prog(t, at, .7)), q = eio(prog(t, T.rowsOut + i * .05, .35));
+    const on = t > at - .02 && t < T.flash + .4;
+    r.style.display = on ? "flex" : "none";
+    if (!on) return;
+    r.style.transform = `perspective(1800px) translateX(${(1 - px) * 420}px) translateY(${-q * 120}px) rotateY(${(1 - p) * -34}deg) scale(${(.9 + .1 * p) * (1 - q * .08)})`;
+    r.style.opacity = clamp(px * 1.6) * (1 - q);
+    blur(r, (1 - px) * 10 + q * 10);
+    if (i === 0) r.style.boxShadow = `0 40px 90px rgba(0,0,0,.55), 0 0 ${60 + 30 * Math.sin(t * 4)}px rgba(139,0,255,${.25 + .15 * Math.sin(t * 4)})`;
+  });
+
+  renderFlash(t, T.flash);
+  renderOutro(t, T.outro);
+}
+
+boot();
+</script>

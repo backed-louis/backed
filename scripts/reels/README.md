@@ -43,16 +43,19 @@ Pour lancer à la main : **Actions → Vidéos de la semaine → Run workflow**
 - Codes du jour : seulement les offres valables jusqu'au vendredi (date de fin vide ou après).
 - Le nombre de nouvelles offres par jour ne change rien : toujours 1 vidéo par jour. S'il manque des offres, le jour est marqué « pas de nouvelle vidéo » dans `publications.md`.
 - Aucun compteur (nombre de codes, de créateurs) dans les vidéos, puisqu'elles sont préparées pour toute la semaine.
-- La vidéo s'ouvre sur l'accroche (logo et nom de la marque, créateur, gain), puis la carte du code,
-  puis la fin : le logo Backed qui se tape, « Avant de payer, passe par Backed. » et backed.fr.
-  Tout reste dans la zone que l'interface TikTok / Reels ne recouvre pas.
+- Vidéos premium (depuis novembre 2026), dans le style du motion « Le réflexe Backed » : pages HTML
+  `scripts/motion/code_du_jour.html` et `top3.html`, rendues image par image dans Chromium (`scripts/motion/moteur.py`).
+  Code du jour (~9,7 s) : accroche (logo, créateur, gain), la carte de l'offre arrive en 3D et le code est copié,
+  le code s'envole et se colle au paiement (« Tu paies moins. Et tu soutiens <créateur>. »), fin Backed.
+  Top 3 (~8,7 s) : « 3 codes à garder » avec les logos, les trois codes arrivent en 3D, fin Backed.
+  Tout reste dans la zone que l'interface TikTok / Reels ne recouvre pas. `--classique` : anciennes vidéos (Pillow).
 - La remise affichée est le premier pourcentage de l'offre (5 à 90 %) ; les « jusqu'à -X % » ne sont pas
   traités comme une remise garantie.
 
 ## En local
 
 ```bash
-pip install Pillow numpy scipy   # + ffmpeg installé
+pip install Pillow numpy scipy playwright && python -m playwright install chromium   # + ffmpeg installé
 AIRTABLE_API_KEY=... AIRTABLE_BASE_ID=... python3 scripts/reels/generate_week.py --out out/semaine
 # test sans Airtable (et sans télécharger les logos) :
 python3 scripts/reels/generate_week.py --fixture scripts/reels/fixture.json --out out/test --no-logo --preview out/apercu
