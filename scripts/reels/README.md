@@ -14,8 +14,8 @@ Chaque run prépare :
 - le top 3 du samedi (le lendemain) : les 3 codes les plus copiés des 7 derniers jours, vidéo `00-…-top3.mp4`
   et textes en tête de `publications.md`, avec le tableau des clics qui a servi au classement ;
 - du dimanche au vendredi suivants : 1 vidéo « Code du jour » par jour ;
-- pour chaque jour (et le top 3) : une image de story Instagram (`…-story.png`, avec la place du sticker lien
-  sous le code) et une carte carrée à envoyer avec le message WhatsApp (`…-whatsapp.png`) ;
+- pour chaque jour (et le top 3) : une carte carrée à envoyer avec le message WhatsApp de 12h15 (`…-whatsapp.png`) ;
+  la vidéo, elle, se publie à 19h sur TikTok, en Reel et en story Instagram (la même vidéo), et en YouTube Shorts ;
 - le carrousel de la semaine (`carrousel/01.png` à `08.png`, format 4:5) : couverture, un code par image,
   image de fin. À publier le dimanche sur Instagram, et sur TikTok en mode photo.
 
