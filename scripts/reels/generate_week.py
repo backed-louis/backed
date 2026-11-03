@@ -6,7 +6,8 @@ Usage :
 
 Sortie : le top 3 du samedi qui suit (le script tourne le vendredi soir ; classé sur les clics des 7 derniers jours),
 puis une vidéo « Code du jour » pour chaque jour du dimanche au vendredi suivants. Pour chaque jour :
-la vidéo, l'image de story et la carte WhatsApp ; pour la semaine : le carrousel (dossier carrousel/).
+la vidéo (publiée à 19h sur TikTok, en Reel et en story Instagram, et en YouTube Shorts) et la carte WhatsApp
+(12h15) ; pour la semaine : le carrousel (dossier carrousel/).
 publications.md donne les textes TikTok, Instagram, YouTube Shorts et WhatsApp de chaque jour.
 """
 import argparse
@@ -179,8 +180,7 @@ def texts_offer(o, weekday):
              + f".\n\n{SIGN_LINK} → lien en bio\n\n{tags} #reduction")
     wa = (f"Code du jour ⚡\n{o['brand']} : {render.first_clause(o['benefit'], 80)}\nCode : {o['code']}\n"
           + (f"via {o['creator']}\n" if o["creator"] else "") + f"→ {url}\n\n{SIGN}")
-    wa_time = "18h" if weekday == 6 else "12h15"
-    return tiktok, insta, wa, wa_time
+    return tiktok, insta, wa, WA_TIME
 
 
 def texts_top(items):
@@ -201,7 +201,7 @@ def texts_top(items):
              f"Enregistre ce post. {SIGN_LINK} → lien en bio\n\n#codepromo #bonplan #youtube")
     wa = (f"🔥 Les {len(items)} codes les plus copiés sur Backed cette semaine\n\n{rich_wa}\n\n"
           f"Copie le code, colle-le au paiement : tu paies moins et tu soutiens le créateur ⚡\n{SIGN_LINK} → backed.fr")
-    return tiktok, insta, wa, "10h"
+    return tiktok, insta, wa, WA_TIME
 
 
 def texts_youtube(o):
@@ -243,10 +243,11 @@ def ranking_note(items, since):
             f"| # | Marque | Code | Clics 7 jours | Clics au total |\n|---|---|---|---|---|\n{rows}\n")
 
 
-def block(title, video, tiktok, insta, wa, wa_time, yt=None, story=None, wa_img=None, link=None):
-    files = f"Vidéo : `{video}` — TikTok + Reel Instagram + YouTube Shorts à 19h\n"
-    if story:
-        files += f"\nStory Instagram ({wa_time}) : `{story}` + sticker lien → {link}\n"
+WA_TIME = "12h15"   # WhatsApp, envoyé à la main chaque jour ; tout le reste se publie à 19h (Buffer)
+
+
+def block(title, video, tiktok, insta, wa, wa_time, yt=None, wa_img=None):
+    files = f"Vidéo : `{video}` — à 19h : TikTok + Reel Instagram + story Instagram (la même vidéo) + YouTube Shorts\n"
     if wa_img:
         files += f"\nWhatsApp ({wa_time}) : l'image `{wa_img}` avec le texte ci-dessous\n"
     out = (f"## {title}\n\n{files}\n"
@@ -349,13 +350,12 @@ def main():
         if dur:
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
         stem = f"00-{top_day.isoformat()}-top{len(top)}"
-        wa_img, story_img = visuels.top_card(top), visuels.top_card(top, visuels.STORY)
+        wa_img = visuels.top_card(top)
         visuels.save(wa_img, os.path.join(a.out, f"{stem}-whatsapp.png"))
-        visuels.save(story_img, os.path.join(a.out, f"{stem}-story.png"))
         vid_rows.append(stills)
-        vis_rows.append([story_img, wa_img])
+        vis_rows.append([wa_img])
         md.append(block(f"{date_fr(top_day)} — Top {len(top)} de la semaine", name, *texts_top(top),
-                        yt=texts_youtube_top(top), story=f"{stem}-story.png", wa_img=f"{stem}-whatsapp.png", link="backed.fr"))
+                        yt=texts_youtube_top(top), wa_img=f"{stem}-whatsapp.png"))
         md.append(ranking_note(top, since))
     # Carrousel de la semaine : les codes du jour, à publier le dimanche (Instagram, et TikTok en mode photo)
     if not only:
@@ -366,7 +366,7 @@ def main():
             visuels.save(im, os.path.join(a.out, "carrousel", f"{k + 1:02d}.png"))
         vis_rows.append(slides[:4])
         vis_rows.append(slides[4:])
-        md.append(f"## {date_fr(start)} à 11h — Carrousel de la semaine\n\n"
+        md.append(f"## {date_fr(start)} à 19h — Carrousel de la semaine\n\n"
                   f"Images : dossier `carrousel/` ({len(slides)} images, dans l'ordre) — post Instagram, et TikTok en mode photo.\n\n"
                   f"**Légende**\n```\n{texts_carousel(daily, period)}\n```\n")
     for i, o in enumerate(daily):
@@ -376,14 +376,12 @@ def main():
         dur, stills = make_video("offre", o, os.path.join(a.out, name), i % 4)
         if dur:
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
-        story_img, _ = visuels.story(o, date_fr(day))
         wa_img = visuels.whatsapp_card(o, date_fr(day))
-        visuels.save(story_img, os.path.join(a.out, f"{stem}-story.png"))
         visuels.save(wa_img, os.path.join(a.out, f"{stem}-whatsapp.png"))
         vid_rows.append(stills)
-        vis_rows.append([story_img, wa_img])
+        vis_rows.append([wa_img])
         md.append(block(f"{date_fr(day)} — {o['brand']}", name, *texts_offer(o, day.weekday()), yt=texts_youtube(o),
-                        story=f"{stem}-story.png", wa_img=f"{stem}-whatsapp.png", link=f"backed.fr/marque/{o['slug']}"))
+                        wa_img=f"{stem}-whatsapp.png"))
     for i in range(len(daily), 0 if only else 6):  # pas assez d'offres valables toute la semaine
         day = start + dt.timedelta(days=i)
         md.append(f"## {date_fr(day)} — pas de nouvelle vidéo\n\nPas assez d'offres valables toute la semaine : "
