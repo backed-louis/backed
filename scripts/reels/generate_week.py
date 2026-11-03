@@ -142,9 +142,13 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None):
         daily = [next(o for o in offers if o["brand"].lower() == m) for m in wanted
                  if any(o["brand"].lower() == m for o in offers)]
         return daily, [], len(data["offers"]), len(creators), since
-    # Codes du jour : l'offre doit tenir jusqu'à la fin de la semaine. Top 3 : publié le jour même.
-    daily = one_per_brand([o for o in offers if not (o["end"] and valid_until and o["end"] < valid_until)], n_daily)
-    top = one_per_brand(offers, n_top)
+    # Codes du jour et top 3 : l'offre doit tenir jusqu'à la fin de la semaine (la vidéo reste en ligne après sa
+    # publication). Le top 3 n'est jamais vide : s'il manque des offres valables, on complète avec les suivantes.
+    valid = [o for o in offers if not (o["end"] and valid_until and o["end"] < valid_until)]
+    daily = one_per_brand(valid, n_daily)
+    top = one_per_brand(valid, n_top)
+    if len(top) < n_top:
+        top += [o for o in one_per_brand(offers, len(offers)) if o["brand"].lower() not in {t["brand"].lower() for t in top}][: n_top - len(top)]
     return daily, top, len(data["offers"]), len(creators), since
 
 
