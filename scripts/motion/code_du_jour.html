@@ -1,6 +1,6 @@
 <!-- Vidéo premium « Code du jour » : 1080×1920, ~9,7 s. Accroche (« Code du jour » + logo et marque, puis une carte
-     premium en 3D avec l'avantage et le code à moitié masqué), la carte de l'offre
-     sort en 3D et le code est copié, le code s'envole et se colle au paiement, fin Backed.
+     premium en 3D avec l'avantage et le code à moitié masqué) ; la même carte se redresse, le code se dévoile et il est copié,
+     le code s'envole et se colle au paiement, fin Backed.
      moteur.py injecte les polices (FONTS), le style et les outils communs (COMMUN_CSS, COMMUN_JS) et l'offre (DATA). -->
 <meta charset="utf-8">
 <style>
@@ -24,14 +24,20 @@
 #hhero .u { font-family: var(--syne); font-weight: 800; line-height: 1; margin-left: .04em; }
 #hhero .txt { font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; line-height: 1.04; padding-bottom: .05em; }
 #hrest { position: absolute; left: 56px; width: 692px; font: 600 40px var(--inter); color: #d6d3e4; line-height: 1.25; }
-#hchip { position: absolute; right: 50px; bottom: 50px; padding: 14px 22px; border-radius: 16px; font: 700 30px var(--mono); letter-spacing: .1em;
+#hchip { position: absolute; right: 50px; bottom: 50px; padding: 14px 22px; border-radius: 16px; font: 700 32px var(--mono); letter-spacing: .1em; transform-origin: 100% 100%; min-width: 250px; text-align: center;
   background: rgba(0,0,0,.38); border: 1.5px solid rgba(200,160,255,.5); color: var(--off); white-space: nowrap; }
-#hchip i { font-style: normal; color: var(--lilas); letter-spacing: .04em; }
+#hcode i, #hcode b { font-style: normal; font-weight: 700; color: var(--lilas); }
+#hchip .ok { position: absolute; inset: -1.5px; display: flex; align-items: center; justify-content: center; border-radius: 16px; opacity: 0;
+  background: #11331f; border: 1.5px solid rgba(76,217,100,.6); color: var(--green2); font: 700 32px var(--mono); letter-spacing: .04em; }
 #hfloor { position: absolute; left: 170px; width: 700px; height: 120px; border-radius: 50%; background: radial-gradient(ellipse, rgba(139,0,255,.5), rgba(139,0,255,0) 70%); filter: blur(20px); }
-#pop { left: 0; top: 0; transform-origin: 0 0; box-shadow: 0 50px 110px rgba(0,0,0,.6), 0 0 90px rgba(139,0,255,.35); }
-#ck { position: absolute; left: 140px; top: 470px; width: 760px; border-radius: 40px; transform-origin: 380px 220px;
-  background: linear-gradient(160deg, #1a1b28, #101119); border: 1.5px solid #34364a; padding: 40px 46px 42px;
-  box-shadow: 0 60px 120px rgba(0,0,0,.6), 0 0 120px rgba(139,0,255,.18); display: none; }
+#ck { position: absolute; left: 140px; top: 470px; width: 760px; border-radius: 44px; transform-origin: 380px 220px; padding: 42px 46px 44px; display: none;
+  background:
+    radial-gradient(ellipse 70% 80% at 92% 0%, rgba(178,102,255,.4), rgba(139,0,255,0) 60%),
+    repeating-linear-gradient(115deg, rgba(255,255,255,.022) 0 2px, rgba(255,255,255,0) 2px 9px),
+    linear-gradient(135deg, #1b1233 0%, #110d20 45%, #0b0b14 100%);
+  box-shadow: 0 0 0 1.5px rgba(200,160,255,.4) inset, 0 60px 120px rgba(0,0,0,.65), 0 0 140px rgba(139,0,255,.28); }
+#ck .k { color: #c9b3ef; }
+#field { background: rgba(7,8,15,.75); }
 #ck .k { font: 700 22px var(--mono); letter-spacing: .26em; color: var(--grey); white-space: nowrap; overflow: hidden; }
 #ck .row { display: flex; align-items: center; justify-content: space-between; margin-top: 26px; }
 #field { flex: 1; height: 86px; border-radius: 18px; background: var(--night); border: 2px solid var(--line); position: relative; margin-right: 16px; }
@@ -52,7 +58,6 @@
   </div>
   <div class="st" id="st2"><div class="n" id="st2n"></div><div class="t">Le code à copier</div></div>
   <div class="st" id="st3"><div class="n">AU PAIEMENT</div><div class="t">Colle-le, c'est appliqué</div></div>
-  <div class="card" id="pop"></div>
   <div id="ck">
     <div class="k" id="ckk"></div>
     <div class="row"><div id="field"><div class="ph" id="fph">Code promo</div><div class="tx" id="ftx"></div></div><div id="apply">Appliquer<div class="ok" id="applyok">✓</div></div></div>
@@ -72,11 +77,24 @@ window.DATA = /*DATA*/{
 /*COMMUN_JS*/
 
 const D = window.DATA;
-const T = { hookOut: 1.35, cardIn: 1.6, st2: 1.75, tap: 2.85, lift: 3.0, recede: 3.1, exit: 3.65, ckIn: 3.75, st3: 3.9,
+const T = { hookOut: 1.35, cardIn: 1.6, st2: 1.75, reveal: 2.0, tap: 2.85, lift: 3.0, recede: 3.1, exit: 3.65, ckIn: 3.75, st3: 3.9,
             dive: 4.25, land: 4.7, apply: 4.8, res: 4.9, msg: 5.05, ckOut: 5.95, flash: 6.05, outro: 6.3, end: 9.7 };
 window.DUREE = T.end; window.CUTS = [0, T.cardIn, T.ckIn, T.outro, T.end]; window.OUTRO_T = T.outro; window.CLICKS = [T.tap, T.land];
 const L = {};
-const POP_S = 1.62, POP_CY = 880;
+const S2 = 1.08, CY2 = 860, CHIP2 = 1.3;   // la carte redressée à l'écran 2 : échelle, centre, et le code agrandi
+const GLYPHS = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789";
+
+// le code sur la carte : la 1re moitié visible, la 2de masquée, qui se dévoile lettre par lettre (en brouillant) à T.reveal
+function codeHTML(t) {
+  const c = D.code; let out = esc(c.slice(0, L.vis));
+  for (let k = 0; k < L.hidden; k++) {
+    const a = T.reveal + k * .05;
+    if (t >= a + .16) out += esc(c[L.vis + k]);
+    else if (t >= a) out += `<b>${GLYPHS[(Math.floor(t * 30) * 7 + k * 13) % GLYPHS.length]}</b>`;
+    else out += "<i>•</i>";
+  }
+  return out;
+}
 
 function balanced(el, text, maxw, max) {
   // une ligne si elle tient assez grande, sinon deux lignes les plus égales possible
@@ -133,9 +151,9 @@ function setup() {
     el.innerHTML = ls.map(esc).join("<br>"); el.style.fontSize = hs + "px";
     y += ls.length * hs * 1.04;
   }
-  const c = D.code, vis = Math.min(c.length, Math.max(2, Math.ceil(c.length / 2)));
-  $("hchip").innerHTML = `${esc(c.slice(0, vis))}<i>${"•".repeat(Math.min(7, c.length - vis))}</i>`;
-  const cardH = Math.round(y + 40 + $("hchip").offsetHeight + 50);
+  L.vis = Math.min(D.code.length, Math.max(2, Math.ceil(D.code.length / 2))); L.hidden = D.code.length - L.vis;
+  $("hchip").innerHTML = `<span id="hcode">${codeHTML(0)}</span><div class="ok">✓ Copié !</div>`;
+  const cardH = Math.round(y + 62 + $("hchip").offsetHeight + 50);
   $("hcard").style.height = cardH + "px"; $("hcard").style.transformOrigin = `400px ${cardH / 2}px`;
   // en-tête + carte centrés ensemble dans la zone sûre
   const HEAD = 112, GAP = 92, top = Math.round(300 + Math.max(0, (1060 - HEAD - GAP - cardH) / 2) - 20);
@@ -143,8 +161,8 @@ function setup() {
   const ct = top + HEAD + GAP;
   $("hcard").style.top = ct + "px"; $("hstage").style.perspectiveOrigin = `520px ${ct + cardH / 2}px`;
   $("hfloor").style.top = (ct + cardH + 10) + "px";
-  // carte, code, paiement
-  $("pop").innerHTML = cardHTML(D);
+  L.dy2 = CY2 - (ct + cardH / 2);   // déplacement de la carte vers son centre de l'écran 2
+  // code, paiement
   $("st2n").textContent = D.createur ? `PARTAGÉ PAR ${D.createur.toUpperCase()}` : `CODE ${D.marque.toUpperCase()}`;
   ["st2", "st3"].forEach(id => { const t = $(id).querySelector(".t"); t.style.fontSize = fitSize(t, 790, 64) + "px"; const n = $(id).querySelector(".n"); n.style.fontSize = Math.min(26, fitSize(n, 790, 26)) + "px"; });
   $("fly").textContent = D.code;
@@ -156,15 +174,11 @@ function setup() {
   L.ms = ms;
 }
 
-function popAt(p) {
-  const w = $("pop").offsetWidth, h = $("pop").offsetHeight;
-  return { x: CX - w * POP_S / 2, y: POP_CY - h * POP_S / 2, s: POP_S, w, h };
-}
-
 function measure() {
-  const q = popAt(1);
-  $("pop").style.transform = `translate(${q.x}px, ${q.y}px) scale(${q.s})`;
-  L.btn = $("pop").querySelector(".codebtn").getBoundingClientRect();
+  // le code sur la carte redressée (écran 2) : là où le doigt appuie et d'où il s'envole
+  $("hcard").style.transform = `translateY(${L.dy2}px) scale(${S2})`; $("hchip").style.transform = `scale(${CHIP2})`;
+  L.btn = $("hchip").getBoundingClientRect();
+  $("hcard").style.transform = $("hchip").style.transform = "none";
   $("fly").style.display = "block"; L.flyW = $("fly").offsetWidth; L.flyH = $("fly").offsetHeight; $("fly").style.display = "none";
   const ck = $("ck"); ck.style.display = "block"; ck.style.transform = "none";
   const h = ck.offsetHeight;
@@ -182,41 +196,42 @@ function measure() {
 function render(t) {
   renderBackground(t, t > T.outro ? .95 : .6);
 
-  // ---------- accroche (lisible dès la 1re image) : la carte flotte en 3D, un reflet la traverse, puis elle part
-  const hookOn = t < T.hookOut + .45;
-  show($("hook"), hookOn);
-  if (hookOn) {
+  // ---------- la carte : elle flotte en 3D (accroche, lisible dès la 1re image), puis se redresse au centre,
+  // le code se dévoile et il est copié (écran 2), puis elle recule et tombe
+  const cardOn = t < T.exit + .7;
+  show($("hook"), cardOn);
+  if (cardOn) {
     const q = eio(prog(t, T.hookOut, .4)), s0 = eo(prog(t, -.25, .5));
     $("head").style.opacity = (.75 + .25 * s0) * (1 - q);
     $("head").style.transform = `translateY(${(1 - s0) * 16 - q * 120}px)`; blur($("head"), q * 10);
-    const f = eo(prog(t, -.25, 1.7));
-    const ry = -16 + 12 * f + Math.sin(t * 1.3) * 1.2, rx = 12 - 7 * f, rz = -2.5 + 2 * f;
-    $("hcard").style.transform = `translateY(${Math.sin(t * 1.8) * 6 - q * 140}px) rotateX(${rx - q * 50}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${1 + q * .25})`;
-    $("hcard").style.opacity = 1 - q; blur($("hcard"), q * 12);
-    $("hshine").style.left = (-300 + 1450 * eio(prog(t, .1, 1.15))) + "px";
-    $("hhero").querySelectorAll(".grad").forEach(el => sweep(el, t, .25, 1.0));
-    $("hfloor").style.opacity = (.85 + .15 * Math.sin(t * 2)) * (1 - q);
+    const f = eo(prog(t, -.25, 1.7)), p = eio(prog(t, T.hookOut, .75));
+    const rec = eio(prog(t, T.recede, .6)), ex = Math.pow(prog(t, T.exit, .6), 3);
+    const ry = lerp(-16 + 12 * f + Math.sin(t * 1.3) * 1.2, 0, p), rx = lerp(12 - 7 * f, 0, p), rz = lerp(-2.5 + 2 * f, 0, p) - ex * 6;
+    const ty = lerp(Math.sin(t * 1.8) * 6, L.dy2, p) + rec * 90 + ex * 1200, sc = lerp(1, S2, p) * (1 - rec * .12);
+    $("hcard").style.transform = `translateY(${ty}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${sc})`;
+    $("hcard").style.opacity = 1 - eio(prog(t, T.exit + .2, .4));
+    $("hcard").style.filter = rec > .01 ? `blur(${rec * 6}px) brightness(${1 - rec * .5})` : "none";
+    // un reflet traverse la carte à l'accroche, puis de nouveau quand le code se dévoile
+    const first = t < T.hookOut + .3;
+    $("hshine").style.left = (-300 + 1450 * (first ? eio(prog(t, .1, 1.15)) : eio(prog(t, T.reveal - .15, .9)))) + "px";
+    $("hhero").querySelectorAll(".grad").forEach(el => first ? sweep(el, t, .25, 1.0) : sweep(el, t, T.reveal, .9));
+    $("hfloor").style.transform = `translateY(${lerp(0, L.dy2, p) + rec * 90}px)`;
+    $("hfloor").style.opacity = (.85 + .15 * Math.sin(t * 2)) * (1 - rec);
+    // le code se dévoile, s'illumine, puis « ✓ Copié ! »
+    $("hcode").innerHTML = codeHTML(t);
+    const done = T.reveal + L.hidden * .05 + .16, gl = Math.sin(Math.PI * prog(t, done - .05, .5));
+    $("hchip").style.transform = `scale(${lerp(1, CHIP2, p) * (1 + .07 * gl)})`;
+    $("hchip").style.borderColor = t > T.reveal ? "rgba(214,180,255,.95)" : "";
+    $("hchip").style.boxShadow = t > T.reveal ? `0 0 ${30 + 40 * gl}px rgba(139,0,255,${.45 + .35 * gl}), 0 0 0 ${6 * gl}px rgba(178,102,255,.25)` : "";
+    const ok = $("hchip").querySelector(".ok"), cp = eo(prog(t, T.tap, .25));
+    ok.style.opacity = t >= T.tap ? cp : 0;
+    ok.style.transform = `scale(${t >= T.tap ? .9 + .1 * back(cp) : 1})`;
   }
 
   // ---------- titres d'étape
   renderStep($("st2"), t, T.st2, T.st3 - .15);
   renderStep($("st3"), t, T.st3 + .1, T.ckOut + .1);
 
-  // ---------- la carte de l'offre arrive en 3D, puis recule
-  const popOn = t > T.cardIn - .02 && t < T.exit + .7;
-  show($("pop"), popOn);
-  if (popOn) {
-    const q = popAt(1), pin = spring(prog(t, T.cardIn, .95)), py = eo5(prog(t, T.cardIn, .8));
-    const rec = eio(prog(t, T.recede, .6)), ex = Math.pow(prog(t, T.exit, .6), 3);
-    const s = q.s * (.88 + .12 * pin) * (1 - rec * .12);
-    const x = CX - q.w * s / 2, y = q.y + (1 - py) * 760 + rec * 90 + ex * 1200;
-    $("pop").style.transform = `perspective(2000px) translate(${x}px, ${y}px) rotateX(${(1 - pin) * 32}deg) rotateZ(${-ex * 6}deg) scale(${s})`;
-    $("pop").style.opacity = clamp(py * 1.5) * (1 - eio(prog(t, T.exit + .2, .4)));
-    $("pop").style.filter = rec > .01 ? `blur(${rec * 6}px) brightness(${1 - rec * .5})` : "none";
-    const ok = $("pop").querySelector(".ok"), cp = eo(prog(t, T.tap, .25));
-    ok.style.opacity = t >= T.tap ? cp : 0;
-    ok.style.transform = `scale(${t >= T.tap ? .9 + .1 * back(cp) : 1})`;
-  }
   renderFinger(t, [[T.tap, L.btn]]);
 
   // ---------- le code s'envole, puis plonge dans le champ du paiement
