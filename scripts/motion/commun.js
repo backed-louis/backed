@@ -20,6 +20,7 @@ function words(el, text) {
   return [...el.querySelectorAll(".word > span")];
 }
 function show(el, on) { el.style.display = on ? (el.dataset.d || "block") : "none"; }
+function sweep(el, t, a, d) { const p = eio(prog(t, a, d)); el.style.backgroundPosition = `${130 - 160 * p}% 0, 0 0`; }   // reflet sur .grad
 function blur(el, px) { el.style.filter = px > .05 ? `blur(${px}px)` : "none"; }
 const de = n => (/^[aeiouyhéèêàâîôû]/i.test(n) ? "d'" : "de ") + n;
 
@@ -161,7 +162,8 @@ function renderOutro(t, T0) {
 
 // démarrage : polices, puis images, puis setup() de la page
 function boot() {
-  document.fonts.ready.then(() => {
+  // charge les trois polices avant de mesurer les textes (fonts.ready n'attend que celles déjà affichées)
+  Promise.all(["800 100px Syne", "600 40px Inter", "700 30px Mono"].map(f => document.fonts.load(f))).then(() => document.fonts.ready).then(() => {
     setupCommon();
     setup();
     const imgs = [...document.querySelectorAll("img")];
