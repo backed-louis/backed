@@ -36,20 +36,22 @@ export default function HowItWorks() {
           {STEPS.map((step, i) => (
             <div
               key={step.num}
+              className={i === 1 ? 'pcard' : undefined}
               style={{
                 padding: '40px 32px',
-                background: i === 1 ? 'var(--bg-surface)' : 'transparent',
-                borderRadius: i === 1 ? 'var(--r-xl)' : 0,
-                border: i === 1 ? '1px solid var(--border)' : 'none',
+                borderRadius: 22,
               }}
             >
-              <div style={{
+              <div className="grad" style={{
                 fontFamily: 'var(--font-syne)',
-                fontSize: 52, fontWeight: 800,
-                color: 'var(--accent)',
-                opacity: 0.2,
+                fontSize: 56, fontWeight: 800,
+                letterSpacing: '-0.04em',
                 lineHeight: 1,
-                marginBottom: 24,
+                paddingBottom: 4,
+                marginBottom: 20,
+                alignSelf: 'flex-start',
+                display: 'inline-block',
+                filter: 'drop-shadow(0 0 22px rgba(139,0,255,.4))',
               }}>
                 {step.num}
               </div>

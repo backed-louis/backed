@@ -40,7 +40,7 @@ export default async function HomePage() {
     <>
       <Navbar />
       <main>
-        <Hero offerCount={allOffers.length} creatorCount={allCreators.length} />
+        <Hero offerCount={allOffers.length} creatorCount={allCreators.length} top={featuredOffers[0] ?? null} />
         <FeaturedOffers offers={featuredOffers} popularThreshold={popularThreshold} />
         <Categories offerCounts={offerCounts} />
         <HowItWorks />
