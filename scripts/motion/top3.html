@@ -1,5 +1,5 @@
-<!-- Vidéo premium « Top 3 de la semaine » : 1080×1920, ~8,7 s, dans la DA du « Code du jour ». En-tête « Les plus
-     copiés cette semaine », puis une carte violette en 3D qui flotte avec les trois codes à moitié masqués ; la carte se
+<!-- Vidéo premium « Top 3 de la semaine » : 1080×1920, ~8,7 s, dans la DA du « Code du jour ». En-tête (« Les plus
+     copiés cette semaine » ou « Les codes en tendance »), puis une carte violette en 3D qui flotte avec les trois codes à moitié masqués ; la carte se
      redresse, les codes se dévoilent l'un après l'autre, puis elle part et la fin Backed arrive.
      moteur.py injecte FONTS, COMMUN_CSS, COMMUN_JS et DATA. -->
 <meta charset="utf-8">
@@ -33,7 +33,7 @@
 </style>
 
 <div id="frame">
-  <div id="head"><div class="lab">LES PLUS COPIÉS CETTE SEMAINE</div><div class="tt grad" id="tt"></div></div>
+  <div id="head"><div class="lab" id="kick"></div><div class="tt grad" id="tt"></div></div>
   <div id="floor"></div>
   <div id="stage"><div id="card"><div id="shine"></div><div id="rows"></div></div></div>
   <div id="save">Enregistre pour plus tard ↓</div>
@@ -73,6 +73,7 @@ function codeHTML(code, t, at) {
 }
 
 function setup() {
+  $("kick").textContent = D.kicker || "LES PLUS COPIÉS CETTE SEMAINE";
   $("tt").textContent = `Top ${N} de la semaine`;
   $("tt").style.fontSize = Math.min(84, fitSize($("tt"), 800, 84)) + "px";
   $("rows").innerHTML = D.items.map((o, i) => {
