@@ -90,13 +90,13 @@ def offer_data(o):
     }
 
 
-def top_data(items):
+def top_data(items, kicker=None):
     out = []
     for o in items:
         logo, style = logo_data(o.get("logo"))
         out.append({"marque": o["brand"], "code": o["code"], "createur": o.get("creator") or "",
                     "disc": o.get("disc") or "", "logo": logo, "logoStyle": style})
-    return {"items": out}
+    return {"items": out, "kicker": kicker or "LES PLUS COPIÉS CETTE SEMAINE"}
 
 
 # ------------------------------------------------------------------ rendu

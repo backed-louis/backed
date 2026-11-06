@@ -1,0 +1,20 @@
+# Marques en tendance sur Google (Google Trends, France, « Requêtes en hausse » liées à « code », 3 derniers mois).
+# Une marque par ligne, la plus en hausse d'abord ; le nom doit être celui de la table Brands d'Airtable.
+# Le top 3 du samedi prend les 3 premières qui ont un code actif valable toute la semaine (le meilleur code de chaque
+# marque) et devient « Les codes en tendance » ; s'il y en a moins de 3, il reste « Les plus copiés cette semaine ».
+# Mis à jour le 6 novembre 2026.
+Mister Spex
+NordPass
+Autodoc
+Saily
+Incogni
+NordVPN
+Rouje
+Surfshark
+Eldorado.gg
+Swissquote
+Emergent
+Picniq
+OrangeX
+eToro
+Hostinger
