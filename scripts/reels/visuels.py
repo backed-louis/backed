@@ -168,7 +168,7 @@ def story(o, date_label):
     return img, bottom + 140
 
 
-def top_card(items, size=SQ, title="Les plus copiés cette semaine"):
+def top_card(items, size=SQ, title="Les codes en tendance"):
     """Carte du top 3 : une ligne par code (logo, marque, code, remise)."""
     W_, H_ = size
     img, d = canvas(size, glow=(W_ / 2, H_ * 0.3, 420, 260, 70))
