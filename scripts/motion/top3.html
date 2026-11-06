@@ -1,113 +1,149 @@
-<!-- Vidéo premium « Top 3 de la semaine » : 1080×1920, ~8,7 s. Accroche (3 codes à garder, logos), les trois
-     codes arrivent en 3D l'un après l'autre, fin Backed. moteur.py injecte FONTS, COMMUN_CSS, COMMUN_JS et DATA. -->
+<!-- Vidéo premium « Top 3 de la semaine » : 1080×1920, ~8,7 s, dans la DA du « Code du jour ». En-tête « Les plus
+     copiés cette semaine », puis une carte violette en 3D qui flotte avec les trois codes à moitié masqués ; la carte se
+     redresse, les codes se dévoilent l'un après l'autre, puis elle part et la fin Backed arrive.
+     moteur.py injecte FONTS, COMMUN_CSS, COMMUN_JS et DATA. -->
 <meta charset="utf-8">
 <style>
 /*FONTS*/
 /*COMMUN_CSS*/
-#tiles { position: absolute; left: 0; top: 0; display: flex; gap: 36px; }
-#names { position: absolute; left: 0; width: 1040px; text-align: center; font: 700 40px var(--inter); color: #c9cbd8; white-space: nowrap; }
-#save { position: absolute; left: 0; top: 1268px; width: 1040px; text-align: center; font: 700 46px var(--inter); }
-.row3 { position: absolute; left: 120px; width: 800px; height: 236px; border-radius: 34px; background: linear-gradient(160deg, #1a1b28, #111219);
-  border: 1.5px solid #34364a; box-shadow: 0 40px 90px rgba(0,0,0,.55); display: flex; align-items: center; gap: 26px; padding: 0 34px; transform-origin: 400px 118px; opacity: 0; }
-.row3 .rk { font-family: var(--inter); font-weight: 800; font-size: 96px; color: var(--lilas); width: 70px; text-align: center; line-height: 1; letter-spacing: -.04em; }
-.row3 .mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-.row3 .br { font-family: var(--syne); font-weight: 800; letter-spacing: -.01em; white-space: nowrap; }
-.row3 .cd { align-self: flex-start; padding: 7px 14px; border-radius: 12px; background: var(--night); border: 1.5px solid #3a3c52; font: 700 30px var(--mono); letter-spacing: .06em; white-space: nowrap; }
-.row3 .cr { font: 500 22px var(--inter); color: var(--grey); white-space: nowrap; }
-.row3 .ds { font-family: var(--syne); font-weight: 800; font-size: 52px; color: var(--green2); white-space: nowrap; }
-.row3.first { border-color: rgba(178,102,255,.7); box-shadow: 0 40px 90px rgba(0,0,0,.55), 0 0 70px rgba(139,0,255,.35); }
+#head { position: absolute; left: 0; width: 1040px; text-align: center; }
+#head .lab { font: 700 25px var(--mono); letter-spacing: .34em; color: var(--lilas); white-space: nowrap; }
+#head .tt { font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; line-height: 1.05; margin-top: 14px; white-space: nowrap; padding-bottom: .05em; }
+#stage { position: absolute; inset: 0; perspective: 1900px; }
+#card { position: absolute; left: 120px; width: 800px; border-radius: 48px; overflow: hidden; padding: 18px 46px;
+  background:
+    radial-gradient(ellipse 70% 60% at 92% 0%, rgba(178,102,255,.55), rgba(139,0,255,0) 60%),
+    radial-gradient(ellipse 60% 60% at 0% 100%, rgba(80,30,160,.5), rgba(80,30,160,0) 65%),
+    repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0 2px, rgba(255,255,255,0) 2px 9px),
+    linear-gradient(135deg, #1e1238 0%, #120d22 45%, #0b0b14 100%);
+  box-shadow: 0 0 0 1.5px rgba(200,160,255,.45) inset, 0 70px 130px rgba(0,0,0,.7), 0 0 160px rgba(139,0,255,.38); }
+#shine { position: absolute; top: -30%; width: 220px; height: 160%; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.2), rgba(255,255,255,0)); transform: rotate(20deg); }
+.row { position: relative; display: flex; align-items: center; gap: 26px; padding: 30px 0; }
+.row + .row { border-top: 1.5px solid rgba(200,160,255,.16); }
+.rk { width: 64px; flex-shrink: 0; text-align: center; font-family: var(--inter); font-weight: 800; font-size: 92px; line-height: 1; letter-spacing: -.05em; padding-bottom: .04em; }
+.mid { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.br { font-family: var(--syne); font-weight: 800; letter-spacing: -.01em; line-height: 1.02; padding-bottom: .04em; }
+.chip { padding: 9px 16px; border-radius: 13px; font: 700 28px var(--mono); letter-spacing: .1em; white-space: nowrap;
+  background: rgba(0,0,0,.38); border: 1.5px solid rgba(200,160,255,.5); color: var(--off); }
+.chip i, .chip b { font-style: normal; font-weight: 700; color: var(--lilas); }
+.ds { flex-shrink: 0; font-family: var(--syne); font-weight: 800; font-size: 56px; letter-spacing: -.04em; line-height: 1; display: flex; align-items: flex-start; padding-bottom: .05em; }
+.ds .u { font-size: .5em; margin: .1em 0 0 .04em; letter-spacing: 0; }
+#floor { position: absolute; left: 170px; width: 700px; height: 120px; border-radius: 50%; background: radial-gradient(ellipse, rgba(139,0,255,.5), rgba(139,0,255,0) 70%); filter: blur(20px); }
+#save { position: absolute; left: 0; width: 1040px; text-align: center; font: 700 44px var(--inter); }
 </style>
 
 <div id="frame">
-  <div id="hook">
-    <div class="kicker" id="kick" style="top:352px">LES PLUS COPIÉS CETTE SEMAINE</div>
-    <div class="line" id="l1"></div><div class="line" id="l2" style="color:var(--lilas)"></div>
-    <div id="tiles"></div><div id="names"></div>
-    <div id="save">Enregistre pour plus tard ↓</div>
-  </div>
-  <div class="st" id="st"><div class="n">TOP 3 DE LA SEMAINE</div><div class="t">Les codes les plus copiés</div></div>
-  <div id="rows"></div>
+  <div id="head"><div class="lab">LES PLUS COPIÉS CETTE SEMAINE</div><div class="tt grad" id="tt"></div></div>
+  <div id="floor"></div>
+  <div id="stage"><div id="card"><div id="shine"></div><div id="rows"></div></div></div>
+  <div id="save">Enregistre pour plus tard ↓</div>
   <div id="outro"></div>
 </div>
 
 <script>
 window.DATA = /*DATA*/{
   items: [
-    { marque: "Cdiscount", code: "SQUEEZIE10", createur: "Squeezie", disc: "", logo: null, logoStyle: "pad" },
-    { marque: "BlaBlaCar", code: "BLABLAILHAN", createur: "ByIlhan", disc: "", logo: null, logoStyle: "pad" },
+    { marque: "Fitness Boutique", code: "BT10", createur: "Bodytime", disc: "-10 %", logo: null, logoStyle: "pad" },
+    { marque: "Ovoko", code: "BAPTISTEPITOIS", createur: "Baptiste Pitois", disc: "", logo: null, logoStyle: "pad" },
     { marque: "Campus Coach", code: "BRUNORUN", createur: "Bruno Maltor", disc: "", logo: null, logoStyle: "pad" }
   ]
 }/*END*/;
 /*COMMUN_JS*/
 
 const D = window.DATA, N = D.items.length;
-const T = { hookOut: 1.4, rows: 1.6, st: 1.7, rowDt: .38, rowsOut: 4.95, flash: 5.05, outro: 5.3 };
+// hookOut : la carte se redresse ; reveal : 1er code dévoilé ; rowsOut : la carte part
+const T = { hookOut: 1.35, rows: 1.6, reveal: 1.95, revealDt: .5, rowsOut: 4.95, flash: 5.05, outro: 5.3 };
 T.end = T.outro + 3.4;
-window.DUREE = T.end; window.CUTS = [0, T.rows, T.outro, T.end]; window.OUTRO_T = T.outro; window.CLICKS = [];
+window.DUREE = T.end; window.CUTS = [0, T.rows, T.outro, T.end]; window.OUTRO_T = T.outro;
+window.CLICKS = D.items.map((_, i) => T.reveal + i * T.revealDt);
 const L = {};
+const CY2 = 880, S2 = 1.04;
+const GLYPHS = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789";
+
+function codeHTML(code, t, at) {
+  const vis = Math.min(code.length, Math.max(2, Math.ceil(code.length / 2)));
+  let out = esc(code.slice(0, vis));
+  for (let k = vis; k < code.length; k++) {
+    const a = at + (k - vis) * .045;
+    if (t >= a + .16) out += esc(code[k]);
+    else if (t >= a) out += `<b>${GLYPHS[(Math.floor(t * 30) * 7 + k * 13) % GLYPHS.length]}</b>`;
+    else out += "<i>•</i>";
+  }
+  return out;
+}
 
 function setup() {
-  const big = `${N} codes`;
-  $("l1").textContent = big; $("l2").textContent = "à garder.";
-  const s1 = fitSize($("l1"), 790, 200), s2 = fitSize($("l2"), 790, 140);
-  $("l1").style.fontSize = s1 + "px"; $("l1").style.top = "430px"; $("l1").style.lineHeight = "1.04";
-  $("l2").style.fontSize = s2 + "px"; $("l2").style.top = (430 + s1 * 1.04) + "px"; $("l2").style.lineHeight = "1.04";
-  L.w1 = words($("l1"), big); L.w2 = words($("l2"), "à garder.");
-  $("tiles").innerHTML = D.items.map(o => tileHTML(o.logo, o.marque, 150, o.logoStyle)).join("");
-  const tw = $("tiles").offsetWidth, tt = 430 + s1 * 1.04 + s2 * 1.04 + 70;
-  $("tiles").style.left = (CX - tw / 2) + "px"; $("tiles").style.top = tt + "px";
-  $("names").textContent = D.items.map(o => o.marque).join(" · ");
-  $("names").style.fontSize = Math.min(40, fitSize($("names"), 790, 40)) + "px";
-  $("names").style.top = (tt + 150 + 34) + "px";
-  ["st"].forEach(id => { const t = $(id).querySelector(".t"); t.style.fontSize = fitSize(t, 790, 64) + "px"; });
-  $("rows").innerHTML = D.items.map((o, i) => `<div class="row3${i === 0 ? " first" : ""}" id="r${i}" style="top:${500 + i * 262}px">
-      <div class="rk">${i + 1}</div>${tileHTML(o.logo, o.marque, 112, o.logoStyle)}
-      <div class="mid"><div class="br">${esc(o.marque)}</div><div class="cd">${esc(o.code)}</div>${o.createur ? `<div class="cr">via ${esc(o.createur)}</div>` : ""}</div>
-      ${o.disc ? `<div class="ds">${esc(o.disc)}</div>` : ""}</div>`).join("");
+  $("tt").textContent = `Top ${N} de la semaine`;
+  $("tt").style.fontSize = Math.min(84, fitSize($("tt"), 800, 84)) + "px";
+  $("rows").innerHTML = D.items.map((o, i) => {
+    const m = (o.disc || "").replace(/\s+/g, "").match(/^-?(\d+)(%|€)$/);
+    const ds = m ? `<div class="ds grad">−${m[1]}<span class="u"${m[2] === "€" ? ' style="font-family:var(--inter)"' : ""}>${m[2]}</span></div>` : "";
+    return `<div class="row" id="r${i}"><div class="rk grad">${i + 1}</div>${tileHTML(o.logo, o.marque, 104, o.logoStyle)}
+      <div class="mid"><div class="br">${esc(o.marque)}</div><div class="chip" id="c${i}"></div></div>${ds}</div>`;
+  }).join("");
   D.items.forEach((o, i) => {
-    const r = $(`r${i}`), br = r.querySelector(".br"), mid = r.querySelector(".mid");
-    br.style.fontSize = "48px";
+    const br = $(`r${i}`).querySelector(".br"), mid = $(`r${i}`).querySelector(".mid");
+    $(`c${i}`).innerHTML = codeHTML(o.code, -1, 99);
+    // la marque sur une ligne si elle tient en 44 px, sinon sur deux (« Fitness / Boutique »), le mot le plus long tient
     const room = mid.offsetWidth;
-    if (textWidth(br) > room) br.style.fontSize = (48 * room / textWidth(br)) + "px";
+    br.style.fontSize = "44px"; br.style.whiteSpace = "nowrap";
+    if (textWidth(br) > room) {
+      const words = o.marque.split(" ");
+      br.textContent = words[0]; let w = 0;
+      words.forEach(x => { br.textContent = x; w = Math.max(w, textWidth(br)); });
+      br.textContent = o.marque;
+      br.style.whiteSpace = words.length > 1 ? "normal" : "nowrap";
+      if (words.length === 1 || w > room) br.style.fontSize = (44 * room / (words.length > 1 ? w : textWidth(br))) + "px";
+    }
   });
+  const cardH = $("card").offsetHeight, HEAD = 25 + 14 + parseFloat($("tt").style.fontSize) * 1.05, GAP = 70;
+  const top = Math.round(300 + Math.max(0, (1060 - HEAD - GAP - cardH) / 2) - 20);
+  $("head").style.top = top + "px";
+  const ct = top + HEAD + GAP;
+  $("card").style.top = ct + "px"; $("card").style.transformOrigin = `400px ${cardH / 2}px`;
+  $("stage").style.perspectiveOrigin = `520px ${ct + cardH / 2}px`;
+  $("floor").style.top = (ct + cardH + 10) + "px";
+  L.dy2 = CY2 - (ct + cardH / 2);
+  $("save").style.top = (CY2 + cardH * S2 / 2 + 56) + "px";
 }
 
 function render(t) {
   renderBackground(t, t > T.outro ? .95 : .6);
-
-  // ---------- accroche
-  const hookOn = t < T.hookOut + .45;
-  show($("hook"), hookOn);
-  if (hookOn) {
-    const out = (i) => eio(prog(t, T.hookOut + i * .05, .3));
-    $("kick").style.opacity = eo(prog(t, -.2, .35)) * (1 - out(0));
-    const rise = (spans, start) => spans.forEach((sp, i) => { sp.style.transform = `translateY(${(1 - expo(prog(t, start + i * .06, .45))) * 112}%)`; });
-    rise(L.w1, -.32); rise(L.w2, -.18);
-    ["l1", "l2"].forEach((id, i) => { const q = out(i + 1); $(id).style.opacity = 1 - q; $(id).style.transform = `translateY(${-q * 150}px)`; blur($(id), q * 12); });
-    [...$("tiles").children].forEach((el, i) => {
-      const p = spring(prog(t, .05 + i * .1, .7)), q = out(3);
-      el.style.transform = `translateY(${(1 - clamp(p)) * 80 - q * 150}px) scale(${.6 + .4 * p})`;
-      el.style.opacity = clamp(p * 2) * (1 - q);
-    });
-    const nq = out(4);
-    $("names").style.opacity = eo(prog(t, .35, .4)) * (1 - nq); $("names").style.transform = `translateY(${-nq * 150}px)`;
-    $("save").style.opacity = (.55 + .45 * Math.abs(Math.sin(t * 4))) * eo(prog(t, .6, .3)) * (1 - out(5));
-  }
-
-  // ---------- les trois codes arrivent en 3D
-  renderStep($("st"), t, T.st, T.rowsOut + .1);
+  const on = t < T.rowsOut + .9;
+  show($("head"), t < T.hookOut + .5); show($("stage"), on); show($("floor"), on); show($("save"), on);
+  // en-tête : lisible dès la 1re image, il s'efface quand la carte se redresse
+  const q = eio(prog(t, T.hookOut, .4)), s0 = eo(prog(t, -.25, .5));
+  $("head").style.opacity = (.75 + .25 * s0) * (1 - q);
+  $("head").style.transform = `translateY(${(1 - s0) * 16 - q * 120}px)`; blur($("head"), q * 10);
+  sweep($("tt"), t, .25, 1.0);
+  if (!on) { renderFlash(t, T.flash); renderOutro(t, T.outro); return; }
+  // la carte : flotte en 3D, se redresse au centre, puis recule et tombe
+  const f = eo(prog(t, -.25, 1.7)), p = eio(prog(t, T.hookOut, .75));
+  const rec = eio(prog(t, T.rowsOut - .2, .5)), ex = Math.pow(prog(t, T.rowsOut + .1, .6), 3);
+  const ry = lerp(-16 + 12 * f + Math.sin(t * 1.3) * 1.2, 0, p), rx = lerp(12 - 7 * f, 0, p), rz = lerp(-2.5 + 2 * f, 0, p) - ex * 6;
+  const ty = lerp(Math.sin(t * 1.8) * 6, L.dy2, p) + rec * 90 + ex * 1200, sc = lerp(1, S2, p) * (1 - rec * .12);
+  $("card").style.transform = `translateY(${ty}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${sc})`;
+  $("card").style.opacity = 1 - eio(prog(t, T.rowsOut + .3, .4));
+  $("card").style.filter = rec > .01 ? `blur(${rec * 6}px) brightness(${1 - rec * .5})` : "none";
+  const first = t < T.hookOut + .3;
+  $("shine").style.left = (-300 + 1450 * (first ? eio(prog(t, .1, 1.15)) : eio(prog(t, T.reveal + (N - 1) * T.revealDt + .1, .9)))) + "px";
+  $("floor").style.transform = `translateY(${lerp(0, L.dy2, p) + rec * 90}px)`;
+  $("floor").style.opacity = (.85 + .15 * Math.sin(t * 2)) * (1 - rec);
+  // les codes se dévoilent l'un après l'autre (rang 1, 2, 3), le rang s'illumine
   D.items.forEach((o, i) => {
-    const r = $(`r${i}`), at = T.rows + .15 + i * T.rowDt;
-    const p = spring(prog(t, at, .9)), px = eo5(prog(t, at, .7)), q = eio(prog(t, T.rowsOut + i * .05, .35));
-    const on = t > at - .02 && t < T.flash + .4;
-    r.style.display = on ? "flex" : "none";
-    if (!on) return;
-    r.style.transform = `perspective(1800px) translateX(${(1 - px) * 420}px) translateY(${-q * 120}px) rotateY(${(1 - p) * -34}deg) scale(${(.9 + .1 * p) * (1 - q * .08)})`;
-    r.style.opacity = clamp(px * 1.6) * (1 - q);
-    blur(r, (1 - px) * 10 + q * 10);
-    if (i === 0) r.style.boxShadow = `0 40px 90px rgba(0,0,0,.55), 0 0 ${60 + 30 * Math.sin(t * 4)}px rgba(139,0,255,${.25 + .15 * Math.sin(t * 4)})`;
+    const at = T.reveal + i * T.revealDt;
+    $(`c${i}`).innerHTML = codeHTML(o.code, t, at);
+    const gl = Math.sin(Math.PI * prog(t, at, .6));
+    const c = $(`c${i}`);
+    c.style.borderColor = t > at ? "rgba(214,180,255,.95)" : "";
+    c.style.boxShadow = t > at ? `0 0 ${24 + 36 * gl}px rgba(139,0,255,${.4 + .35 * gl})` : "";
+    c.style.transform = `scale(${1 + .06 * gl})`; c.style.transformOrigin = "0 50%";
+    $(`r${i}`).querySelectorAll(".grad").forEach(el => sweep(el, t, first ? .25 : at, first ? 1.0 : .8));
   });
-
+  // « Enregistre pour plus tard » sous la carte redressée
+  const sv = eo(prog(t, T.reveal + N * T.revealDt - .2, .4)) * (1 - eio(prog(t, T.rowsOut - .2, .3)));
+  $("save").style.opacity = sv * (.65 + .35 * Math.abs(Math.sin(t * 4)));
+  $("save").style.transform = `translateY(${(1 - sv) * 20}px)`;
   renderFlash(t, T.flash);
   renderOutro(t, T.outro);
 }
