@@ -153,19 +153,17 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, tr
     # publication). Le top 3 n'est jamais vide : s'il manque des offres valables, on complète avec les suivantes.
     valid = [o for o in offers if not (o["end"] and valid_until and o["end"] < valid_until)]
     daily = one_per_brand(valid, n_daily)
-    # Top 3 « en tendance » : les marques de tendances.txt (dans l'ordre) qui ont un code valable ; pour chacune, le code
-    # le plus copié, puis celui qui affiche une remise chiffrée, puis le plus récent. Seulement s'il y en a assez.
-    trend_top = []
-    for name in trending or []:
+    # Top 3 : les marques les plus en hausse sur Google Trends (tendances.txt, dans l'ordre) qui ont un code valable toute
+    # la semaine — les 1re, 2e et 3e si on a leurs codes, sinon on descend dans le classement. Pour chaque marque, son code
+    # le plus copié, puis celui qui affiche une remise chiffrée, puis le plus récent. Jamais les « plus copiés » à la place.
+    top = []
+    for rank, name in enumerate(trending or [], 1):
         mine = [o for o in valid if o["brand"].lower() == name]
         if mine:
             best = max(mine, key=lambda o: (o["week"], o["clicks"], bool(o["pct"]), o["created"]))
-            trend_top.append(dict(best, trend=True))
-        if len(trend_top) == n_top:
-            return daily, trend_top, len(data["offers"]), len(creators), since
-    top = one_per_brand(valid, n_top)
-    if len(top) < n_top:
-        top += [o for o in one_per_brand(offers, len(offers)) if o["brand"].lower() not in {t["brand"].lower() for t in top}][: n_top - len(top)]
+            top.append(dict(best, trend_rank=rank))
+        if len(top) == n_top:
+            break
     return daily, top, len(data["offers"]), len(creators), since
 
 
@@ -206,13 +204,9 @@ def texts_offer(o, weekday):
     return tiktok, insta, wa, WA_TIME
 
 
-def is_trend(items):
-    return bool(items) and all(o.get("trend") for o in items)
-
-
-def top_sub(items):
-    """Sous-titre du top 3 (vidéo, visuel WhatsApp)."""
-    return "Les codes en tendance" if is_trend(items) else "Les plus copiés cette semaine"
+def top_sub(items=None):
+    """Sous-titre du top 3 (vidéo, visuel WhatsApp) : les marques en hausse sur Google Trends."""
+    return "Les codes en tendance"
 
 
 def texts_top(items):
@@ -227,13 +221,9 @@ def texts_top(items):
                               for i, o in enumerate(items))
     rich_wa = "\n\n".join(f"{i + 1}. {o['brand']}" + (f" : {gain(o)}" if gain(o) else "")
                            + f"\nCode : {o['code']}{via(o)}\n→ backed.fr/marque/{o['slug']}" for i, o in enumerate(items))
-    n = len(items)
-    if is_trend(items):  # marques les plus en hausse sur Google cette semaine (tendances.txt)
-        head_tt, head_ig, head_wa = (f"Les {n} codes promo en tendance cette semaine. 🔥", f"Les {n} codes promo en tendance cette semaine 🔥",
-                                     f"🔥 Les {n} codes promo en tendance cette semaine")
-    else:
-        head_tt, head_ig, head_wa = (f"Les {n} codes les plus copiés sur Backed cette semaine. 🔥", f"Les {n} codes les plus copiés de la semaine 🔥",
-                                     f"🔥 Les {n} codes les plus copiés sur Backed cette semaine")
+    n = len(items)  # marques les plus en hausse sur Google cette semaine (tendances.txt)
+    head_tt, head_ig, head_wa = (f"Les {n} codes promo en tendance cette semaine. 🔥", f"Les {n} codes promo en tendance cette semaine 🔥",
+                                 f"🔥 Les {n} codes promo en tendance cette semaine")
     tiktok = (f"{head_tt}\n{lines}\n"
               f"Enregistre pour plus tard. {SIGN}\n\n#codepromo #bonplan #youtube")
     insta = (f"{head_ig}\n\n{rich_insta}\n\n"
@@ -257,7 +247,7 @@ def texts_youtube(o):
 
 
 def texts_youtube_top(items):
-    what = "en tendance" if is_trend(items) else "les plus copiés"
+    what = "en tendance"
     title = f"Les {len(items)} codes promo {what} cette semaine : " + ", ".join(o["brand"] for o in items)
     if len(title) > 100:
         title = f"Les {len(items)} codes promo {what} cette semaine"
@@ -277,10 +267,11 @@ def texts_carousel(items, period):
 
 def ranking_note(items, since):
     """Ce sur quoi repose le top 3, pour vérifier avant de publier (pas publié)."""
-    base = f"clics depuis le relevé du {since}, puis au total" if since else "clics au total (pas encore de relevé)"
-    rows = "\n".join(f"| {i + 1} | {o['brand']} | {o['code']} | {o['week']} | {o['clicks']} |" for i, o in enumerate(items))
-    return (f"Classement : {base}, une offre par marque.\n\n"
-            f"| # | Marque | Code | Clics 7 jours | Clics au total |\n|---|---|---|---|---|\n{rows}\n")
+    rows = "\n".join(f"| {i + 1} | {o['brand']} | {o.get('trend_rank', '?')} | {o['code']} | {o['week']} | {o['clicks']} |"
+                     for i, o in enumerate(items))
+    return ("Classement : les marques les plus en hausse sur Google Trends (scripts/reels/tendances.txt) qui ont un code "
+            "valable toute la semaine ; pour chacune, son code le plus copié.\n\n"
+            f"| # | Marque | Rang Google Trends | Code | Clics 7 jours | Clics au total |\n|---|---|---|---|---|---|\n{rows}\n")
 
 
 WA_TIME = "12h15"   # WhatsApp, envoyé à la main chaque jour ; tout le reste se publie à 19h (Buffer)
@@ -382,9 +373,12 @@ def main():
           f"Généré automatiquement depuis Airtable le {dt.date.today().isoformat()} : {n_offers} offres actives, "
           "les plus copiées en premier (clics des 7 derniers jours, puis au total), une par marque, et pour les codes "
           "du jour seulement celles valables jusqu'au vendredi. "
-          + ("Top 3 : les marques en tendance sur Google (scripts/reels/tendances.txt) qui ont un code valable. " if is_trend(top) else "")
+          + "Top 3 : les marques les plus en hausse sur Google Trends (scripts/reels/tendances.txt) qui ont un code valable. "
           + "Le nombre de nouvelles offres par jour n'a pas d'importance : 1 vidéo par jour, toujours.\n"]
     # Le top 3 d'abord : il se publie le samedi, avec le classement de la semaine qui se termine.
+    if len(top) < 2 and not only:
+        md.append(f"## {date_fr(top_day)} — Top 3 de la semaine\n\n⚠️ Pas de top 3 : moins de 2 marques de "
+                  "scripts/reels/tendances.txt ont un code valable. Mets la liste à jour avec Google Trends.\n")
     if len(top) >= 2:
         name = f"00-{top_day.isoformat()}-top{len(top)}.mp4"
         dur, stills = make_video("top", top, os.path.join(a.out, name), 3)

@@ -96,7 +96,7 @@ def top_data(items, kicker=None):
         logo, style = logo_data(o.get("logo"))
         out.append({"marque": o["brand"], "code": o["code"], "createur": o.get("creator") or "",
                     "disc": o.get("disc") or "", "logo": logo, "logoStyle": style})
-    return {"items": out, "kicker": kicker or "LES PLUS COPIÉS CETTE SEMAINE"}
+    return {"items": out, "kicker": kicker or "LES CODES EN TENDANCE"}
 
 
 # ------------------------------------------------------------------ rendu

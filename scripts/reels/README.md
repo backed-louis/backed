@@ -11,10 +11,9 @@ Le workflow **Vidéos de la semaine** tourne chaque vendredi vers 18h (heure de 
 soit prêt au réveil le samedi (GitHub retarde parfois les tâches planifiées de plusieurs heures).
 Chaque run prépare :
 
-- le top 3 du samedi (le lendemain) : « Les codes en tendance », les 3 premières marques de `tendances.txt` (Google
-  Trends, mis à jour à la main) qui ont un code valable jusqu'à la fin de la semaine suivante ; s'il y en a moins de 3,
-  « Les plus copiés cette semaine » : les 3 codes les plus copiés des 7 derniers jours (complété par les suivants s'il
-  en manque), vidéo `00-…-top3.mp4`
+- le top 3 du samedi (le lendemain) : « Les codes en tendance », les marques les plus en hausse sur Google Trends
+  (`tendances.txt`, mis à jour à la main) qui ont un code valable jusqu'à la fin de la semaine suivante, dans l'ordre
+  du classement (on descend dans la liste quand on n'a pas le code d'une marque), vidéo `00-…-top3.mp4`
   et textes en tête de `publications.md`, avec le tableau des clics qui a servi au classement ;
 - du dimanche au vendredi suivants : 1 vidéo « Code du jour » par jour ;
 - pour chaque jour (et le top 3) : une carte carrée à envoyer avec le message WhatsApp de 12h15 (`…-whatsapp.png`) ;
