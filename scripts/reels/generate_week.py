@@ -7,7 +7,7 @@ Usage :
 Sortie : le top 3 du samedi qui suit (le script tourne le vendredi soir ; classé sur les clics des 7 derniers jours),
 puis une vidéo « Code du jour » pour chaque jour du dimanche au vendredi suivants. Pour chaque jour :
 la vidéo (publiée à 19h sur TikTok, en Reel et en story Instagram, et en YouTube Shorts) et la carte WhatsApp
-(12h15) ; pour la semaine : le carrousel (dossier carrousel/).
+(12h15). Pas de carrousel de la semaine : chaque code sort le jour même, une fois (WhatsApp à 12h15, réseaux à 19h).
 publications.md donne les textes TikTok, Instagram, YouTube Shorts et WhatsApp de chaque jour.
 """
 import argparse
@@ -176,12 +176,6 @@ def date_fr(d):
     return f"{JOURS[d.weekday()]} {'1er' if d.day == 1 else d.day} {MOIS[d.month - 1]}"
 
 
-def period_fr(a, b):
-    da = "1er" if a.day == 1 else str(a.day)
-    db = "1er" if b.day == 1 else str(b.day)
-    return f"du {da} au {db} {MOIS[b.month - 1]}" if a.month == b.month else f"du {da} {MOIS[a.month - 1]} au {db} {MOIS[b.month - 1]}"
-
-
 def texts_offer(o, weekday):
     url = f"backed.fr/marque/{o['slug']}"
     # Les captions commencent par « Code promo <marque> » : c'est ce que les gens tapent dans la
@@ -257,14 +251,6 @@ def texts_youtube_top(items):
     return title, desc
 
 
-def texts_carousel(items, period):
-    rows = "\n".join(f"{i + 1}. {o['brand']}" + (f" : {o['disc']}" if o["disc"] else "") + f" — code {o['code']}"
-                     for i, o in enumerate(items))
-    return (f"Les {len(items)} codes promo de la semaine ({period}), à enregistrer avant ton prochain achat 💜\n\n"
-            f"{rows}\n\nTous les codes partagés par tes créateurs YouTube → lien en bio\n{SIGN}\n\n"
-            "#codepromo #bonplan #reduction #youtube")
-
-
 def ranking_note(items, since):
     """Ce sur quoi repose le top 3, pour vérifier avant de publier (pas publié)."""
     rows = "\n".join(f"| {i + 1} | {o['brand']} | {o.get('trend_rank', '?')} | {o['code']} | {o['week']} | {o['clicks']} |"
@@ -329,7 +315,7 @@ def main():
     ap.add_argument("--no-logo", action="store_true", help="Ne télécharge pas les logos des marques")
     ap.add_argument("--classique", action="store_true", help="Anciennes vidéos (Pillow) au lieu des vidéos premium (Chromium)")
     ap.add_argument("--marques", help="Marques imposées, séparées par des virgules, un jour chacune à partir de --start "
-                                      "(lot spécial : pas de top 3 ni de carrousel)")
+                                      "(lot spécial : pas de top 3)")
     a = ap.parse_args()
 
     data = json.load(open(a.fixture, encoding="utf-8")) if a.fixture else load_from_airtable()
@@ -392,18 +378,6 @@ def main():
         md.append(block(f"{date_fr(top_day)} — Top {len(top)} de la semaine", name, *texts_top(top),
                         yt=texts_youtube_top(top), wa_img=f"{stem}-whatsapp.png"))
         md.append(ranking_note(top, since))
-    # Carrousel de la semaine : les codes du jour, à publier le dimanche (Instagram, et TikTok en mode photo)
-    if not only:
-        period = period_fr(start, start + dt.timedelta(days=max(0, len(daily) - 1)))
-        slides = visuels.week_carousel(daily, period)
-        os.makedirs(os.path.join(a.out, "carrousel"), exist_ok=True)
-        for k, im in enumerate(slides):
-            visuels.save(im, os.path.join(a.out, "carrousel", f"{k + 1:02d}.png"))
-        vis_rows.append(slides[:4])
-        vis_rows.append(slides[4:])
-        md.append(f"## {date_fr(start)} à 19h — Carrousel de la semaine\n\n"
-                  f"Images : dossier `carrousel/` ({len(slides)} images, dans l'ordre) — post Instagram, et TikTok en mode photo.\n\n"
-                  f"**Légende**\n```\n{texts_carousel(daily, period)}\n```\n")
     for i, o in enumerate(daily):
         day = start + dt.timedelta(days=i)
         stem = f"{i + 1:02d}-{day.isoformat()}-{o['slug']}"

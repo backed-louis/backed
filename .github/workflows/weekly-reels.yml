@@ -2,7 +2,7 @@ name: Vidéos de la semaine
 
 # Chaque vendredi vers 18h (heure de Paris en hiver), génère le top 3 du lendemain samedi (clics des
 # 7 derniers jours) et les vidéos « Code du jour » du dimanche au vendredi suivants, à partir d'Airtable,
-# avec pour chaque jour la carte WhatsApp (12h15), et le carrousel de la semaine.
+# avec pour chaque jour la carte WhatsApp (12h15). Pas de carrousel de la semaine.
 # Le vendredi soir plutôt que le samedi matin : GitHub retarde parfois les tâches planifiées de plusieurs
 # heures, et le lot doit être prêt au réveil le samedi.
 # Les fichiers sont à télécharger dans l'onglet Actions, en bas du run (« Artifacts »).
@@ -17,7 +17,7 @@ on:
         required: false
         default: ''
       marques:
-        description: 'Lot spécial : marques imposées, séparées par des virgules, un jour chacune à partir du premier jour (pas de top 3 ni de carrousel). Vide = lot normal.'
+        description: 'Lot spécial : marques imposées, séparées par des virgules, un jour chacune à partir du premier jour (pas de top 3). Vide = lot normal.'
         required: false
         default: ''
 
@@ -92,6 +92,5 @@ jobs:
           git clean -fdq -e out
           cp -r /tmp/semaine/* .
           git add -- *.mp4 *.png *.md
-          [ -d carrousel ] && git add -- carrousel
           git commit -qm "Fichiers du $(date -u +%F) (run ${{ github.run_number }})"
           git push -f origin $BRANCHE
