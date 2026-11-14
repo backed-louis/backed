@@ -7,7 +7,7 @@
 /*FONTS*/
 /*COMMUN_CSS*/
 #scene { position: absolute; inset: 0; }
-.ph { position: absolute; inset: 0; background-size: cover; background-position: 50% 50%; opacity: 0; will-change: transform; }
+.ph { position: absolute; inset: 0; background-repeat: no-repeat; opacity: 0; will-change: transform; }
 #shade { position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(180deg, rgba(7,8,15,.82) 0%, rgba(7,8,15,.45) 24%, rgba(7,8,15,0) 38%, rgba(7,8,15,0) 52%, rgba(7,8,15,.55) 72%, rgba(7,8,15,.85) 100%); }
 #dark { position: absolute; inset: 0; background: rgba(7,8,15,.6); opacity: 0; }
@@ -15,17 +15,17 @@
 .cap { text-shadow: 0 4px 24px rgba(0,0,0,.75), 0 2px 4px rgba(0,0,0,.6); }
 
 /* panier */
-#cart { position: absolute; left: 140px; top: 0; width: 760px; border-radius: 40px; padding: 30px 40px 34px;
+#cart { position: absolute; left: 150px; top: 0; width: 740px; border-radius: 36px; padding: 24px 34px 28px;
   background: linear-gradient(135deg, rgba(27,18,51,.94) 0%, rgba(17,13,32,.94) 45%, rgba(11,11,20,.95) 100%);
   box-shadow: 0 0 0 1.5px rgba(200,160,255,.45) inset, 0 50px 110px rgba(0,0,0,.7), 0 0 120px rgba(139,0,255,.3); }
 #cart .top { display: flex; align-items: center; gap: 22px; }
 #cart .k { font: 700 20px var(--mono); letter-spacing: .26em; color: var(--grey); white-space: nowrap; }
 #cart .prod { font: 600 34px var(--inter); line-height: 1.15; margin-top: 6px; white-space: nowrap; }
-#cart .tot { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+#cart .tot { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
 #cart .tot .l { font: 600 30px var(--inter); color: var(--grey); }
-#price { position: relative; font-family: var(--syne); font-weight: 800; font-size: 66px; letter-spacing: -.02em; line-height: 1; white-space: nowrap; }
+#price { position: relative; font-family: var(--syne); font-weight: 800; font-size: 58px; letter-spacing: -.02em; line-height: 1; white-space: nowrap; }
 #strike { position: absolute; left: -8px; top: 46%; height: 9px; width: 0; background: #ff4d6d; border-radius: 5px; transform: rotate(-7deg); transform-origin: 0 50%; box-shadow: 0 0 18px rgba(255,77,109,.6); }
-#pay { position: relative; margin-top: 22px; height: 92px; border-radius: 22px; background: var(--vio); display: flex; align-items: center; justify-content: center;
+#pay { position: relative; margin-top: 16px; height: 84px; border-radius: 22px; background: var(--vio); display: flex; align-items: center; justify-content: center;
   font: 700 34px var(--inter); overflow: hidden; white-space: nowrap; }
 #pay .ok, #pay .cd { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 22px; opacity: 0; white-space: nowrap; }
 #pay .ok { background: var(--green); font: 700 34px var(--inter); }
@@ -33,9 +33,9 @@
 #pay .cd b { font-family: var(--syne); font-weight: 800; font-size: 46px; color: #fff; }
 
 /* notification du créateur */
-#notif { position: absolute; left: 120px; top: 300px; width: 800px; border-radius: 38px; padding: 26px 30px; display: none; gap: 24px; align-items: center;
+#notif { position: absolute; left: 120px; top: 296px; width: 800px; border-radius: 36px; padding: 20px 28px; display: none; gap: 24px; align-items: center;
   background: rgba(30,31,48,.96); border: 1.5px solid #44466a; box-shadow: 0 40px 90px rgba(0,0,0,.6), 0 0 90px rgba(139,0,255,.35); }
-#notif .av { width: 100px; height: 100px; flex: none; border-radius: 50%; background: linear-gradient(135deg, #c48cff, #8b00ff); display: flex; align-items: center; justify-content: center;
+#notif .av { width: 88px; height: 88px; flex: none; border-radius: 50%; background: linear-gradient(135deg, #c48cff, #8b00ff); display: flex; align-items: center; justify-content: center;
   font-family: var(--syne); font-weight: 800; font-size: 54px; box-shadow: 0 0 0 4px rgba(255,255,255,.12); }
 #notif .a { font: 700 20px var(--mono); letter-spacing: .2em; color: var(--grey); white-space: nowrap; }
 #notif .b { font: 700 38px var(--inter); margin-top: 8px; white-space: nowrap; }
@@ -49,7 +49,7 @@
 
 .msg { position: absolute; left: 0; width: 1040px; text-align: center; font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; white-space: nowrap; opacity: 0; }
 #ne2 { font-family: var(--inter); font-weight: 600; letter-spacing: 0; color: var(--lilas); }
-#ai { position: absolute; left: 140px; top: 1338px; font: 600 18px var(--inter); color: rgba(244,242,238,.55); letter-spacing: .02em; }
+#ai { position: absolute; left: 0; width: 1040px; text-align: center; top: 262px; font: 600 18px var(--inter); color: rgba(244,242,238,.55); letter-spacing: .02em; }
 </style>
 
 <div id="frame">
@@ -79,7 +79,7 @@ window.DATA = /*DATA*/{
   episode: 1, createur: "Jojol", code: "MAGGO2PRO", marque: "Anker", produit: "Batterie externe MagGo 2 Pro",
   prix: "109,99 €", prixCode: "87,99 €", gain: "22 €", logo: null, logoStyle: "pad",
   photos: { fier: { src: "", fx: .5, fy: .35 }, joie: { src: "", fx: .5, fy: .35 }, choc: { src: "", fx: .5, fy: .35 }, depite: { src: "", fx: .5, fy: .35 } },
-  cartTop: 1000
+  cartTop: 1060, phTop: 180
 }/*END*/;
 /*COMMUN_JS*/
 
@@ -92,9 +92,15 @@ const L = {};
 const SHOTS = [["fier", -1, T.paid], ["joie", T.paid, T.shock], ["choc", T.shock, T.end4], ["depite", T.end4, T.flash + .3]];
 
 function setup() {
+  // la photo, pleine largeur, descendue de PH_TOP pour que le visage soit entre l'accroche (en haut) et le panier (en bas) ;
+  // son bord haut se fond dans le noir
   for (const [k, p] of Object.entries(D.photos)) {
-    $("ph_" + k).style.backgroundImage = `url(${p.src})`;
-    $("ph_" + k).style.transformOrigin = `${p.fx * 100}% ${p.fy * 100}%`;
+    const el = $("ph_" + k), top = Math.max(0, Math.min(D.phTop, 1920 - 1080 * p.ratio));
+    el.style.backgroundImage = `url(${p.src})`;
+    el.style.backgroundSize = "1080px auto"; el.style.backgroundPosition = `50% ${top}px`;
+    const m = `linear-gradient(180deg, transparent ${top}px, #000 ${top + 260}px)`;
+    el.style.webkitMaskImage = el.style.maskImage = m;
+    el.style.transformOrigin = `${p.fx * 1080}px ${top + p.fy * 1080 * p.ratio}px`;
   }
   $("hk").textContent = `GÉRARD PLEINPOT · ÉPISODE ${D.episode}`;
   $("h1").innerHTML = "POV : Gérard n'a pas vu";
@@ -104,7 +110,7 @@ function setup() {
   $("hk").style.top = "318px"; $("h1").style.top = "366px"; $("h2").style.top = (366 + hs * 1.1) + "px";
   $("hk").style.fontSize = Math.min(26, fitSize($("hk"), 860, 26)) + "px";
 
-  $("ctile").innerHTML = tileHTML(D.logo, D.marque, 92, D.logoStyle);
+  $("ctile").innerHTML = tileHTML(D.logo, D.marque, 80, D.logoStyle);
   $("ck").textContent = `TON PANIER · ${D.marque.toUpperCase()}`;
   $("cprod").textContent = D.produit;
   $("cprod").style.fontSize = Math.min(34, fitSize($("cprod"), 540, 34)) + "px";
@@ -148,7 +154,7 @@ function renderPhotos(t) {
     let s = 1.04 + .05 * lt / Math.max(.5, b - Math.max(a, 0)), dx = 0, dy = 0;
     if (k === "joie") s += .05 * (1 - eo(prog(lt, 0, .35)));                       // petit « punch » à la coupe
     if (k === "choc") {                                                              // zoom dramatique sur le visage, puis secousse
-      s = 1.04 + .3 * eo5(prog(lt, 0, .35)) + .04 * prog(lt, .35, 1.8);
+      s = 1.04 + .2 * eo5(prog(lt, 0, .35)) + .04 * prog(lt, .35, 1.8);
       const k2 = 1 - prog(lt, 0, .7); dx = Math.sin(lt * 47) * 14 * k2; dy = Math.cos(lt * 39) * 10 * k2;
     }
     if (k === "depite") s = 1.1 - .04 * eo(prog(lt, 0, 1.2));
