@@ -16,7 +16,11 @@ jobs:
         with:
           python-version: '3.12'
       - name: Générer
-        run: python3 scripts/gerard/images.py out/gerard
+        env:
+          BASE_URL: https://raw.githubusercontent.com/backed-louis/backed/879830732baa70e04d3bfd9f1d3c978295d615dc/3110-choc.jpg
+        run: |
+          pip install --quiet gradio_client
+          python3 scripts/gerard/kontext.py out/gerard
       - name: Pousser sur gerard-images
         if: always()
         run: |
