@@ -1,0 +1,26 @@
+name: Search Console (essai)
+# Essai de l'accès à la Search Console : écrit gsc.json (téléchargeable dans Artifacts, pas dans le journal public).
+on:
+  push:
+    branches: [gsc]
+    paths: ['scripts/reels/gsc.py', '.github/workflows/gsc-essai.yml']
+permissions:
+  contents: read
+jobs:
+  gsc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet google-auth requests
+      - env:
+          GSC_SERVICE_ACCOUNT: ${{ secrets.GSC_SERVICE_ACCOUNT }}
+        run: python3 scripts/reels/gsc.py --out gsc.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gsc
+          path: gsc.json
+          retention-days: 3
