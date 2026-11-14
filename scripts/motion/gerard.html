@@ -1,0 +1,325 @@
+<!-- Vidéo « Gérard Pleinpot » (sketch POV) : 1080×1920, ~9,9 s. Gérard paie plein pot, fier de lui ; une notification
+     lui apprend que le créateur avait un code ; le prix se barre, tampon « X € DE TROP » ; « Ne sois pas Gérard. » ; fin Backed.
+     moteur.py injecte les polices (FONTS), le style et les outils communs (COMMUN_CSS, COMMUN_JS) et l'épisode (DATA). -->
+<meta charset="utf-8">
+<style>
+/*FONTS*/
+/*COMMUN_CSS*/
+#scene { position: absolute; inset: 0; }
+.hl { color: var(--lilas); }
+
+/* panier */
+#cart { position: absolute; left: 140px; top: 572px; width: 760px; border-radius: 40px; padding: 32px 40px 36px;
+  background:
+    radial-gradient(ellipse 70% 80% at 92% 0%, rgba(178,102,255,.4), rgba(139,0,255,0) 60%),
+    repeating-linear-gradient(115deg, rgba(255,255,255,.022) 0 2px, rgba(255,255,255,0) 2px 9px),
+    linear-gradient(135deg, #1b1233 0%, #110d20 45%, #0b0b14 100%);
+  box-shadow: 0 0 0 1.5px rgba(200,160,255,.4) inset, 0 60px 120px rgba(0,0,0,.65), 0 0 140px rgba(139,0,255,.28); }
+#cart .top { display: flex; align-items: center; gap: 22px; }
+#cart .k { font: 700 20px var(--mono); letter-spacing: .26em; color: var(--grey); white-space: nowrap; }
+#cart .prod { font: 600 34px var(--inter); line-height: 1.15; margin-top: 6px; white-space: nowrap; }
+#cart .tot { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+#cart .tot .l { font: 600 30px var(--inter); color: var(--grey); }
+#price { position: relative; font-family: var(--syne); font-weight: 800; font-size: 68px; letter-spacing: -.02em; line-height: 1; white-space: nowrap; }
+#strike { position: absolute; left: -8px; top: 46%; height: 9px; width: 0; background: #ff4d6d; border-radius: 5px; transform: rotate(-7deg); transform-origin: 0 50%; box-shadow: 0 0 18px rgba(255,77,109,.6); }
+#pay { position: relative; margin-top: 24px; height: 94px; border-radius: 22px; background: var(--vio); display: flex; align-items: center; justify-content: center;
+  font: 700 34px var(--inter); overflow: hidden; white-space: nowrap; }
+#pay .ok, #pay .cd { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 22px; opacity: 0; white-space: nowrap; }
+#pay .ok { background: var(--green); font: 700 34px var(--inter); }
+#pay .cd { background: #11331f; border: 2px solid rgba(76,217,100,.65); color: var(--green2); font: 700 30px var(--inter); gap: 16px; }
+#pay .cd b { font-family: var(--syne); font-weight: 800; font-size: 46px; color: #fff; }
+
+/* notification du créateur */
+#notif { position: absolute; left: 120px; top: 300px; width: 800px; border-radius: 38px; padding: 26px 30px; display: none; gap: 24px; align-items: center;
+  background: rgba(30,31,48,.97); border: 1.5px solid #44466a; box-shadow: 0 40px 90px rgba(0,0,0,.6), 0 0 90px rgba(139,0,255,.35); }
+#notif .av { width: 100px; height: 100px; flex: none; border-radius: 50%; background: linear-gradient(135deg, #c48cff, #8b00ff); display: flex; align-items: center; justify-content: center;
+  font-family: var(--syne); font-weight: 800; font-size: 54px; box-shadow: 0 0 0 4px rgba(255,255,255,.12); }
+#notif .a { font: 700 20px var(--mono); letter-spacing: .2em; color: var(--grey); white-space: nowrap; }
+#notif .b { font: 700 38px var(--inter); margin-top: 8px; white-space: nowrap; }
+#notif .b i { font-style: normal; font-family: var(--mono); color: var(--lilas); }
+#notif .c { font: 500 28px var(--inter); color: #c9c6d8; margin-top: 4px; white-space: nowrap; }
+
+/* tampon */
+#stamp { position: absolute; left: 0; top: 0; display: none; padding: 8px 30px 14px; border: 10px solid #ff4d6d; border-radius: 24px; color: #ff4d6d; white-space: nowrap;
+  font-family: var(--syne); font-weight: 800; font-size: 96px; letter-spacing: -.01em; line-height: 1.05; background: rgba(24,6,14,.72);
+  box-shadow: 0 0 70px rgba(255,77,109,.45), 0 0 0 4px rgba(255,77,109,.18) inset; }
+
+.msg { position: absolute; left: 0; width: 1040px; text-align: center; font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; white-space: nowrap; opacity: 0; }
+#ne2 { font-family: var(--inter); font-weight: 600; letter-spacing: 0; color: var(--lilas); }
+
+/* Gérard */
+#ger { position: absolute; left: 220px; top: 880px; width: 600px; height: 700px; overflow: visible; }
+.star { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; background: #ffd34d; opacity: 0;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); filter: drop-shadow(0 0 12px rgba(255,211,77,.8)); }
+</style>
+
+<div id="frame">
+  <div id="scene">
+    <div class="kicker" id="hk"></div>
+    <div class="line" id="h1"></div>
+    <div class="line" id="h2"></div>
+    <div id="cart">
+      <div class="top"><div id="ctile"></div><div><div class="k" id="ck"></div><div class="prod" id="cprod"></div></div></div>
+      <div class="tot"><span class="l">Total</span><span id="price"><span id="ptx"></span><span id="strike"></span></span></div>
+      <div id="pay"><span id="paytx"></span><div class="ok" id="payok">✓ Paiement accepté</div><div class="cd" id="paycd"></div></div>
+    </div>
+    <div id="notif" data-d="flex"><div class="av" id="nav"></div><div><div class="a" id="na"></div><div class="b" id="nb"></div><div class="c" id="nc"></div></div></div>
+    <div id="stamp"></div>
+    <div class="msg" id="ne1">Ne sois pas Gérard.</div>
+    <div class="msg" id="ne2">Abonne-toi : un code par jour.</div>
+    <div class="star" id="s1"></div><div class="star" id="s2"></div><div class="star" id="s3"></div><div class="star" id="s4"></div>
+
+    <svg id="ger" viewBox="0 0 600 700" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset=".55" stop-color="#f2b929"/><stop offset="1" stop-color="#c98a12"/></linearGradient>
+        <linearGradient id="cardi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2ac48"/><stop offset="1" stop-color="#b8862f"/></linearGradient>
+        <radialGradient id="skin" cx=".42" cy=".35" r=".75"><stop offset="0" stop-color="#ffd9b8"/><stop offset=".7" stop-color="#f2bf96"/><stop offset="1" stop-color="#e3a47c"/></radialGradient>
+      </defs>
+      <g id="bodyg">
+        <!-- corps : gilet moutarde, chemise, badge -->
+        <path d="M40 700 C 48 590, 150 528, 300 522 C 450 528, 552 590, 560 700 Z" fill="url(#cardi)"/>
+        <path d="M238 524 L300 650 L362 524 Z" fill="#f4f2ee"/>
+        <path d="M236 522 L300 566 L282 600 Z" fill="#ffffff"/>
+        <path d="M364 522 L300 566 L318 600 Z" fill="#ffffff"/>
+        <path d="M300 650 L300 700" stroke="#9a6d22" stroke-width="5"/>
+        <circle cx="300" cy="668" r="7" fill="#8a5f1c"/>
+        <rect x="368" y="596" width="136" height="48" rx="11" fill="#ffffff"/>
+        <text x="436" y="628" text-anchor="middle" font-family="Mono" font-weight="700" font-size="22" fill="#8b00ff" letter-spacing="2">GÉRARD</text>
+      </g>
+      <g id="headg">
+        <rect x="262" y="420" width="76" height="110" rx="20" fill="#e0a67e"/>
+        <ellipse cx="148" cy="302" rx="26" ry="40" fill="#efb68d"/><ellipse cx="152" cy="304" rx="12" ry="22" fill="#d9946c"/>
+        <ellipse cx="452" cy="302" rx="26" ry="40" fill="#efb68d"/><ellipse cx="448" cy="304" rx="12" ry="22" fill="#d9946c"/>
+        <ellipse cx="300" cy="282" rx="152" ry="176" fill="url(#skin)"/>
+        <!-- crâne qui brille, mèches rabattues, touffes -->
+        <ellipse cx="338" cy="150" rx="46" ry="17" fill="#ffffff" opacity=".45" transform="rotate(-14 338 150)"/>
+        <path d="M185 176 Q300 104 418 166" stroke="#5b3a29" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <path d="M196 196 Q306 126 422 186" stroke="#5b3a29" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <path d="M206 160 Q290 112 392 136" stroke="#5b3a29" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M150 284 C 138 230, 150 190, 188 166 C 178 204, 174 242, 180 284 Z" fill="#5b3a29"/>
+        <path d="M450 284 C 462 230, 450 190, 412 166 C 422 204, 426 242, 420 284 Z" fill="#5b3a29"/>
+        <circle id="chL" cx="200" cy="370" r="26" fill="#ff8a8a" opacity=".35"/>
+        <circle id="chR" cx="400" cy="370" r="26" fill="#ff8a8a" opacity=".35"/>
+        <!-- yeux -->
+        <g id="eyesOpen">
+          <ellipse id="wL" cx="242" cy="292" rx="24" ry="25" fill="#ffffff"/>
+          <ellipse id="wR" cx="358" cy="292" rx="24" ry="25" fill="#ffffff"/>
+          <circle id="pL" cx="242" cy="294" r="10" fill="#1e1626"/>
+          <circle id="pR" cx="358" cy="294" r="10" fill="#1e1626"/>
+          <rect id="lidL" x="214" y="262" width="56" height="0" fill="#f6c7a0"/>
+          <rect id="lidR" x="330" y="262" width="56" height="0" fill="#f6c7a0"/>
+        </g>
+        <g id="eyesHappy" style="display:none">
+          <path d="M218 300 Q242 270 266 300" stroke="#1e1626" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M334 300 Q358 270 382 300" stroke="#1e1626" stroke-width="9" fill="none" stroke-linecap="round"/>
+        </g>
+        <g id="glasses">
+          <circle cx="242" cy="292" r="50" fill="rgba(255,255,255,.08)" stroke="#2a2233" stroke-width="8"/>
+          <circle cx="358" cy="292" r="50" fill="rgba(255,255,255,.08)" stroke="#2a2233" stroke-width="8"/>
+          <path d="M292 288 Q300 280 308 288" stroke="#2a2233" stroke-width="8" fill="none"/>
+          <path d="M192 284 L160 276" stroke="#2a2233" stroke-width="7"/><path d="M408 284 L440 276" stroke="#2a2233" stroke-width="7"/>
+        </g>
+        <g id="browL"><path d="M206 226 Q240 206 276 220" stroke="#5b3a29" stroke-width="16" fill="none" stroke-linecap="round"/></g>
+        <g id="browR"><path d="M324 220 Q360 206 394 226" stroke="#5b3a29" stroke-width="16" fill="none" stroke-linecap="round"/></g>
+        <!-- bouche (sous la moustache), moustache, nez -->
+        <path id="mouth" d="M262 410 Q292 420 336 398" stroke="#5a2a22" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M300 350 C 274 336, 226 340, 208 372 C 226 398, 272 396, 300 380 C 328 396, 374 398, 392 372 C 374 340, 326 336, 300 350 Z" fill="#5b3a29"/>
+        <ellipse cx="300" cy="336" rx="28" ry="24" fill="#eba383"/>
+        <ellipse cx="292" cy="328" rx="9" ry="6" fill="#ffffff" opacity=".35"/>
+        <path id="sweat" d="M0 -32 C 12 -12, 19 0, 19 10 A19 19 0 1 1 -19 10 C -19 0, -12 -12, 0 -32 Z" fill="#8fdcff" opacity="0"/>
+      </g>
+      <!-- bras levé avec la carte bancaire -->
+      <g id="armg">
+        <path d="M462 590 Q 528 566 540 470" stroke="url(#cardi)" stroke-width="62" fill="none" stroke-linecap="round"/>
+        <g id="card">
+          <g transform="rotate(-14 560 400)">
+            <rect x="490" y="352" width="150" height="96" rx="13" fill="url(#gold)"/>
+            <rect x="508" y="378" width="30" height="22" rx="5" fill="#fff3c4" opacity=".85"/>
+            <rect x="508" y="418" width="96" height="9" rx="4" fill="#9a6a0c" opacity=".55"/>
+          </g>
+        </g>
+        <circle cx="540" cy="452" r="34" fill="#f2bf96"/>
+        <path d="M518 438 Q540 426 560 438" stroke="#d9946c" stroke-width="5" fill="none" stroke-linecap="round"/>
+      </g>
+    </svg>
+  </div>
+  <div id="ripple"></div><div id="finger"></div>
+  <div id="outro"></div>
+</div>
+
+<script>
+window.DATA = /*DATA*/{
+  episode: 1, createur: "Jojol", code: "MAGGO2PRO", marque: "Anker", produit: "Batterie externe MagGo 2 Pro",
+  prix: "109,99 €", prixCode: "87,99 €", gain: "22 €", logo: null, logoStyle: "pad"
+}/*END*/;
+/*COMMUN_JS*/
+
+const D = window.DATA;
+const T = { tap: 2.3, paid: 2.4, notif: 3.55, shock: 3.85, strike: 4.25, newp: 4.55, stamp: 4.95, end4: 5.85, ne: 6.0,
+            flash: 6.85, outro: 7.05, end: 10.05 };
+window.DUREE = T.end; window.CUTS = [0, T.notif, T.end4, T.outro, T.end]; window.OUTRO_T = T.outro; window.CLICKS = [T.tap, T.notif, T.stamp];
+const L = {};
+const STARS = [[255, 1005], [790, 975], [215, 1215], [835, 1190]];
+
+function setup() {
+  $("hk").textContent = `GÉRARD PLEINPOT · ÉPISODE ${D.episode}`;
+  $("h1").innerHTML = "POV : Gérard n'a pas vu";
+  $("h2").innerHTML = `le code ${esc(de(D.createur)).replace(esc(D.createur), `<span class="hl">${esc(D.createur)}</span>`)}.`;
+  const hs = Math.min(fitSize($("h1"), 860, 84), fitSize($("h2"), 860, 84));
+  $("h1").style.fontSize = $("h2").style.fontSize = hs + "px";
+  $("hk").style.top = "318px"; $("h1").style.top = "368px"; $("h2").style.top = (368 + hs * 1.1) + "px";
+  $("hk").style.fontSize = Math.min(26, fitSize($("hk"), 860, 26)) + "px";
+
+  $("ctile").innerHTML = tileHTML(D.logo, D.marque, 92, D.logoStyle);
+  $("ck").textContent = `TON PANIER · ${D.marque.toUpperCase()}`;
+  $("cprod").textContent = D.produit;
+  $("cprod").style.fontSize = Math.min(34, fitSize($("cprod"), 540, 34)) + "px";
+  $("ptx").textContent = D.prix;
+  $("paytx").textContent = `Payer ${D.prix}`;
+  $("paycd").innerHTML = `<span>Avec le code ${esc(de(D.createur))} :</span><b>${esc(D.prixCode)}</b>`;
+
+  $("nav").textContent = D.createur.slice(0, 1).toUpperCase();
+  $("na").textContent = `YOUTUBE · ${D.createur.toUpperCase()} · À L'INSTANT`;
+  $("nb").innerHTML = `Code <i>${esc(D.code)}</i> : −${esc(D.gain)}`;
+  $("nc").textContent = `sur la ${D.produit.replace(/^Batterie externe /, "batterie ")}`;
+  $("nb").style.fontSize = Math.min(38, fitSize($("nb"), 600, 38)) + "px";
+  $("nc").style.fontSize = Math.min(28, fitSize($("nc"), 600, 28)) + "px";
+
+  $("stamp").textContent = `${D.gain} DE TROP`;
+  show($("stamp"), true);   // caché par défaut : il faut l'afficher pour le mesurer
+  $("stamp").style.fontSize = Math.min(96, fitSize($("stamp"), 620, 96)) + "px";
+  show($("stamp"), false);
+  const ns = Math.min(fitSize($("ne1"), 860, 100), 100);
+  $("ne1").style.fontSize = ns + "px";
+  $("ne2").style.fontSize = Math.min(44, fitSize($("ne2"), 820, 44)) + "px";
+  $("ne1").style.top = "430px"; $("ne2").style.top = (430 + ns * 1.25) + "px";
+}
+
+function measure() {
+  L.btn = $("pay").getBoundingClientRect();
+  L.priceW = $("ptx").getBoundingClientRect().width;
+  const c = $("cart").getBoundingClientRect();
+  show($("stamp"), true);
+  L.stX = CX - $("stamp").offsetWidth / 2; L.stY = c.top + 80 - $("stamp").offsetHeight / 2;   // sur la ligne du produit : le prix barré et le nouveau prix restent lisibles
+  show($("stamp"), false);
+}
+
+const MOUTH = {
+  smug: ["M262 410 Q292 420 336 398", "none", 8],
+  joy: ["M250 398 Q300 466 350 398 Q300 418 250 398 Z", "#6b1d2a", 6],
+  shock: ["M300 390 C 318 390 327 406 327 424 C 327 444 316 456 300 456 C 284 456 273 444 273 424 C 273 406 282 390 300 390 Z", "#6b1d2a", 6],
+  sad: ["M264 432 Q300 404 336 432", "none", 8],
+};
+// sourcils : [décalage vertical, angle] pour le gauche puis le droit
+const BROWS = { smug: [[-18, 0], [4, -9]], joy: [[-12, 0], [-12, 0]], shock: [[-28, -7], [-28, 7]], sad: [[-6, -15], [-6, 15]] };
+
+function renderGerard(t) {
+  const e = t < T.paid ? "smug" : t < T.shock ? "joy" : t < T.end4 + .05 ? "shock" : "sad";
+  const inP = eo(prog(t, -.3, .7)), out = eio(prog(t, T.flash - .1, .3));
+  const jump = e === "joy" ? Math.abs(Math.sin((t - T.paid) * 8)) * 26 * (1 - prog(t, T.paid, 1.1)) : 0;
+  const droop = eio(prog(t, T.end4, .5)) * 30;
+  $("ger").style.opacity = .6 + .4 * inP - out;
+  $("ger").style.transform = `translateY(${(1 - inP) * 50 - jump + droop + out * 80}px)`;
+
+  const sh = e === "shock" ? Math.sin((t - T.shock) * 40) * 7 * (1 - prog(t, T.shock, .8)) : 0;
+  const tilt = e === "smug" ? -5 + Math.sin(t * 2.2) * 1.5 : e === "joy" ? Math.sin((t - T.paid) * 9) * 3.5 : e === "sad" ? 6 * eio(prog(t, T.end4, .4)) : 0;
+  $("headg").setAttribute("transform", `rotate(${tilt + sh} 300 470)`);
+
+  // yeux
+  show($("eyesOpen"), e !== "joy"); show($("eyesHappy"), e === "joy");
+  const big = e === "shock" ? 1 + .4 * back(prog(t, T.shock, .25)) : 1;
+  for (const [s, cx] of [["L", 242], ["R", 358]]) {
+    $("w" + s).setAttribute("rx", 24 * big); $("w" + s).setAttribute("ry", 25 * big);
+    let px = cx, py = 294, pr = 10;
+    if (e === "smug") px += 8;
+    if (e === "shock") pr = 6;
+    if (e === "sad") { py += 10; px += s === "L" ? 4 : -4; pr = 9; }
+    $("p" + s).setAttribute("cx", px); $("p" + s).setAttribute("cy", py); $("p" + s).setAttribute("r", pr);
+    $("lid" + s).setAttribute("height", e === "smug" ? 22 : e === "sad" ? 13 : 0);
+  }
+  const bump = e === "shock" ? Math.sin(Math.PI * prog(t, T.shock, .3)) : 0;
+  $("glasses").setAttribute("transform", `translate(0 ${-22 * bump})`);
+  BROWS[e].forEach(([dy, a], k) => {
+    const cx = k ? 359 : 241, lift = e === "shock" ? (1 - back(prog(t, T.shock, .25))) * 20 : 0;
+    $(k ? "browR" : "browL").setAttribute("transform", `translate(0 ${dy + lift}) rotate(${a} ${cx} 216)`);
+  });
+  const [d, fill, sw] = MOUTH[e];
+  const m = $("mouth");
+  m.setAttribute("d", d); m.setAttribute("fill", fill); m.setAttribute("stroke-width", sw);
+  m.setAttribute("transform", e === "shock" ? `translate(300 424) scale(${.6 + .4 * back(prog(t, T.shock, .25))}) translate(-300 -424)` : "");
+  const blush = e === "joy" ? .6 : e === "shock" ? .12 : .35;
+  $("chL").setAttribute("opacity", blush); $("chR").setAttribute("opacity", blush);
+  const sw2 = prog(t, T.shock + .1, 1.6);
+  $("sweat").setAttribute("opacity", e === "shock" || e === "sad" ? clamp(sw2 * 4) : 0);
+  $("sweat").setAttribute("transform", `translate(438 ${200 + 70 * sw2})`);
+
+  // bras et carte : la carte s'agite (paiement), puis tombe ; le bras retombe
+  const wave = e === "joy" ? Math.sin((t - T.paid) * 14) * 9 * (1 - prog(t, T.paid, 1)) : Math.sin(t * 2.4) * 2;
+  const drop = eio(prog(t, T.shock + .05, .5));
+  $("armg").setAttribute("transform", `rotate(${wave + drop * 16} 462 590)`);
+  const fall = prog(t, T.shock, .75);
+  $("card").setAttribute("transform", fall > 0 ? `translate(${fall * 40} ${Math.pow(fall, 2) * 700}) rotate(${fall * 120} 560 400)` : "");
+  $("card").setAttribute("opacity", 1 - prog(t, T.shock + .5, .25));
+
+  // étoiles de fierté
+  STARS.forEach(([x, y], k) => {
+    const p = prog(t, T.paid + k * .07, .8), el = $("s" + (k + 1));
+    el.style.left = x + "px"; el.style.top = (y - jump) + "px";
+    el.style.opacity = p > 0 && p < 1 ? Math.sin(p * Math.PI) : 0;
+    el.style.transform = `scale(${.4 + .8 * Math.sin(p * Math.PI)}) rotate(${p * 90}deg)`;
+  });
+}
+
+function render(t) {
+  renderBackground(t, t > T.outro ? .95 : .6);
+  const on = t < T.flash + .3;
+  show($("scene"), on);
+  if (on) {
+    // accroche : lisible dès la 1re image, puis s'efface quand la notification arrive
+    const s0 = eo(prog(t, -.3, .6)), hq = eio(prog(t, T.notif - .1, .3));
+    ["hk", "h1", "h2"].forEach((id, k) => {
+      const el = $(id);
+      el.style.opacity = (.7 + .3 * s0) * (1 - hq);
+      el.style.transform = `translateY(${(1 - s0) * 18 - hq * 70}px)`;
+      blur(el, hq * 10);
+    });
+    // panier
+    const cIn = eo(prog(t, -.3, .7)), cOut = eio(prog(t, T.end4, .45));
+    const shake = t > T.stamp ? Math.sin((t - T.stamp) * 55) * 12 * (1 - prog(t, T.stamp, .4)) : 0;
+    $("cart").style.opacity = (.7 + .3 * cIn) * (1 - cOut);
+    $("cart").style.transform = `translate(${shake}px, ${(1 - cIn) * 26 + Math.sin(t * 1.6) * 5 - cOut * 90}px) scale(${(.97 + .03 * cIn) * (1 - cOut * .06)})`;
+    blur($("cart"), cOut * 10);
+    const ok = eo(prog(t, T.tap + .05, .25));
+    $("payok").style.opacity = ok; $("payok").style.transform = `scale(${t > T.tap ? .92 + .08 * back(ok) : 1})`;
+    const pc = eo(prog(t, T.newp, .35));
+    $("paycd").style.opacity = pc; $("paycd").style.transform = `scale(${.9 + .1 * back(pc)})`;
+    $("strike").style.width = (eio(prog(t, T.strike, .3)) * (L.priceW + 16)) + "px";
+    $("ptx").style.color = t > T.strike + .15 ? "#8c8fa3" : "";
+    // notification
+    show($("notif"), t > T.notif - .02);
+    const nIn = back(prog(t, T.notif, .5), 1.3), nOut = eio(prog(t, T.end4, .45));
+    $("notif").style.opacity = clamp(prog(t, T.notif, .15) * 1.2) * (1 - nOut);
+    $("notif").style.transform = `translateY(${(1 - nIn) * -320 - nOut * 90}px) scale(${1 - nOut * .05})`;
+    blur($("notif"), nOut * 10);
+    // tampon
+    show($("stamp"), t > T.stamp);
+    const sp = prog(t, T.stamp, .2);
+    $("stamp").style.opacity = clamp(sp * 2.5) * (1 - nOut);
+    $("stamp").style.transform = `translate(${L.stX + shake}px, ${L.stY - cOut * 90}px) rotate(-9deg) scale(${lerp(2.6, 1, eo(sp))})`;
+    blur($("stamp"), cOut * 10);
+    // « Ne sois pas Gérard. »
+    [["ne1", T.ne], ["ne2", T.ne + .18]].forEach(([id, at]) => {
+      const p = expo(prog(t, at, .5)), q = eio(prog(t, T.flash - .1, .3));
+      $(id).style.opacity = p * (1 - q);
+      $(id).style.transform = `translateY(${(1 - p) * 40 - q * 60}px)`;
+      blur($(id), (1 - p) * 10 + q * 10);
+    });
+    renderGerard(t);
+  }
+  renderFinger(t, [[T.tap, L.btn]]);
+  renderFlash(t, T.flash);
+  renderOutro(t, T.outro);
+}
+
+boot();
+</script>

@@ -1,0 +1,213 @@
+<!-- Vidéo « Gérard Pleinpot » (sketch POV, personnage photoréaliste créé par IA) : 1080×1920, ~10 s.
+     Gérard paie plein pot (photo « fier »), ravi (« joie ») ; la notification du créateur arrive (« choc », zoom dramatique),
+     le prix se barre, tampon « X € DE TROP » ; « Ne sois pas Gérard. » (« dépité ») ; fin Backed.
+     moteur.py injecte les polices (FONTS), le style et les outils communs (COMMUN_CSS, COMMUN_JS) et l'épisode (DATA). -->
+<meta charset="utf-8">
+<style>
+/*FONTS*/
+/*COMMUN_CSS*/
+#scene { position: absolute; inset: 0; }
+.ph { position: absolute; inset: 0; background-size: cover; background-position: 50% 50%; opacity: 0; will-change: transform; }
+#shade { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(7,8,15,.82) 0%, rgba(7,8,15,.45) 24%, rgba(7,8,15,0) 38%, rgba(7,8,15,0) 52%, rgba(7,8,15,.55) 72%, rgba(7,8,15,.85) 100%); }
+#dark { position: absolute; inset: 0; background: rgba(7,8,15,.6); opacity: 0; }
+.hl { color: var(--lilas); }
+.cap { text-shadow: 0 4px 24px rgba(0,0,0,.75), 0 2px 4px rgba(0,0,0,.6); }
+
+/* panier */
+#cart { position: absolute; left: 140px; top: 0; width: 760px; border-radius: 40px; padding: 30px 40px 34px;
+  background: linear-gradient(135deg, rgba(27,18,51,.94) 0%, rgba(17,13,32,.94) 45%, rgba(11,11,20,.95) 100%);
+  box-shadow: 0 0 0 1.5px rgba(200,160,255,.45) inset, 0 50px 110px rgba(0,0,0,.7), 0 0 120px rgba(139,0,255,.3); }
+#cart .top { display: flex; align-items: center; gap: 22px; }
+#cart .k { font: 700 20px var(--mono); letter-spacing: .26em; color: var(--grey); white-space: nowrap; }
+#cart .prod { font: 600 34px var(--inter); line-height: 1.15; margin-top: 6px; white-space: nowrap; }
+#cart .tot { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+#cart .tot .l { font: 600 30px var(--inter); color: var(--grey); }
+#price { position: relative; font-family: var(--syne); font-weight: 800; font-size: 66px; letter-spacing: -.02em; line-height: 1; white-space: nowrap; }
+#strike { position: absolute; left: -8px; top: 46%; height: 9px; width: 0; background: #ff4d6d; border-radius: 5px; transform: rotate(-7deg); transform-origin: 0 50%; box-shadow: 0 0 18px rgba(255,77,109,.6); }
+#pay { position: relative; margin-top: 22px; height: 92px; border-radius: 22px; background: var(--vio); display: flex; align-items: center; justify-content: center;
+  font: 700 34px var(--inter); overflow: hidden; white-space: nowrap; }
+#pay .ok, #pay .cd { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 22px; opacity: 0; white-space: nowrap; }
+#pay .ok { background: var(--green); font: 700 34px var(--inter); }
+#pay .cd { background: #11331f; border: 2px solid rgba(76,217,100,.65); color: var(--green2); font: 700 30px var(--inter); gap: 16px; }
+#pay .cd b { font-family: var(--syne); font-weight: 800; font-size: 46px; color: #fff; }
+
+/* notification du créateur */
+#notif { position: absolute; left: 120px; top: 300px; width: 800px; border-radius: 38px; padding: 26px 30px; display: none; gap: 24px; align-items: center;
+  background: rgba(30,31,48,.96); border: 1.5px solid #44466a; box-shadow: 0 40px 90px rgba(0,0,0,.6), 0 0 90px rgba(139,0,255,.35); }
+#notif .av { width: 100px; height: 100px; flex: none; border-radius: 50%; background: linear-gradient(135deg, #c48cff, #8b00ff); display: flex; align-items: center; justify-content: center;
+  font-family: var(--syne); font-weight: 800; font-size: 54px; box-shadow: 0 0 0 4px rgba(255,255,255,.12); }
+#notif .a { font: 700 20px var(--mono); letter-spacing: .2em; color: var(--grey); white-space: nowrap; }
+#notif .b { font: 700 38px var(--inter); margin-top: 8px; white-space: nowrap; }
+#notif .b i { font-style: normal; font-family: var(--mono); color: var(--lilas); }
+#notif .c { font: 500 28px var(--inter); color: #c9c6d8; margin-top: 4px; white-space: nowrap; }
+
+/* tampon */
+#stamp { position: absolute; left: 0; top: 0; display: none; padding: 8px 30px 14px; border: 10px solid #ff4d6d; border-radius: 24px; color: #ff4d6d; white-space: nowrap;
+  font-family: var(--syne); font-weight: 800; font-size: 96px; letter-spacing: -.01em; line-height: 1.05; background: rgba(24,6,14,.8);
+  box-shadow: 0 0 70px rgba(255,77,109,.45), 0 0 0 4px rgba(255,77,109,.18) inset; }
+
+.msg { position: absolute; left: 0; width: 1040px; text-align: center; font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; white-space: nowrap; opacity: 0; }
+#ne2 { font-family: var(--inter); font-weight: 600; letter-spacing: 0; color: var(--lilas); }
+#ai { position: absolute; left: 140px; top: 1338px; font: 600 18px var(--inter); color: rgba(244,242,238,.55); letter-spacing: .02em; }
+</style>
+
+<div id="frame">
+  <div id="scene">
+    <div class="ph" id="ph_fier"></div><div class="ph" id="ph_joie"></div><div class="ph" id="ph_choc"></div><div class="ph" id="ph_depite"></div>
+    <div id="shade"></div><div id="dark"></div>
+    <div class="kicker cap" id="hk"></div>
+    <div class="line cap" id="h1"></div>
+    <div class="line cap" id="h2"></div>
+    <div id="cart">
+      <div class="top"><div id="ctile"></div><div><div class="k" id="ck"></div><div class="prod" id="cprod"></div></div></div>
+      <div class="tot"><span class="l">Total</span><span id="price"><span id="ptx"></span><span id="strike"></span></span></div>
+      <div id="pay"><span id="paytx"></span><div class="ok" id="payok">✓ Paiement accepté</div><div class="cd" id="paycd"></div></div>
+    </div>
+    <div id="notif" data-d="flex"><div class="av" id="nav"></div><div><div class="a" id="na"></div><div class="b" id="nb"></div><div class="c" id="nc"></div></div></div>
+    <div id="stamp"></div>
+    <div class="msg cap" id="ne1">Ne sois pas Gérard.</div>
+    <div class="msg cap" id="ne2">Abonne-toi : un code par jour.</div>
+    <div id="ai">Personnage fictif créé par IA</div>
+  </div>
+  <div id="ripple"></div><div id="finger"></div>
+  <div id="outro"></div>
+</div>
+
+<script>
+window.DATA = /*DATA*/{
+  episode: 1, createur: "Jojol", code: "MAGGO2PRO", marque: "Anker", produit: "Batterie externe MagGo 2 Pro",
+  prix: "109,99 €", prixCode: "87,99 €", gain: "22 €", logo: null, logoStyle: "pad",
+  photos: { fier: { src: "", fx: .5, fy: .35 }, joie: { src: "", fx: .5, fy: .35 }, choc: { src: "", fx: .5, fy: .35 }, depite: { src: "", fx: .5, fy: .35 } },
+  cartTop: 1000
+}/*END*/;
+/*COMMUN_JS*/
+
+const D = window.DATA;
+const T = { tap: 2.2, paid: 2.3, notif: 3.4, shock: 3.75, strike: 4.2, newp: 4.5, stamp: 4.9, end4: 5.85, ne: 6.0,
+            flash: 6.85, outro: 7.05, end: 10.05 };
+window.DUREE = T.end; window.CUTS = [0, T.paid, T.shock, T.end4, T.outro, T.end]; window.OUTRO_T = T.outro; window.CLICKS = [T.tap, T.notif, T.stamp];
+const L = {};
+// plans photo : [nom, début, fin]
+const SHOTS = [["fier", -1, T.paid], ["joie", T.paid, T.shock], ["choc", T.shock, T.end4], ["depite", T.end4, T.flash + .3]];
+
+function setup() {
+  for (const [k, p] of Object.entries(D.photos)) {
+    $("ph_" + k).style.backgroundImage = `url(${p.src})`;
+    $("ph_" + k).style.transformOrigin = `${p.fx * 100}% ${p.fy * 100}%`;
+  }
+  $("hk").textContent = `GÉRARD PLEINPOT · ÉPISODE ${D.episode}`;
+  $("h1").innerHTML = "POV : Gérard n'a pas vu";
+  $("h2").innerHTML = `le code ${esc(de(D.createur)).replace(esc(D.createur), `<span class="hl">${esc(D.createur)}</span>`)}.`;
+  const hs = Math.min(fitSize($("h1"), 860, 84), fitSize($("h2"), 860, 84));
+  $("h1").style.fontSize = $("h2").style.fontSize = hs + "px";
+  $("hk").style.top = "318px"; $("h1").style.top = "366px"; $("h2").style.top = (366 + hs * 1.1) + "px";
+  $("hk").style.fontSize = Math.min(26, fitSize($("hk"), 860, 26)) + "px";
+
+  $("ctile").innerHTML = tileHTML(D.logo, D.marque, 92, D.logoStyle);
+  $("ck").textContent = `TON PANIER · ${D.marque.toUpperCase()}`;
+  $("cprod").textContent = D.produit;
+  $("cprod").style.fontSize = Math.min(34, fitSize($("cprod"), 540, 34)) + "px";
+  $("ptx").textContent = D.prix;
+  $("paytx").textContent = `Payer ${D.prix}`;
+  $("paycd").innerHTML = `<span>Avec le code ${esc(de(D.createur))} :</span><b>${esc(D.prixCode)}</b>`;
+  $("cart").style.top = D.cartTop + "px";
+
+  $("nav").textContent = D.createur.slice(0, 1).toUpperCase();
+  $("na").textContent = `YOUTUBE · ${D.createur.toUpperCase()} · À L'INSTANT`;
+  $("nb").innerHTML = `Code <i>${esc(D.code)}</i> : −${esc(D.gain)}`;
+  $("nc").textContent = `sur la ${D.produit.replace(/^Batterie externe /, "batterie ")}`;
+  $("nb").style.fontSize = Math.min(38, fitSize($("nb"), 600, 38)) + "px";
+  $("nc").style.fontSize = Math.min(28, fitSize($("nc"), 600, 28)) + "px";
+
+  $("stamp").textContent = `${D.gain} DE TROP`;
+  show($("stamp"), true);   // caché par défaut : il faut l'afficher pour le mesurer
+  $("stamp").style.fontSize = Math.min(96, fitSize($("stamp"), 640, 96)) + "px";
+  show($("stamp"), false);
+  const ns = Math.min(fitSize($("ne1"), 860, 100), 100);
+  $("ne1").style.fontSize = ns + "px";
+  $("ne2").style.fontSize = Math.min(44, fitSize($("ne2"), 820, 44)) + "px";
+  $("ne1").style.top = "380px"; $("ne2").style.top = (380 + ns * 1.25) + "px";
+}
+
+function measure() {
+  L.btn = $("pay").getBoundingClientRect();
+  L.priceW = $("ptx").getBoundingClientRect().width;
+  const c = $("cart").getBoundingClientRect();
+  show($("stamp"), true);
+  L.stX = CX - $("stamp").offsetWidth / 2; L.stY = c.top + 76 - $("stamp").offsetHeight / 2;
+  show($("stamp"), false);
+}
+
+function renderPhotos(t) {
+  for (const [k, a, b] of SHOTS) {
+    const el = $("ph_" + k), on = t >= a && t < b;
+    el.style.opacity = on ? 1 : 0;
+    if (!on) continue;
+    const lt = t - Math.max(a, 0);
+    let s = 1.04 + .05 * lt / Math.max(.5, b - Math.max(a, 0)), dx = 0, dy = 0;
+    if (k === "joie") s += .05 * (1 - eo(prog(lt, 0, .35)));                       // petit « punch » à la coupe
+    if (k === "choc") {                                                              // zoom dramatique sur le visage, puis secousse
+      s = 1.04 + .3 * eo5(prog(lt, 0, .35)) + .04 * prog(lt, .35, 1.8);
+      const k2 = 1 - prog(lt, 0, .7); dx = Math.sin(lt * 47) * 14 * k2; dy = Math.cos(lt * 39) * 10 * k2;
+    }
+    if (k === "depite") s = 1.1 - .04 * eo(prog(lt, 0, 1.2));
+    el.style.transform = `translate(${dx}px, ${dy}px) scale(${s})`;
+    el.style.filter = k === "depite" ? "saturate(.55) brightness(.8)" : "none";
+  }
+  $("dark").style.opacity = .55 * eio(prog(t, T.end4, .4));
+}
+
+function render(t) {
+  renderBackground(t, t > T.outro ? .95 : .6);
+  const on = t < T.flash + .3;
+  show($("scene"), on);
+  if (on) {
+    renderPhotos(t);
+    // accroche : lisible dès la 1re image, puis s'efface quand la notification arrive
+    const s0 = eo(prog(t, -.3, .6)), hq = eio(prog(t, T.notif - .1, .3));
+    ["hk", "h1", "h2"].forEach(id => {
+      const el = $(id);
+      el.style.opacity = (.7 + .3 * s0) * (1 - hq);
+      el.style.transform = `translateY(${(1 - s0) * 18 - hq * 70}px)`;
+      blur(el, hq * 10);
+    });
+    // panier
+    const cIn = eo(prog(t, -.3, .7)), cOut = eio(prog(t, T.end4, .45));
+    const shake = t > T.stamp ? Math.sin((t - T.stamp) * 55) * 12 * (1 - prog(t, T.stamp, .4)) : 0;
+    $("cart").style.opacity = (.7 + .3 * cIn) * (1 - cOut);
+    $("cart").style.transform = `translate(${shake}px, ${(1 - cIn) * 26 + Math.sin(t * 1.6) * 4 + cOut * 90}px) scale(${(.97 + .03 * cIn) * (1 - cOut * .06)})`;
+    blur($("cart"), cOut * 10);
+    const ok = eo(prog(t, T.tap + .05, .25));
+    $("payok").style.opacity = ok; $("payok").style.transform = `scale(${t > T.tap ? .92 + .08 * back(ok) : 1})`;
+    const pc = eo(prog(t, T.newp, .35));
+    $("paycd").style.opacity = pc; $("paycd").style.transform = `scale(${.9 + .1 * back(pc)})`;
+    $("strike").style.width = (eio(prog(t, T.strike, .3)) * (L.priceW + 16)) + "px";
+    $("ptx").style.color = t > T.strike + .15 ? "#8c8fa3" : "";
+    // notification
+    show($("notif"), t > T.notif - .02);
+    const nIn = back(prog(t, T.notif, .5), 1.3), nOut = eio(prog(t, T.end4, .45));
+    $("notif").style.opacity = clamp(prog(t, T.notif, .15) * 1.2) * (1 - nOut);
+    $("notif").style.transform = `translateY(${(1 - nIn) * -320 - nOut * 90}px) scale(${1 - nOut * .05})`;
+    blur($("notif"), nOut * 10);
+    // tampon
+    show($("stamp"), t > T.stamp);
+    const sp = prog(t, T.stamp, .2);
+    $("stamp").style.opacity = clamp(sp * 2.5) * (1 - cOut);
+    $("stamp").style.transform = `translate(${L.stX + shake}px, ${L.stY + cOut * 90}px) rotate(-9deg) scale(${lerp(2.6, 1, eo(sp))})`;
+    blur($("stamp"), cOut * 10);
+    // « Ne sois pas Gérard. »
+    [["ne1", T.ne], ["ne2", T.ne + .18]].forEach(([id, at]) => {
+      const p = expo(prog(t, at, .5)), q = eio(prog(t, T.flash - .1, .3));
+      $(id).style.opacity = p * (1 - q);
+      $(id).style.transform = `translateY(${(1 - p) * 40 - q * 60}px)`;
+      blur($(id), (1 - p) * 10 + q * 10);
+    });
+  }
+  renderFinger(t, [[T.tap, L.btn]]);
+  renderFlash(t, T.flash);
+  renderOutro(t, T.outro);
+}
+
+boot();
+</script>
