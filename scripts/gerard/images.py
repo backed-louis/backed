@@ -4,18 +4,18 @@ import os, sys, time, urllib.parse, urllib.request
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "out/gerard"
 os.makedirs(OUT, exist_ok=True)
-BASE = ("candid vertical smartphone photo, photorealistic, a 55-year-old French man named Gerard, bald on top with a thin brown comb-over, "
-        "thick bushy brown mustache, round thin metal glasses, slightly chubby friendly face, rosy cheeks, mustard-yellow knitted cardigan "
-        "over a white shirt, sitting on a beige sofa in a modest French living room, warm evening lamp light, natural skin texture, "
-        "shallow depth of field, medium shot, centered, looking natural")
+# L'expression d'abord (le modèle privilégie le début de la description), puis le personnage, court et identique partout.
+PERSO = ("chubby 55-year-old French man with receding brown hair, thick brown mustache, clean-shaven chin, round tortoiseshell glasses, "
+         "mustard-yellow cardigan over a white shirt, sitting on a beige sofa in a cozy French living room, warm lamp light, "
+         "candid smartphone photo, photorealistic, natural skin")
 EXPR = {
-    "fier": "smug proud smile, chin up, one eyebrow raised, holding up a gold credit card next to his face, looking at the camera",
-    "joie": "delighted big open-mouth grin, celebrating with a fist pump, gold credit card in the other hand, looking at the camera",
-    "choc": "staring at his smartphone in total shock, mouth wide open, eyes wide open behind his glasses, eyebrows raised high",
-    "depite": "defeated and dejected, slumped on the sofa, hand on his forehead, sad frown, smartphone in his lap, looking down",
+    "fier": "photo of a smug proud man with a big confident smile holding up a gold credit card next to his face",
+    "joie": "photo of an overjoyed man laughing with his mouth wide open, celebrating with a fist pump, gold credit card in hand",
+    "choc": "photo of a horrified man staring at his smartphone, mouth wide open in shock, eyes wide, eyebrows raised high",
+    "depite": "photo of a sad defeated man slumped on a sofa, facepalm, hand covering his forehead, frowning, phone in his lap",
 }
-SEEDS = [int(s) for s in os.environ.get("SEEDS", "1207,4242,9001").split(",")]
-W, H = 864, 1536
+SEEDS = [int(s) for s in os.environ.get("SEEDS", "2026,3110,7777").split(",")]
+W, H = 576, 1024
 
 
 def get(prompt, seed, path):
@@ -43,7 +43,7 @@ def get(prompt, seed, path):
 ok = 0
 for seed in SEEDS:
     for name, expr in EXPR.items():
-        ok += get(f"{BASE}, {expr}", seed, os.path.join(OUT, f"{seed}-{name}.jpg"))
+        ok += get(f"{expr}, {PERSO}", seed, os.path.join(OUT, f"{seed}-{name}.jpg"))
         time.sleep(6)
 print(f"{ok} images")
 sys.exit(0 if ok else 1)
