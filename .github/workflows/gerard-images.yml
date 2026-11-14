@@ -1,0 +1,33 @@
+name: Photos de Gérard (essai)
+# Essai : génère les photos de Gérard Pleinpot (IA gratuite) et les pousse sur la branche gerard-images.
+on:
+  push:
+    branches: [gerard-ia]
+    paths: ['scripts/gerard/**', '.github/workflows/gerard-images.yml']
+permissions:
+  contents: write
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Générer
+        run: python3 scripts/gerard/images.py out/gerard
+      - name: Pousser sur gerard-images
+        if: always()
+        run: |
+          [ -d out/gerard ] && [ -n "$(ls -A out/gerard)" ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          cp -r out/gerard /tmp/gerard
+          git checkout --orphan gerard-images
+          git rm -rfq --cached .
+          git clean -fdq -e out
+          cp /tmp/gerard/* .
+          git add -- *.jpg
+          git commit -qm "Photos de Gérard (run ${{ github.run_number }})"
+          git push -f origin gerard-images
