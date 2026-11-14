@@ -1,0 +1,21 @@
+name: Vérification du domaine (essai)
+on:
+  push:
+    branches: [verif-domaine]
+permissions:
+  contents: read
+jobs:
+  verif:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: |
+          for u in https://backed.fr/marque/ovoko https://backed.fr/ http://backed.fr/marque/saily http://www.backed.fr/marque/saily https://www.backed.fr/marque/ovoko; do
+            echo "== $u"
+            curl -s -o /dev/null -D - --max-time 20 "$u" | grep -iE "^HTTP/|^location:|^x-vercel" | tr -d '\r'
+            echo "-> final : $(curl -sL -o /dev/null -w '%{http_code} %{url_effective} (%{num_redirects} redirection)' --max-time 20 "$u")"
+          done
+          echo "== canonical"
+          for u in https://www.backed.fr/marque/ovoko https://backed.fr/marque/ovoko; do
+            echo "$u : $(curl -sL --max-time 20 "$u" | grep -oE '<link rel="canonical"[^>]*>' | head -1)"
+          done
