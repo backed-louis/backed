@@ -11,10 +11,11 @@ Le workflow **Vidéos de la semaine** tourne chaque vendredi vers 18h (heure de 
 soit prêt au réveil le samedi (GitHub retarde parfois les tâches planifiées de plusieurs heures).
 Chaque run prépare :
 
-- le top 3 du samedi (le lendemain) : « Les codes en tendance », les marques les plus en hausse sur Google Trends
-  (`tendances.txt`, mis à jour à la main) qui ont un code valable jusqu'à la fin de la semaine suivante, dans l'ordre
-  du classement (on descend dans la liste quand on n'a pas le code d'une marque), vidéo `00-…-top3.mp4`
-  et textes en tête de `publications.md`, avec le tableau des clics qui a servi au classement ;
+- le top 3 du samedi (le lendemain) : « Les codes en tendance », les marques dont la page backed.fr monte le plus dans
+  la Search Console (impressions des 7 derniers jours contre la moyenne des 4 semaines d'avant, au moins 30 impressions,
+  `gsc.py`) qui ont un code valable jusqu'à la fin de la semaine suivante, dans l'ordre du classement (on descend dans
+  la liste quand on n'a pas le code d'une marque), vidéo `00-…-top3.mp4` et textes en tête de `publications.md` ; juste
+  après, les marques en hausse qui n'ont pas de code valable (un code à ajouter ?) ;
 - du dimanche au vendredi suivants : 1 vidéo « Code du jour » par jour ;
 - pour chaque jour (et le top 3) : une carte carrée à envoyer avec le message WhatsApp de 12h15 (`…-whatsapp.png`) ;
   la vidéo, elle, se publie à 19h sur TikTok, en Reel et en story Instagram (la même vidéo), et en YouTube Shorts.
@@ -43,6 +44,10 @@ Pour lancer à la main : **Actions → Vidéos de la semaine → Run workflow**
   7 jours), puis clics au total, puis les plus récentes. Les clics sont regroupés par `Slug`
   (marque + créateur), comme sur le site (`lib/classement.ts`).
 - Une seule offre par marque.
+- Codes du jour : pas les marques du top 3 ; d'abord les autres marques en hausse dans la Search Console, puis les plus
+  copiées. La Search Console est lue avec un compte de service Google en lecture seule (secret `GSC_SERVICE_ACCOUNT`).
+  Aucun chiffre de la Search Console n'est écrit nulle part (dépôt et journaux publics) : seulement l'ordre des marques.
+  Si elle ne répond pas, le classement de secours est `tendances.txt`.
 - Codes du jour : seulement les offres valables jusqu'au vendredi (date de fin vide ou après).
 - Le nombre de nouvelles offres par jour ne change rien : toujours 1 vidéo par jour. S'il manque des offres, le jour est marqué « pas de nouvelle vidéo » dans `publications.md`.
 - Aucun compteur (nombre de codes, de créateurs) dans les vidéos, puisqu'elles sont préparées pour toute la semaine.

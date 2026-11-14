@@ -1,3 +1,5 @@
+# SECOURS SEULEMENT : depuis le 14 novembre 2026, le top 3 vient de la Search Console (gsc.py). Cette liste ne sert
+# que si la Search Console ne répond pas.
 # Marques en tendance sur Google (Google Trends, France, « Requêtes en hausse » liées à « code », 3 derniers mois).
 # Une marque par ligne, la plus en hausse d'abord ; le nom doit être celui de la table Brands d'Airtable.
 # Le top 3 du samedi (« Les codes en tendance ») prend les premières qui ont un code actif valable toute la semaine :

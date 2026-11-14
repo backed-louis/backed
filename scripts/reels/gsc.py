@@ -34,7 +34,7 @@ def pick_site(s):
             return pref
     if sites:
         return sites[0]
-    sys.exit("Aucune propriété Search Console accessible : vérifier l'ajout du compte de service dans la Search Console.")
+    raise RuntimeError("aucune propriété Search Console accessible : vérifier l'ajout du compte de service")
 
 
 def query(s, site, start, end, dims, filters=None, limit=25000):

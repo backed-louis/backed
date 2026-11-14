@@ -1,9 +1,7 @@
 name: Search Console (essai)
-# Essai de l'accès à la Search Console : écrit gsc.json (téléchargeable dans Artifacts, pas dans le journal public).
 on:
   push:
     branches: [gsc]
-    paths: ['scripts/reels/gsc.py', '.github/workflows/gsc-essai.yml']
 permissions:
   contents: read
 jobs:
@@ -15,37 +13,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install --quiet google-auth requests
+      - run: pip install --quiet Pillow==11.3.0 numpy==2.1.3 google-auth==2.38.0 requests==2.32.3
       - env:
           GSC_SERVICE_ACCOUNT: ${{ secrets.GSC_SERVICE_ACCOUNT }}
-        run: python3 scripts/reels/gsc.py --out gsc.json
-      - name: Résultat chiffré (lisible seulement avec la clé privée de Claude)
+          AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
         run: |
-          cat > cert.pem <<'PEM'
-          -----BEGIN CERTIFICATE-----
-          MIIEGzCCAoOgAwIBAgIUBRAp6QgoV/4+jVYbHCtGuxfUtdEwDQYJKoZIhvcNAQEL
-          BQAwHTEbMBkGA1UEAwwSYmFja2VkLWdzYy1sZWN0dXJlMB4XDTI2MTExNDE1MjI1
-          N1oXDTI2MTIxNDE1MjI1N1owHTEbMBkGA1UEAwwSYmFja2VkLWdzYy1sZWN0dXJl
-          MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAhoGcQM3MQHq27GigchqM
-          JBRkvCSNLE35q7nkSr8kKl/EozEg4C2ie4dnfZzfPcs/ucYKwx7hzCCd2RpudxmZ
-          CYk5Cvr4cyxAWTTUlzKCACswNXf/QeYhGn3JH0nc1YmIm+0HfHQja89vlygsQf78
-          NIYjL0ngDJ0lSXnYV8LV5EpsIhIWGX72bZHdAUZ4dbLE5gOYSsP7/2iZRYhdze10
-          9abxevwJFSPSvDAZCflccadxSzH/h3woEnJ/W8JUPVlMyNrlK/Sz5f1IuHkAjh79
-          owngUMG7qtLBrq+bQwMhFqBDuS2ZxQTHrRAVmaGgK6GJMfqZUXuZnqKYnNd4bjKo
-          qJN80Snk0TQ2OoOKSxPEjb2RFpDIwnMPkMkghTOm/Pm53/99huEdndpeiJWiwKKC
-          yzK6aPhzOdgSSSARQcmHVzjhE1Cmqngyv5U+TQKp/EKFJAV2mQ3oEEUFb4uvErG6
-          6DB13z9lAh5ghUpyIuq/9KMygtpyYRrYy1IATiVWxjVHAgMBAAGjUzBRMB0GA1Ud
-          DgQWBBTzu1E6AAJOtLy2/U2LICU5OOF3rzAfBgNVHSMEGDAWgBTzu1E6AAJOtLy2
-          /U2LICU5OOF3rzAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBgQAd
-          bMRw8/8DU7gw1mOpxsZDG+bkaxE+00vq5lbO3kVgp0pIHk+bsQvCUMRUGz8zK2bc
-          a6VFnux94SVMkVYEIWU89zQHmS9pFp+XEzasmt8kV9E86ExbJTF+sgdK35EHFj3r
-          bzIORJexS2nRHsGCHyk6WNdjCW4HK4vA6lwtbsMTSGZ9o0BlzjwytZPBNNaq3msM
-          4SD8i67WMw1W/+qgb5DAN2GzYN0/PDAvfYUB+kvoTfr7hE/kDvwq31VFaVSXyG2i
-          RovuqYKRQwG06emlqC3F+cnc+5qjcNZ3+OkGEl0OzF7gXtvoUZRMkpva3Io4lUCc
-          0sn4CJcoL3s9unOLgcCwiWaG08AEDaBjBWSmTspbiIMMRFwryykRuyP2Kz79wsD9
-          ISueeoOdpvGrCztmsZm8ShJroxJAU9l0ajESNm2NEuMecgA3TyrRWQ7/xeaBdcbS
-          JTfSOzEE9yPesGe0QZ/7L96JYIs9n2f0euQO9m3/2nU7t46aneUlB8ENa0x1qoY=
-          -----END CERTIFICATE-----
-          PEM
-          sed -i 's/^ *//' cert.pem
-          openssl cms -encrypt -binary -aes256 -in gsc.json -outform PEM cert.pem
+          cd scripts/reels
+          python3 - <<'PY'
+          import datetime as dt, generate_week as g
+          t = g.trends_search_console()
+          print("marques en hausse :", None if t is None else len(t))
+          data = g.load_from_airtable()
+          today = dt.date.today()
+          end = (g.next_sunday(today) + dt.timedelta(days=5)).isoformat()
+          daily, top, *_, missing = g.pick_offers(data, today, valid_until=end, trending=t)
+          print("top 3 :", [o["brand"] for o in top])
+          print("codes du jour :", [o["brand"] for o in daily])
+          print("sans code :", len(missing))
+          PY
