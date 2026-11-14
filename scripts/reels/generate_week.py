@@ -4,8 +4,8 @@ Usage :
   AIRTABLE_API_KEY=... AIRTABLE_BASE_ID=... python3 scripts/reels/generate_week.py --out out/semaine
   python3 scripts/reels/generate_week.py --fixture scripts/reels/fixture.json --out out/test
 
-Sortie : le top 3 du samedi qui suit (le script tourne le vendredi soir ; classé sur les clics des 7 derniers jours),
-puis une vidéo « Code du jour » pour chaque jour du dimanche au vendredi suivants. Pour chaque jour :
+Sortie : le top 3 du samedi qui suit (le script tourne le vendredi soir ; les marques les plus en hausse dans la Search
+Console), puis une vidéo « Code du jour » pour chaque jour du dimanche au vendredi suivants. Pour chaque jour :
 la vidéo (publiée à 19h sur TikTok, en Reel et en story Instagram, et en YouTube Shorts) et la carte WhatsApp
 (12h15). Pas de carrousel de la semaine : chaque code sort le jour même, une fois (WhatsApp à 12h15, réseaux à 19h).
 publications.md donne les textes TikTok, Instagram, YouTube Shorts et WhatsApp de chaque jour.
@@ -97,10 +97,27 @@ SHIPPING = re.compile(r"(\d{1,2})\s?%[^.,;]*?(livraison|frais de port)", re.I)
 
 
 def trends(path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "tendances.txt")):
-    """Marques en tendance sur Google, dans l'ordre (tendances.txt) ; minuscules."""
+    """Secours, si la Search Console ne répond pas : marques de tendances.txt, dans l'ordre ; minuscules."""
     if not os.path.exists(path):
         return []
     return [l.strip().lower() for l in open(path, encoding="utf-8") if l.strip() and not l.startswith("#")]
+
+
+def trends_search_console():
+    """Slugs des pages marques de backed.fr les plus en hausse dans la Search Console (impressions des 7 derniers jours
+    contre la moyenne hebdomadaire des 4 semaines d'avant, voir gsc.py), la plus forte hausse d'abord.
+    None si la Search Console n'est pas accessible (pas de clé GSC_SERVICE_ACCOUNT, erreur) : on prend alors tendances.txt.
+    Aucun chiffre n'est écrit (le dépôt et ses journaux sont publics) : seulement l'ordre des marques."""
+    if not os.environ.get("GSC_SERVICE_ACCOUNT"):
+        return None
+    try:
+        import gsc
+        s = gsc.session()
+        ranked, _, _ = gsc.brand_stats(s, gsc.pick_site(s))
+        return [d["slug"] for d in ranked]
+    except Exception as e:  # noqa: BLE001 — le lot de la semaine passe avant tout
+        print(f"⚠️ Search Console indisponible ({type(e).__name__} : {e}) : classement de secours tendances.txt", flush=True)
+        return None
 
 
 def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, trending=None):
@@ -148,23 +165,31 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, tr
         wanted = [m.strip().lower() for m in only if m.strip()]
         daily = [next(o for o in offers if o["brand"].lower() == m) for m in wanted
                  if any(o["brand"].lower() == m for o in offers)]
-        return daily, [], len(data["offers"]), len(creators), since
+        return daily, [], len(data["offers"]), len(creators), since, []
     # Codes du jour et top 3 : l'offre doit tenir jusqu'à la fin de la semaine (la vidéo reste en ligne après sa
-    # publication). Le top 3 n'est jamais vide : s'il manque des offres valables, on complète avec les suivantes.
+    # publication).
     valid = [o for o in offers if not (o["end"] and valid_until and o["end"] < valid_until)]
-    daily = one_per_brand(valid, n_daily)
-    # Top 3 : les marques les plus en hausse sur Google Trends (tendances.txt, dans l'ordre) qui ont un code valable toute
-    # la semaine — les 1re, 2e et 3e si on a leurs codes, sinon on descend dans le classement. Pour chaque marque, son code
-    # le plus copié, puis celui qui affiche une remise chiffrée, puis le plus récent. Jamais les « plus copiés » à la place.
-    top = []
-    for rank, name in enumerate(trending or [], 1):
-        mine = [o for o in valid if o["brand"].lower() == name]
-        if mine:
+    trending = trending or []   # slugs (Search Console) ou noms (tendances.txt), en minuscules, la plus en hausse d'abord
+    is_brand = lambda o, key: key in (o["slug"], o["brand"].lower())  # noqa: E731
+    # Top 3 : les marques les plus en hausse (Search Console) qui ont un code valable toute la semaine — les 1re, 2e et 3e
+    # si on a leurs codes, sinon on descend dans le classement. Pour chaque marque, son code le plus copié, puis celui qui
+    # affiche une remise chiffrée, puis le plus récent. Jamais les « plus copiés » à la place.
+    top, missing = [], []
+    for rank, key in enumerate(trending, 1):
+        mine = [o for o in valid if is_brand(o, key)]
+        if not mine:
+            missing.append(key)   # en hausse, mais pas de code valable : à signaler
+        elif len(top) < n_top:
             best = max(mine, key=lambda o: (o["week"], o["clicks"], bool(o["pct"]), o["created"]))
             top.append(dict(best, trend_rank=rank))
-        if len(top) == n_top:
-            break
-    return daily, top, len(data["offers"]), len(creators), since
+    # Codes du jour : pas les marques du top 3 (déjà publiées le samedi) ; d'abord les autres marques en hausse, dans
+    # l'ordre de la Search Console, puis les plus copiées.
+    pos = {k: i for i, k in enumerate(trending)}
+    in_top = {o["brand"].lower() for o in top}
+    pool = sorted((o for o in valid if o["brand"].lower() not in in_top),
+                  key=lambda o: min(pos.get(o["slug"], len(pos)), pos.get(o["brand"].lower(), len(pos))))
+    daily = one_per_brand(pool, n_daily)
+    return daily, top, len(data["offers"]), len(creators), since, missing
 
 
 # ------------------------------------------------------------------ textes
@@ -199,7 +224,7 @@ def texts_offer(o, weekday):
 
 
 def top_sub(items=None):
-    """Sous-titre du top 3 (vidéo, visuel WhatsApp) : les marques en hausse sur Google Trends."""
+    """Sous-titre du top 3 (vidéo, visuel WhatsApp) : les marques les plus recherchées (Search Console)."""
     return "Les codes en tendance"
 
 
@@ -215,7 +240,7 @@ def texts_top(items):
                               for i, o in enumerate(items))
     rich_wa = "\n\n".join(f"{i + 1}. {o['brand']}" + (f" : {gain(o)}" if gain(o) else "")
                            + f"\nCode : {o['code']}{via(o)}\n→ backed.fr/marque/{o['slug']}" for i, o in enumerate(items))
-    n = len(items)  # marques les plus en hausse sur Google cette semaine (tendances.txt)
+    n = len(items)  # marques les plus en hausse dans la Search Console cette semaine
     head_tt, head_ig, head_wa = (f"Les {n} codes promo en tendance cette semaine. 🔥", f"Les {n} codes promo en tendance cette semaine 🔥",
                                  f"🔥 Les {n} codes promo en tendance cette semaine")
     tiktok = (f"{head_tt}\n{lines}\n"
@@ -251,13 +276,16 @@ def texts_youtube_top(items):
     return title, desc
 
 
-def ranking_note(items, since):
+def ranking_note(items, since, source):
     """Ce sur quoi repose le top 3, pour vérifier avant de publier (pas publié)."""
     rows = "\n".join(f"| {i + 1} | {o['brand']} | {o.get('trend_rank', '?')} | {o['code']} | {o['week']} | {o['clicks']} |"
                      for i, o in enumerate(items))
-    return ("Classement : les marques les plus en hausse sur Google Trends (scripts/reels/tendances.txt) qui ont un code "
-            "valable toute la semaine ; pour chacune, son code le plus copié.\n\n"
-            f"| # | Marque | Rang Google Trends | Code | Clics 7 jours | Clics au total |\n|---|---|---|---|---|---|\n{rows}\n")
+    return (f"Classement : {source}, qui ont un code valable toute la semaine ; pour chacune, son code le plus copié.\n\n"
+            f"| # | Marque | Rang (hausse) | Code | Clics 7 jours | Clics au total |\n|---|---|---|---|---|---|\n{rows}\n")
+
+
+SOURCE_GSC = "les marques dont la page backed.fr monte le plus dans la Search Console (impressions des 7 derniers jours)"
+SOURCE_SECOURS = "⚠️ Search Console indisponible cette semaine : marques de secours de scripts/reels/tendances.txt"
 
 
 WA_TIME = "12h15"   # WhatsApp, envoyé à la main chaque jour ; tout le reste se publie à 19h (Buffer)
@@ -323,7 +351,11 @@ def main():
     week_end = (start + dt.timedelta(days=5)).isoformat()  # vendredi : dernier « Code du jour »
     top_day = start - dt.timedelta(days=1)  # le samedi (le lendemain du vendredi où le script tourne)
     only = a.marques.split(",") if a.marques else None
-    daily, top, n_offers, n_creators, since = pick_offers(data, dt.date.today(), valid_until=week_end, only=only, trending=trends())
+    trending, source = (None, SOURCE_GSC) if only else (trends_search_console(), SOURCE_GSC)
+    if trending is None and not only:
+        trending, source = trends(), SOURCE_SECOURS
+    daily, top, n_offers, n_creators, since, missing = pick_offers(data, dt.date.today(), valid_until=week_end, only=only,
+                                                                   trending=trending)
     if not daily:
         sys.exit("Aucune offre active avec code et marque : rien à générer.")
     # Pas de chiffre qui bouge chaque jour dans les vidéos : elles sont générées le vendredi pour toute la semaine.
@@ -357,14 +389,14 @@ def main():
 
     md = [f"# Publications Backed — semaine du {date_fr(start)}\n",
           f"Généré automatiquement depuis Airtable le {dt.date.today().isoformat()} : {n_offers} offres actives, "
-          "les plus copiées en premier (clics des 7 derniers jours, puis au total), une par marque, et pour les codes "
-          "du jour seulement celles valables jusqu'au vendredi. "
-          + "Top 3 : les marques les plus en hausse sur Google Trends (scripts/reels/tendances.txt) qui ont un code valable. "
+          "une par marque, valables jusqu'au vendredi. "
+          + f"Top 3 : {source}, qui ont un code valable. Codes du jour : les autres marques en hausse, puis les plus "
+          "copiées (clics des 7 derniers jours, puis au total). "
           + "Le nombre de nouvelles offres par jour n'a pas d'importance : 1 vidéo par jour, toujours.\n"]
     # Le top 3 d'abord : il se publie le samedi, avec le classement de la semaine qui se termine.
     if len(top) < 2 and not only:
-        md.append(f"## {date_fr(top_day)} — Top 3 de la semaine\n\n⚠️ Pas de top 3 : moins de 2 marques de "
-                  "scripts/reels/tendances.txt ont un code valable. Mets la liste à jour avec Google Trends.\n")
+        md.append(f"## {date_fr(top_day)} — Top 3 de la semaine\n\n⚠️ Pas de top 3 : moins de 2 marques en hausse "
+                  "ont un code valable cette semaine.\n")
     if len(top) >= 2:
         name = f"00-{top_day.isoformat()}-top{len(top)}.mp4"
         dur, stills = make_video("top", top, os.path.join(a.out, name), 3)
@@ -377,7 +409,12 @@ def main():
         vis_rows.append([wa_img])
         md.append(block(f"{date_fr(top_day)} — Top {len(top)} de la semaine", name, *texts_top(top),
                         yt=texts_youtube_top(top), wa_img=f"{stem}-whatsapp.png"))
-        md.append(ranking_note(top, since))
+        md.append(ranking_note(top, since, source))
+    if missing:
+        names = {(r["fields"].get("slug") or "").lower(): r["fields"].get("Name") for r in data["brands"]}
+        shown = [names.get(k) or k for k in missing[:10]]
+        md.append("### Marques en hausse sans code valable cette semaine\n\n" + ", ".join(shown)
+                  + "\n\nRecherchées sur backed.fr, mais pas de code actif valable jusqu'au vendredi : un code à ajouter ?\n")
     for i, o in enumerate(daily):
         day = start + dt.timedelta(days=i)
         stem = f"{i + 1:02d}-{day.isoformat()}-{o['slug']}"

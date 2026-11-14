@@ -1,7 +1,7 @@
 name: Vidéos de la semaine
 
-# Chaque vendredi vers 18h (heure de Paris en hiver), génère le top 3 du lendemain samedi (clics des
-# 7 derniers jours) et les vidéos « Code du jour » du dimanche au vendredi suivants, à partir d'Airtable,
+# Chaque vendredi vers 18h (heure de Paris en hiver), génère le top 3 du lendemain samedi (les marques les plus en
+# hausse dans la Search Console) et les vidéos « Code du jour » du dimanche au vendredi suivants, à partir d'Airtable,
 # avec pour chaque jour la carte WhatsApp (12h15). Pas de carrousel de la semaine.
 # Le vendredi soir plutôt que le samedi matin : GitHub retarde parfois les tâches planifiées de plusieurs
 # heures, et le lot doit être prêt au réveil le samedi.
@@ -39,13 +39,15 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
-          pip install --quiet Pillow==11.3.0 numpy==2.1.3 scipy==1.14.1 playwright==1.49.1
+          pip install --quiet Pillow==11.3.0 numpy==2.1.3 scipy==1.14.1 playwright==1.49.1 google-auth==2.38.0 requests==2.32.3
           # vidéos premium : pages HTML rendues image par image dans Chromium (scripts/motion)
           python -m playwright install --with-deps chromium
       - name: Generate videos
         env:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          # compte de service Google, en lecture seule sur la Search Console (classement des marques en hausse)
+          GSC_SERVICE_ACCOUNT: ${{ secrets.GSC_SERVICE_ACCOUNT }}
           START: ${{ github.event.inputs.start }}
           MARQUES: ${{ github.event.inputs.marques }}
         run: |
