@@ -1,0 +1,59 @@
+name: Search Console (relevé chiffré)
+on:
+  push:
+    branches: [gsc-releve]
+permissions:
+  contents: read
+jobs:
+  gsc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet google-auth==2.38.0 requests==2.32.3
+      - env:
+          GSC_SERVICE_ACCOUNT: ${{ secrets.GSC_SERVICE_ACCOUNT }}
+        run: |
+          cd scripts/reels
+          python3 - <<'PY'
+          import json, datetime as dt, gsc
+          s = gsc.session(); site = gsc.pick_site(s)
+          ranked, allb, period = gsc.brand_stats(s, site)
+          end = dt.date.today() - dt.timedelta(days=1)
+          rows = gsc.query(s, site, end - dt.timedelta(days=27), end, ["page"], [{"dimension": "page", "operator": "contains", "expression": "/marque/"}])
+          top28 = sorted(({"page": r["keys"][0], "imp": r["impressions"], "clics": r["clicks"], "pos": round(r["position"], 1)} for r in rows), key=lambda r: -r["imp"])[:40]
+          json.dump({"periode": period, "hausse": ranked, "top28": top28}, open("/tmp/gsc.json", "w"), ensure_ascii=False)
+          print("ok", len(ranked), len(top28))
+          PY
+      - run: |
+          cat > cert.pem <<'PEM'
+          -----BEGIN CERTIFICATE-----
+          MIIEGzCCAoOgAwIBAgIUPKcnn+GxdTuhy8bgjEgn/Tle1KAwDQYJKoZIhvcNAQEL
+          BQAwHTEbMBkGA1UEAwwSYmFja2VkLWdzYy1sZWN0dXJlMB4XDTI2MTExNjE2Mjcz
+          NFoXDTI2MTIxNjE2MjczNFowHTEbMBkGA1UEAwwSYmFja2VkLWdzYy1sZWN0dXJl
+          MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAqm8jCcoKn3gtrNuhzHSl
+          MJyoTpYoekMURg5HHI/9/p2xITD83hMYVGeay6yCy+8qXtJMmVuLetXmuijujEbU
+          FcvULlr+q844BthFLWf/Rb2Ff3KX53I9R7LXE6B+YyS/785UEqUWu4Gr72ZoTYfK
+          9XTZm5V1I4PwMBC2s26fcmsqS1qKRkZLs4MBfuKqPS0irPmwqDVBmmZ1SPDZKK4G
+          XqJWiTP/QqcQwGzOQP0oVh/hKXjEqKEWqPaGhJxhvEgDc3RYcNySbLCbUH2pMoNV
+          XL4vm3R3WdZAtSeeBBV/wgpE9efZaVb9P9fhw3pHsoKaL0r4fERDyyJFoTk2b+vX
+          c9M8O5S4+hiIBCWPv/sbE343s2WNlXCCpx7JuqljSLYkUc28C8wR8H/nZYxCULfY
+          5ONg3Yn+rzOYNTNaIs/oVukREA3noXMnG0n3qf/jTl4fqxbhvVO8xnuMEjb62fIY
+          s3IrHpgkNxa9OuziMfxhL6eryCL49daRU0FE5mrA6uTRAgMBAAGjUzBRMB0GA1Ud
+          DgQWBBRdxq70IYPmWeAnqVHmoBHI0aWqljAfBgNVHSMEGDAWgBRdxq70IYPmWeAn
+          qVHmoBHI0aWqljAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBgQAb
+          dyLNr8UbhL6GXOkfy5fq/2YT0fG2jR5VdKwmDoKwCQk32lojCHHZJKH2jo0641xq
+          JbtkfB9e38QWaAtoZ+jr8C08kvr0LRgiFdCjsGykv/1bkYV1Esnvpef+JhklnG8L
+          ntPSLgOTrDMMggBmxztgmOjkv+6Vz50GJgjQH5/pUg887r3fBTJSN0mNO+uSgNlA
+          KSiuykBrOiAelHvZuijumW9DbuxgZlWPA0scjNPYlGySjwDBrbysSY45FEu96Nzf
+          8ozp8u0aGwd6c5LabAERvjk5+3Y8DHy+ar4E20u/jKLKCZcVSEmnsV4x6XYP0XzN
+          u99oiPJv9gzVcRIV4oGNdl5r9E2tDi5uCXrG+W18HbSBTehjtsGf9YfzPhTZW6Ft
+          ltxpoykJzZZmJ7p47+5rsjTPVakbrdzS4tpURTRyDkGP8llxf3IHkUonfGSA0kff
+          OP9JHbRh7fESkDIduu3ohSeRQ/7u+kelXFPUeJO93Lklo6X6GyTXfAlUjX8zWXY=
+          -----END CERTIFICATE-----
+          PEM
+          sed -i 's/^ *//' cert.pem
+          openssl cms -encrypt -binary -aes256 -in /tmp/gsc.json -outform PEM cert.pem
