@@ -4,8 +4,8 @@ Usage :
   AIRTABLE_API_KEY=... AIRTABLE_BASE_ID=... python3 scripts/reels/generate_week.py --out out/semaine
   python3 scripts/reels/generate_week.py --fixture scripts/reels/fixture.json --out out/test
 
-Sortie : le top 3 du samedi qui suit (le script tourne le vendredi soir ; les marques les plus en hausse dans la Search
-Console), puis une vidéo « Code du jour » pour chaque jour du dimanche au vendredi suivants. Pour chaque jour :
+Sortie : le top 3 du dimanche qui suit (le script tourne le vendredi soir ; les marques les plus en hausse dans la Search
+Console), puis une vidéo « Code du jour » pour chaque jour du lundi au samedi suivants. Pour chaque jour :
 la vidéo (publiée à 19h sur TikTok, en Reel et en story Instagram, et en YouTube Shorts) et la carte WhatsApp
 (12h15). Pas de carrousel de la semaine : chaque code sort le jour même, une fois (WhatsApp à 12h15, réseaux à 19h).
 publications.md donne les textes TikTok, Instagram, YouTube Shorts et WhatsApp de chaque jour.
@@ -337,7 +337,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="out/semaine")
     ap.add_argument("--fixture", help="JSON {offers, brands, creators} au format de l'API Airtable (pour tester)")
-    ap.add_argument("--start", help="Date du premier jour (AAAA-MM-JJ), par défaut le prochain dimanche")
+    ap.add_argument("--start", help="Dimanche de la semaine (AAAA-MM-JJ), jour du top 3 ; codes du jour du lundi au samedi "
+                                    "suivants. Par défaut le prochain dimanche. Lot spécial : premier jour des marques imposées")
     ap.add_argument("--no-video", action="store_true", help="Ne génère que publications.md")
     ap.add_argument("--preview", help="Dossier où écrire un aperçu léger (planches JPEG + publications.md)")
     ap.add_argument("--no-logo", action="store_true", help="Ne télécharge pas les logos des marques")
@@ -348,8 +349,11 @@ def main():
 
     data = json.load(open(a.fixture, encoding="utf-8")) if a.fixture else load_from_airtable()
     start = dt.date.fromisoformat(a.start) if a.start else next_sunday(dt.date.today())
-    week_end = (start + dt.timedelta(days=5)).isoformat()  # vendredi : dernier « Code du jour »
-    top_day = start - dt.timedelta(days=1)  # le samedi (le lendemain du vendredi où le script tourne)
+    # Le top 3 sort le dimanche (le week-end), puis un « Code du jour » du lundi au samedi. Lot spécial : un jour par
+    # marque imposée, à partir de --start.
+    first = 0 if a.marques else 1
+    week_end = (start + dt.timedelta(days=6)).isoformat()  # samedi : dernier « Code du jour »
+    top_day = start  # le dimanche (deux jours après le vendredi où le script tourne)
     only = a.marques.split(",") if a.marques else None
     trending, source = (None, SOURCE_GSC) if only else (trends_search_console(), SOURCE_GSC)
     if trending is None and not only:
@@ -389,11 +393,11 @@ def main():
 
     md = [f"# Publications Backed — semaine du {date_fr(start)}\n",
           f"Généré automatiquement depuis Airtable le {dt.date.today().isoformat()} : {n_offers} offres actives, "
-          "une par marque, valables jusqu'au vendredi. "
+          "une par marque, valables jusqu'au samedi. "
           + f"Top 3 : {source}, qui ont un code valable. Codes du jour : les autres marques en hausse, puis les plus "
           "copiées (clics des 7 derniers jours, puis au total). "
           + "Le nombre de nouvelles offres par jour n'a pas d'importance : 1 vidéo par jour, toujours.\n"]
-    # Le top 3 d'abord : il se publie le samedi, avec le classement de la semaine qui se termine.
+    # Le top 3 d'abord : il se publie le dimanche, avec le classement de la semaine qui se termine.
     if len(top) < 2 and not only:
         md.append(f"## {date_fr(top_day)} — Top 3 de la semaine\n\n⚠️ Pas de top 3 : moins de 2 marques en hausse "
                   "ont un code valable cette semaine.\n")
@@ -414,9 +418,9 @@ def main():
         names = {(r["fields"].get("slug") or "").lower(): r["fields"].get("Name") for r in data["brands"]}
         shown = [names.get(k) or k for k in missing[:10]]
         md.append("### Marques en hausse sans code valable cette semaine\n\n" + ", ".join(shown)
-                  + "\n\nRecherchées sur backed.fr, mais pas de code actif valable jusqu'au vendredi : un code à ajouter ?\n")
+                  + "\n\nRecherchées sur backed.fr, mais pas de code actif valable jusqu'au samedi : un code à ajouter ?\n")
     for i, o in enumerate(daily):
-        day = start + dt.timedelta(days=i)
+        day = start + dt.timedelta(days=first + i)
         stem = f"{i + 1:02d}-{day.isoformat()}-{o['slug']}"
         name = f"{stem}.mp4"
         dur, stills = make_video("offre", o, os.path.join(a.out, name), i % 4)
@@ -429,12 +433,12 @@ def main():
         md.append(block(f"{date_fr(day)} — {o['brand']}", name, *texts_offer(o, day.weekday()), yt=texts_youtube(o),
                         wa_img=f"{stem}-whatsapp.png"))
     for i in range(len(daily), 0 if only else 6):  # pas assez d'offres valables toute la semaine
-        day = start + dt.timedelta(days=i)
+        day = start + dt.timedelta(days=first + i)
         md.append(f"## {date_fr(day)} — pas de nouvelle vidéo\n\nPas assez d'offres valables toute la semaine : "
                   "republie la vidéo qui a le mieux marché, ou saute ce jour.\n")
     if not only:
-        md.append(f"## {date_fr(start + dt.timedelta(days=6))} — Top 3\n\nIl sera généré la veille au soir (vendredi), "
-                  "avec les clics de la semaine : c'est le premier fichier du lot suivant.\n")
+        md.append(f"## {date_fr(start + dt.timedelta(days=7))} — Top 3\n\nIl sera généré le vendredi soir d'avant, avec "
+                  "les chiffres de la semaine : c'est le premier fichier du lot suivant.\n")
 
     if mot:
         mot.__exit__(None, None, None)
