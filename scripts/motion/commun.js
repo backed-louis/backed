@@ -48,7 +48,8 @@ function setupCommon() {
     <div id="dot"></div><div class="ring" id="ring1"></div><div class="ring" id="ring2"></div><div id="sparks"></div><div id="ocaret"></div>
     <div class="sig" id="sig1">Avant de payer,</div><div class="sig" id="sig2" style="color:var(--lilas)">passe par Backed.</div>
     <div id="pill"><span>backed.fr</span><i id="shine"></i></div>
-    <div id="free">Gratuit · sans compte</div>`;
+    <div id="free">Gratuit · sans compte</div>
+    <div id="ocover"><div class="kicker" id="ock"></div><div class="line" id="oct"></div><div class="line" id="ocs"></div></div>`;
   f.insertAdjacentHTML("beforeend", `<div id="flash"></div><canvas id="grain" width="540" height="960"></canvas><div id="vignette"></div>`);
   $("outro").style.display = "block";   // visible le temps de mesurer les textes
   $("typed").innerHTML = "Backed".split("").map(c => `<span>${c}</span>`).join("");
@@ -158,6 +159,23 @@ function renderOutro(t, T0) {
   const fr = expo(prog(lt, t0 + .55, .5));
   $("free").style.top = (pillTop + 140) + "px";
   $("free").style.opacity = fr; $("free").style.transform = `translateY(${(1 - fr) * 20}px)`;
+  $("ocover").style.opacity = clamp(prog(lt, -.05, .12));   // dès la première image de la fin (couverture TikTok)
+}
+
+// Rappel de l'offre au-dessus de la barre Backed, pendant toute la fin : TikTok choisit lui-même la couverture
+// (souvent une image de la fin, la barre encore vide), il faut donc que chaque image de la fin dise de quoi parle
+// la vidéo. Appelé par la page dans setup().
+function setCover(kicker, title, sub) {
+  $("outro").style.display = "block";
+  $("ock").textContent = kicker || "";
+  $("oct").textContent = title || "";
+  $("ocs").textContent = sub || "";
+  const ts = Math.min(96, fitSize($("oct"), 880, 96));
+  $("oct").style.fontSize = ts + "px";
+  const ss = Math.min(44, fitSize($("ocs"), 860, 44));
+  $("ocs").style.fontSize = ss + "px";
+  $("ock").style.top = "318px"; $("oct").style.top = "362px"; $("ocs").style.top = (362 + ts * 1.12) + "px";
+  $("outro").style.display = "none";
 }
 
 // démarrage : polices, puis images, puis setup() de la page

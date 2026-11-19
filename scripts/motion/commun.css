@@ -55,6 +55,7 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
 
 /* fin : « Backed » se tape dans la barre de recherche */
 #outro { display: none; }
+#ocs { font-family: var(--inter); font-weight: 600; letter-spacing: 0; color: var(--lilas); }
 #bar { position: absolute; left: 120px; top: 605px; width: 800px; height: 230px; border-radius: 70px; background: var(--slate); border: 5px solid var(--vio); transform-origin: 400px 115px; }
 #mag { position: absolute; left: 62px; top: 80px; width: 60px; height: 60px; border-radius: 50%; border: 8px solid var(--grey); }
 #mag::after { content: ""; position: absolute; left: 44px; top: 44px; width: 30px; height: 9px; border-radius: 5px; background: var(--grey); transform: rotate(45deg); transform-origin: 0 50%; }
