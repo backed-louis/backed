@@ -87,6 +87,7 @@ def offer_data(o):
         "gainBig": o.get("disc") or "",
         "gainText": "" if o.get("disc") else (o.get("gain") or render.hook_gain(benefit or o["brand"], 46)),
         "remise": o.get("pct") or 0, "logo": logo, "logoStyle": style,
+        "gros": bool(o.get("gros")),   # gros créateur : son nom fait le titre de la couverture
     }
 
 
@@ -95,7 +96,7 @@ def top_data(items, kicker=None):
     for o in items:
         logo, style = logo_data(o.get("logo"))
         out.append({"marque": o["brand"], "code": o["code"], "createur": o.get("creator") or "",
-                    "disc": o.get("disc") or "", "logo": logo, "logoStyle": style})
+                    "disc": o.get("disc") or "", "logo": logo, "logoStyle": style, "gros": bool(o.get("gros"))})
     return {"items": out, "kicker": kicker or "LES CODES EN TENDANCE"}
 
 

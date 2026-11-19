@@ -48,6 +48,8 @@ jobs:
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
           # compte de service Google, en lecture seule sur la Search Console (classement des marques en hausse)
           GSC_SERVICE_ACCOUNT: ${{ secrets.GSC_SERVICE_ACCOUNT }}
+          # abonnés YouTube des créateurs (gros créateurs en priorité et en couverture)
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           START: ${{ github.event.inputs.start }}
           MARQUES: ${{ github.event.inputs.marques }}
         run: |
