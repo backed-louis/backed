@@ -127,7 +127,9 @@ function setup() {
   // rappel de l'offre pendant la fin (couverture TikTok) : « BSP Auto −5 % », « Le code de ZACK »
   const gain = (D.gainBig || "").replace(/^-/, "−");
   const sub = [gain ? "" : D.gainText, D.createur ? `le code de ${D.createur}` : ""].filter(Boolean).join(" · ");
-  setCover("CODE PROMO", gain ? `${D.marque} ${gain}` : D.marque, sub.charAt(0).toUpperCase() + sub.slice(1));
+  // couverture : un gros créateur en titre (c'est ce qui fait cliquer), sinon la marque et la remise
+  if (D.gros && D.createur) setCover("LE CODE DE", D.createur, gain ? `${D.marque} ${gain}` : [D.marque, D.gainText].filter(Boolean).join(" · "));
+  else setCover("CODE PROMO", gain ? `${D.marque} ${gain}` : D.marque, sub.charAt(0).toUpperCase() + sub.slice(1));
   // en-tête : logo, « CODE DU JOUR », marque
   $("head").innerHTML = `${tileHTML(D.logo, D.marque, 112, D.logoStyle)}<div><div class="lab">CODE DU JOUR</div><div class="br" id="hbr">${esc(D.marque)}</div></div>`;
   $("hbr").style.fontSize = Math.min(58, fitSize($("hbr"), 620, 58)) + "px";

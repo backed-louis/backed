@@ -74,7 +74,11 @@ function codeHTML(code, t, at) {
 
 function setup() {
   // rappel pendant la fin (couverture TikTok) : les marques du top
-  setCover(`TOP ${N} DE LA SEMAINE`, D.items.map(o => o.marque).join(" · "), "Les codes en tendance");
+  // avec des gros créateurs : leurs noms en titre, les marques dessous
+  const gros = D.items.filter(o => o.gros && o.createur).map(o => o.createur);
+  const marques = [...D.items.filter(o => o.gros && o.createur), ...D.items.filter(o => !(o.gros && o.createur))].map(o => o.marque);
+  if (gros.length) setCover(`TOP ${N} DE LA SEMAINE`, gros.join(" · "), marques.join(" · "));
+  else setCover(`TOP ${N} DE LA SEMAINE`, D.items.map(o => o.marque).join(" · "), "Les codes en tendance");
   $("kick").textContent = D.kicker || "LES CODES EN TENDANCE";
   $("tt").textContent = `Top ${N} de la semaine`;
   $("tt").style.fontSize = Math.min(84, fitSize($("tt"), 800, 84)) + "px";

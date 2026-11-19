@@ -94,6 +94,46 @@ def click_stats(data, today):
 
 # ------------------------------------------------------------------ sélection
 SHIPPING = re.compile(r"(\d{1,2})\s?%[^.,;]*?(livraison|frais de port)", re.I)
+# Abonnés YouTube à partir desquels un créateur est « gros » : son code passe en priorité et son nom fait le titre de la
+# couverture (les vidéos avec un créateur connu en couverture font 3 à 4 fois la médiane).
+GROS = 1_000_000
+LOTS_PRECEDENTS = ["https://raw.githubusercontent.com/backed-louis/backed/semaine-fichiers/publications.md",
+                   "https://raw.githubusercontent.com/backed-louis/backed/lot-special/publications.md"]
+
+
+def youtube_subscribers(data):
+    """Abonnés YouTube par créateur (id Airtable → nombre), depuis le champ Channel ID et l'API YouTube.
+    {} sans clé YOUTUBE_API_KEY ou si l'API ne répond pas : le lot se fait alors sans priorité aux gros créateurs."""
+    key = os.environ.get("YOUTUBE_API_KEY")
+    if not key:
+        return {}
+    chan = {r["id"]: (r["fields"].get("Channel ID") or "").strip() for r in data["creators"]}
+    used = {(r["fields"].get("Creator") or [None])[0] for r in data["offers"]}
+    ids = sorted({c for rid, c in chan.items() if rid in used and c.startswith("UC")})
+    count = {}
+    try:
+        for i in range(0, len(ids), 50):
+            q = urllib.parse.urlencode({"part": "statistics", "id": ",".join(ids[i:i + 50]), "maxResults": 50, "key": key})
+            with urllib.request.urlopen(f"https://www.googleapis.com/youtube/v3/channels?{q}", timeout=30) as r:
+                for it in json.load(r).get("items", []):
+                    count[it["id"]] = int(it.get("statistics", {}).get("subscriberCount") or 0)
+    except Exception as e:  # noqa: BLE001 — le lot de la semaine passe avant tout
+        print(f"⚠️ Abonnés YouTube indisponibles ({type(e).__name__}) : pas de priorité aux gros créateurs", flush=True)
+        return {}
+    return {rid: count[c] for rid, c in chan.items() if c in count}
+
+
+def last_lot_codes(urls=LOTS_PRECEDENTS):
+    """Codes du jour des lots précédents (branches semaine-fichiers et lot-special) : ils passent après les autres, pour
+    ne pas ressortir les mêmes vidéos chaque semaine. Ensemble vide si les fichiers ne sont pas joignables."""
+    codes = set()
+    for url in urls:
+        try:
+            with urllib.request.urlopen(url, timeout=20) as r:
+                codes |= {c.lower() for c in re.findall(r"^Code (\S+?), ", r.read().decode("utf-8"), re.M)}
+        except Exception:  # noqa: BLE001
+            pass
+    return codes
 
 
 def trends(path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "tendances.txt")):
@@ -120,9 +160,11 @@ def trends_search_console():
         return None
 
 
-def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, trending=None):
-    """`only` : liste de marques imposées (dans cet ordre) pour les codes du jour ; pas de top 3."""
+def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, trending=None, subs=None, recent=None):
+    """`only` : liste de marques imposées (dans cet ordre) pour les codes du jour ; pas de top 3.
+    `subs` : abonnés YouTube par id de créateur (voir youtube_subscribers) ; `recent` : codes des lots précédents."""
     week, total, since = click_stats(data, today)
+    subs, recent = subs or {}, recent or set()
     brands = {r["id"]: r["fields"] for r in data["brands"]}
     creators = {r["id"]: r["fields"].get("Name", "") for r in data["creators"]}
     offers = []
@@ -141,35 +183,38 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, tr
         gain = f"-{ship.group(1)} % sur la livraison" if ship else ""
         if ship:
             pct = None
+        cid = (f.get("Creator") or [None])[0]
         offers.append({
             "brand": name, "slug": slug, "code": code, "benefit": benefit, "pct": pct, "gain": gain,
             "website": b.get("Website") or "", "logo_urls": logos.airtable_urls(b.get("Logo")),
             "disc": f"-{pct} %" if pct else "", "detail": benefit,
-            "creator": creators.get((f.get("Creator") or [None])[0], ""),
+            "creator": creators.get(cid, ""), "subs": subs.get(cid, 0), "gros": subs.get(cid, 0) >= GROS,
             "week": week.get(f.get("Slug") or r["id"], 0),
             "clicks": max(f.get("Clicks") or 0, total.get(f.get("Slug") or r["id"], 0)),
             "created": r.get("createdTime", ""), "end": end,
         })
-    # Les plus copiées cette semaine, puis au total, puis les plus récentes ; une seule offre par marque.
-    offers.sort(key=lambda o: (o["week"], o["clicks"], o["created"]), reverse=True)
 
-    def one_per_brand(items, n):
-        seen, unique = set(), []
+    def best(items):
+        """Le code à mettre en avant pour une marque : celui du plus gros créateur s'il a au moins GROS abonnés, sinon
+        le plus copié (7 jours, puis au total), puis celui qui affiche une remise chiffrée, puis le plus récent."""
+        return max(items, key=lambda o: (o["gros"], o["subs"] if o["gros"] else 0, o["week"], o["clicks"],
+                                         bool(o["pct"]), o["created"]))
+
+    def by_brand(items):
+        out = {}
         for o in items:
-            if o["brand"].lower() not in seen:
-                seen.add(o["brand"].lower())
-                unique.append(o)
-        return unique[:n]
+            out.setdefault(o["brand"].lower(), []).append(o)
+        return out
 
     if only:
-        # « Marque » prend son code le plus copié ; « Marque:CODE » impose un code précis (ex. « Saily:SQUEEZIE », pour
-        # mettre en avant le créateur le plus connu plutôt que le code le plus récent).
+        # « Marque » prend le code de son plus gros créateur (sinon le plus copié) ; « Marque:CODE » impose un code
+        # précis (ex. « Saily:SQUEEZIE »).
         daily = []
         for m in only:
             brand, _, code = (part.strip().lower() for part in m.partition(":"))
             mine = [o for o in offers if o["brand"].lower() == brand and (not code or o["code"].lower() == code)]
             if mine:
-                daily.append(mine[0])
+                daily.append(best(mine))
         return daily, [], len(data["offers"]), len(creators), since, []
     # Codes du jour et top 3 : l'offre doit tenir jusqu'à la fin de la semaine (la vidéo reste en ligne après sa
     # publication).
@@ -177,24 +222,32 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, tr
     trending = trending or []   # slugs (Search Console) ou noms (tendances.txt), en minuscules, la plus en hausse d'abord
     is_brand = lambda o, key: key in (o["slug"], o["brand"].lower())  # noqa: E731
     # Top 3 : les marques les plus en hausse (Search Console) qui ont un code valable toute la semaine — les 1re, 2e et 3e
-    # si on a leurs codes, sinon on descend dans le classement. Pour chaque marque, son code le plus copié, puis celui qui
-    # affiche une remise chiffrée, puis le plus récent. Jamais les « plus copiés » à la place.
-    top, missing = [], []
+    # si on a leurs codes, sinon on descend dans le classement ; pour chacune, son meilleur code (best). Au moins un gros
+    # créateur : sinon la 3e place va à la marque en hausse suivante qui en a un. Jamais les « plus copiés » à la place.
+    top, missing, spare = [], [], None
     for rank, key in enumerate(trending, 1):
         mine = [o for o in valid if is_brand(o, key)]
         if not mine:
             missing.append(key)   # en hausse, mais pas de code valable : à signaler
-        elif len(top) < n_top:
-            best = max(mine, key=lambda o: (o["week"], o["clicks"], bool(o["pct"]), o["created"]))
-            top.append(dict(best, trend_rank=rank))
-    # Codes du jour : pas les marques du top 3 (déjà publiées le samedi) ; d'abord les autres marques en hausse, dans
-    # l'ordre de la Search Console, puis les plus copiées.
+            continue
+        pick = dict(best(mine), trend_rank=rank)
+        if len(top) < n_top:
+            top.append(pick)
+        elif spare is None and pick["gros"]:
+            spare = pick
+    if len(top) == n_top and spare and not any(o["gros"] for o in top):
+        top[-1] = spare
+    # Codes du jour : d'abord les gros créateurs (marques en hausse d'abord, puis les plus suivis), puis les autres marques
+    # en hausse dans l'ordre de la Search Console, puis les plus copiées ; à chaque fois, les codes des lots précédents
+    # après les autres. Une marque du top 3 n'a sa vidéo seule que si c'est un gros créateur : il passe alors deux fois
+    # dans la semaine, seul et dans le top 3.
     pos = {k: i for i, k in enumerate(trending)}
-    in_top = {o["brand"].lower() for o in top}
-    pool = sorted((o for o in valid if o["brand"].lower() not in in_top),
-                  key=lambda o: min(pos.get(o["slug"], len(pos)), pos.get(o["brand"].lower(), len(pos))))
-    daily = one_per_brand(pool, n_daily)
-    return daily, top, len(data["offers"]), len(creators), since, missing
+    rank_of = lambda o: min(pos.get(o["slug"], len(pos)), pos.get(o["brand"].lower(), len(pos)))  # noqa: E731
+    in_top = {o["brand"].lower(): o for o in top}
+    pool = [(in_top[b] if b in in_top else best(items)) for b, items in by_brand(valid).items()
+            if b not in in_top or in_top[b]["gros"]]
+    pool.sort(key=lambda o: (not o["gros"], o["code"].lower() in recent, rank_of(o), -o["subs"], -o["week"], -o["clicks"]))
+    return pool[:n_daily], top, len(data["offers"]), len(creators), since, missing
 
 
 # ------------------------------------------------------------------ textes
@@ -283,10 +336,13 @@ def texts_youtube_top(items):
 
 def ranking_note(items, since, source):
     """Ce sur quoi repose le top 3, pour vérifier avant de publier (pas publié)."""
-    rows = "\n".join(f"| {i + 1} | {o['brand']} | {o.get('trend_rank', '?')} | {o['code']} | {o['week']} | {o['clicks']} |"
-                     for i, o in enumerate(items))
-    return (f"Classement : {source}, qui ont un code valable toute la semaine ; pour chacune, son code le plus copié.\n\n"
-            f"| # | Marque | Rang (hausse) | Code | Clics 7 jours | Clics au total |\n|---|---|---|---|---|---|\n{rows}\n")
+    rows = "\n".join(f"| {i + 1} | {o['brand']} | {o.get('trend_rank', '?')} | {o['code']} | {o['creator'] or '—'}"
+                     f"{' ⭐' if o.get('gros') else ''} | {o['week']} | {o['clicks']} |" for i, o in enumerate(items))
+    return (f"Classement : {source}, qui ont un code valable toute la semaine ; pour chacune, le code de son plus gros "
+            f"créateur (⭐ : au moins {GROS // 1_000_000} M d'abonnés YouTube), sinon son code le plus copié. Au moins un "
+            "gros créateur dans le top 3.\n\n"
+            "| # | Marque | Rang (hausse) | Code | Créateur | Clics 7 jours | Clics au total |\n"
+            f"|---|---|---|---|---|---|---|\n{rows}\n")
 
 
 SOURCE_GSC = "les marques dont la page backed.fr monte le plus dans la Search Console (impressions des 7 derniers jours)"
@@ -349,7 +405,7 @@ def main():
     ap.add_argument("--no-logo", action="store_true", help="Ne télécharge pas les logos des marques")
     ap.add_argument("--classique", action="store_true", help="Anciennes vidéos (Pillow) au lieu des vidéos premium (Chromium)")
     ap.add_argument("--marques", help="Marques imposées, séparées par des virgules, un jour chacune à partir de --start "
-                                      "(lot spécial : pas de top 3). « Marque:CODE » pour imposer un code précis")
+                                      "(lot spécial : pas de top 3). « Marque » prend le code de son plus gros créateur, « Marque:CODE » impose un code")
     a = ap.parse_args()
 
     data = json.load(open(a.fixture, encoding="utf-8")) if a.fixture else load_from_airtable()
@@ -363,8 +419,12 @@ def main():
     trending, source = (None, SOURCE_GSC) if only else (trends_search_console(), SOURCE_GSC)
     if trending is None and not only:
         trending, source = trends(), SOURCE_SECOURS
+    subs = data.get("subs") or youtube_subscribers(data)   # fixture : {"subs": {id du créateur: abonnés}}
+    recent = set() if (only or a.fixture) else last_lot_codes()
+    print(f"⭐ Gros créateurs (au moins {GROS // 1_000_000} M d'abonnés YouTube) : "
+          f"{sum(v >= GROS for v in subs.values())} parmi les {len(subs)} créateurs des offres actives", flush=True)
     daily, top, n_offers, n_creators, since, missing = pick_offers(data, dt.date.today(), valid_until=week_end, only=only,
-                                                                   trending=trending)
+                                                                   trending=trending, subs=subs, recent=recent)
     if not daily:
         sys.exit("Aucune offre active avec code et marque : rien à générer.")
     # Pas de chiffre qui bouge chaque jour dans les vidéos : elles sont générées le vendredi pour toute la semaine.
@@ -399,8 +459,10 @@ def main():
     md = [f"# Publications Backed — semaine du {date_fr(start)}\n",
           f"Généré automatiquement depuis Airtable le {dt.date.today().isoformat()} : {n_offers} offres actives, "
           "une par marque, valables jusqu'au samedi. "
-          + f"Top 3 : {source}, qui ont un code valable. Codes du jour : les autres marques en hausse, puis les plus "
-          "copiées (clics des 7 derniers jours, puis au total). "
+          + f"Top 3 : {source}, qui ont un code valable, avec au moins un gros créateur. Codes du jour : d'abord les gros "
+          f"créateurs (⭐ au moins {GROS // 1_000_000} M d'abonnés YouTube ; celui du top 3 a aussi sa vidéo seule), puis "
+          "les autres marques en hausse, puis les plus copiées (clics des 7 derniers jours, puis au total) ; les codes "
+          "des lots précédents passent après. "
           + "Le nombre de nouvelles offres par jour n'a pas d'importance : 1 vidéo par jour, toujours.\n"]
     # Le top 3 d'abord : il se publie le dimanche, avec le classement de la semaine qui se termine.
     if len(top) < 2 and not only:
@@ -435,7 +497,8 @@ def main():
         visuels.save(wa_img, os.path.join(a.out, f"{stem}-whatsapp.png"))
         vid_rows.append(stills)
         vis_rows.append([wa_img])
-        md.append(block(f"{date_fr(day)} — {o['brand']}", name, *texts_offer(o, day.weekday()), yt=texts_youtube(o),
+        star = f" (⭐ {o['creator']})" if o.get("gros") else ""
+        md.append(block(f"{date_fr(day)} — {o['brand']}{star}", name, *texts_offer(o, day.weekday()), yt=texts_youtube(o),
                         wa_img=f"{stem}-whatsapp.png"))
     for i in range(len(daily), 0 if only else 6):  # pas assez d'offres valables toute la semaine
         day = start + dt.timedelta(days=first + i)

@@ -43,9 +43,16 @@ Pour lancer à la main : **Actions → Vidéos de la semaine → Run workflow**
 - Les plus copiées d'abord : clics des 7 derniers jours (clics actuels − relevé « Suivi quotidien » d'il y a
   7 jours), puis clics au total, puis les plus récentes. Les clics sont regroupés par `Slug`
   (marque + créateur), comme sur le site (`lib/classement.ts`).
-- Une seule offre par marque.
-- Codes du jour : pas les marques du top 3 ; d'abord les autres marques en hausse dans la Search Console, puis les plus
-  copiées. La Search Console est lue avec un compte de service Google en lecture seule (secret `GSC_SERVICE_ACCOUNT`).
+- Une seule offre par marque : celle de son plus gros créateur s'il a au moins 1 M d'abonnés YouTube (« gros
+  créateur », ⭐ dans `publications.md`), sinon la plus copiée. Les abonnés viennent de l'API YouTube (champ `Channel ID`
+  de la table Creators, secret `YOUTUBE_API_KEY`) ; sans réponse, le lot se fait comme avant, sans cette priorité.
+- Top 3 : au moins un gros créateur ; sinon la 3e place va à la marque en hausse suivante qui en a un.
+- Couverture (fin de la vidéo, que TikTok prend en image) : pour un gros créateur, « LE CODE DE » + son nom en titre,
+  la marque et la remise dessous ; top 3 : les noms des gros créateurs en titre, les marques dessous.
+- Codes du jour : d'abord les gros créateurs (marques en hausse d'abord, puis les plus suivis), puis les autres marques
+  en hausse dans la Search Console, puis les plus copiées ; les codes des lots précédents (branches `semaine-fichiers`
+  et `lot-special`) passent après les autres. Pas les marques du top 3, sauf un gros créateur : il passe alors deux fois,
+  seul et dans le top 3. La Search Console est lue avec un compte de service Google en lecture seule (secret `GSC_SERVICE_ACCOUNT`).
   Aucun chiffre de la Search Console n'est écrit nulle part (dépôt et journaux publics) : seulement l'ordre des marques.
   Si elle ne répond pas, le classement de secours est `tendances.txt`.
 - Codes du jour : seulement les offres valables jusqu'au samedi (date de fin vide ou après).
