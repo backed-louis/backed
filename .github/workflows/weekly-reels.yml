@@ -17,7 +17,7 @@ on:
         required: false
         default: ''
       marques:
-        description: 'Lot spécial : marques imposées, séparées par des virgules, un jour chacune à partir du premier jour (pas de top 3). Vide = lot normal.'
+        description: 'Lot spécial : marques imposées, séparées par des virgules, un jour chacune à partir du premier jour (pas de top 3). « Marque:CODE » impose un code précis. Vide = lot normal.'
         required: false
         default: ''
 
