@@ -162,9 +162,14 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, tr
         return unique[:n]
 
     if only:
-        wanted = [m.strip().lower() for m in only if m.strip()]
-        daily = [next(o for o in offers if o["brand"].lower() == m) for m in wanted
-                 if any(o["brand"].lower() == m for o in offers)]
+        # « Marque » prend son code le plus copié ; « Marque:CODE » impose un code précis (ex. « Saily:SQUEEZIE », pour
+        # mettre en avant le créateur le plus connu plutôt que le code le plus récent).
+        daily = []
+        for m in only:
+            brand, _, code = (part.strip().lower() for part in m.partition(":"))
+            mine = [o for o in offers if o["brand"].lower() == brand and (not code or o["code"].lower() == code)]
+            if mine:
+                daily.append(mine[0])
         return daily, [], len(data["offers"]), len(creators), since, []
     # Codes du jour et top 3 : l'offre doit tenir jusqu'à la fin de la semaine (la vidéo reste en ligne après sa
     # publication).
@@ -344,7 +349,7 @@ def main():
     ap.add_argument("--no-logo", action="store_true", help="Ne télécharge pas les logos des marques")
     ap.add_argument("--classique", action="store_true", help="Anciennes vidéos (Pillow) au lieu des vidéos premium (Chromium)")
     ap.add_argument("--marques", help="Marques imposées, séparées par des virgules, un jour chacune à partir de --start "
-                                      "(lot spécial : pas de top 3)")
+                                      "(lot spécial : pas de top 3). « Marque:CODE » pour imposer un code précis")
     a = ap.parse_args()
 
     data = json.load(open(a.fixture, encoding="utf-8")) if a.fixture else load_from_airtable()
