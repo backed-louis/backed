@@ -76,7 +76,9 @@ jobs:
           git rm -rfq --cached .
           git clean -fdq -e out
           cp /tmp/apercu/* .
-          git add -- *.jpg *.md *.txt
+          # Branche de fichiers, pas un site : Vercel ne doit pas essayer de la déployer (échec + e-mail à chaque run)
+          printf '%s\n' '{ "git": { "deploymentEnabled": false }, "ignoreCommand": "exit 0" }' > vercel.json
+          git add -- *.jpg *.md *.txt vercel.json
           git commit -qm "Aperçu du $(date -u +%F) (run ${{ github.run_number }})"
           git push -f origin semaine-apercu
       - name: Garder tous les fichiers de la semaine (branche semaine-fichiers, ou lot-special)
@@ -93,6 +95,8 @@ jobs:
           git rm -rfq --cached .
           git clean -fdq -e out
           cp -r /tmp/semaine/* .
-          git add -- *.mp4 *.png *.md
+          # Branche de fichiers, pas un site : Vercel ne doit pas essayer de la déployer (échec + e-mail à chaque run)
+          printf '%s\n' '{ "git": { "deploymentEnabled": false }, "ignoreCommand": "exit 0" }' > vercel.json
+          git add -- *.mp4 *.png *.md vercel.json
           git commit -qm "Fichiers du $(date -u +%F) (run ${{ github.run_number }})"
           git push -f origin $BRANCHE
