@@ -247,7 +247,17 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, tr
     pool = [(in_top[b] if b in in_top else best(items)) for b, items in by_brand(valid).items()
             if b not in in_top or in_top[b]["gros"]]
     pool.sort(key=lambda o: (not o["gros"], o["code"].lower() in recent, rank_of(o), -o["subs"], -o["week"], -o["clicks"]))
-    return pool[:n_daily], top, len(data["offers"]), len(creators), since, missing
+    # Un seul code du jour par créateur dans la semaine (sinon le plus suivi, MrBeast, prendrait trois jours).
+    daily, seen = [], set()
+    for o in pool:
+        who = o["creator"].lower()
+        if who and who in seen:
+            continue
+        seen.add(who)
+        daily.append(o)
+        if len(daily) == n_daily:
+            break
+    return daily, top, len(data["offers"]), len(creators), since, missing
 
 
 # ------------------------------------------------------------------ textes
