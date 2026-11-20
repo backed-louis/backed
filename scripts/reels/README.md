@@ -52,7 +52,7 @@ Pour lancer à la main : **Actions → Vidéos de la semaine → Run workflow**
 - Codes du jour : d'abord les gros créateurs (marques en hausse d'abord, puis les plus suivis), puis les autres marques
   en hausse dans la Search Console, puis les plus copiées ; les codes des lots précédents (branches `semaine-fichiers`
   et `lot-special`) passent après les autres. Pas les marques du top 3, sauf un gros créateur : il passe alors deux fois,
-  seul et dans le top 3. La Search Console est lue avec un compte de service Google en lecture seule (secret `GSC_SERVICE_ACCOUNT`).
+  seul et dans le top 3. Un seul code du jour par créateur dans la semaine. La Search Console est lue avec un compte de service Google en lecture seule (secret `GSC_SERVICE_ACCOUNT`).
   Aucun chiffre de la Search Console n'est écrit nulle part (dépôt et journaux publics) : seulement l'ordre des marques.
   Si elle ne répond pas, le classement de secours est `tendances.txt`.
 - Codes du jour : seulement les offres valables jusqu'au samedi (date de fin vide ou après).
