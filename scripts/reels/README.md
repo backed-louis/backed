@@ -47,8 +47,9 @@ Pour lancer à la main : **Actions → Vidéos de la semaine → Run workflow**
   créateur », ⭐ dans `publications.md`), sinon la plus copiée. Les abonnés viennent de l'API YouTube (champ `Channel ID`
   de la table Creators, secret `YOUTUBE_API_KEY`) ; sans réponse, le lot se fait comme avant, sans cette priorité.
 - Top 3 : au moins un gros créateur ; sinon la 3e place va à la marque en hausse suivante qui en a un.
-- Couverture (fin de la vidéo, que TikTok prend en image) : pour un gros créateur, « LE CODE DE » + son nom en titre,
-  la marque et la remise dessous ; top 3 : les noms des gros créateurs en titre, les marques dessous.
+- Couverture TikTok : c'est l'image au `thumbnailOffset` donné dans Buffer (TikTok le respecte). Mettre **1000 ms** :
+  le logo, la marque et la carte de remise (les couvertures préférées). 500 ms tombe avant la carte (image vide) ;
+  7200 ms donne l'en-tête de fin (« LE CODE DE » + créateur), essayé le 19/11 puis abandonné le 20/11.
 - Codes du jour : d'abord les gros créateurs (marques en hausse d'abord, puis les plus suivis), puis les autres marques
   en hausse dans la Search Console, puis les plus copiées ; les codes des lots précédents (branches `semaine-fichiers`
   et `lot-special`) passent après les autres. Pas les marques du top 3, sauf un gros créateur : il passe alors deux fois,
