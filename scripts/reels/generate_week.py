@@ -123,17 +123,26 @@ def youtube_subscribers(data):
     return {rid: count[c] for rid, c in chan.items() if c in count}
 
 
-def last_lot_codes(urls=LOTS_PRECEDENTS):
-    """Codes du jour des lots précédents (branches semaine-fichiers et lot-special) : ils passent après les autres, pour
-    ne pas ressortir les mêmes vidéos chaque semaine. Ensemble vide si les fichiers ne sont pas joignables."""
+def last_lot_codes(this_week, urls=LOTS_PRECEDENTS):
+    """Codes des lots précédents (branches semaine-fichiers et lot-special) : ils passent après les autres, pour ne pas
+    ressortir les mêmes vidéos chaque semaine. Un lot de la même semaine (`this_week`, ex. « semaine du Dimanche 22
+    novembre » : le lot relancé) ne compte pas. Ensemble vide si les fichiers ne sont pas joignables."""
     codes = set()
     for url in urls:
         try:
             with urllib.request.urlopen(url, timeout=20) as r:
-                codes |= {c.lower() for c in re.findall(r"^Code (\S+?), ", r.read().decode("utf-8"), re.M)}
+                txt = r.read().decode("utf-8")
         except Exception:  # noqa: BLE001
-            pass
+            continue
+        if this_week not in txt.split("\n", 1)[0]:
+            codes |= {c.lower() for c in re.findall(r"^Code (\S+?), ", txt, re.M)}
     return codes
+
+
+# Créateurs dont les offres visent surtout un autre pays (lien .com, prix en $) : jamais en code du jour automatique.
+# Un lot spécial (--marques « Marque:CODE ») peut toujours les mettre en avant.
+HORS_FRANCE = {"mrbeast"}
+VRAIE_REMISE = re.compile(r"\d+\s?(€|euros?)|offerts?e?s?\b|\boffert", re.I)
 
 
 def trends(path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "tendances.txt")):
@@ -246,8 +255,13 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, tr
     in_top = {o["brand"].lower(): o for o in top}
     pool = [(in_top[b] if b in in_top else best(items)) for b, items in by_brand(valid).items()
             if b not in in_top or in_top[b]["gros"]]
-    pool.sort(key=lambda o: (not o["gros"], o["code"].lower() in recent, rank_of(o), -o["subs"], -o["week"], -o["clicks"]))
-    # Un seul code du jour par créateur dans la semaine (sinon le plus suivi, MrBeast, prendrait trois jours).
+    # À rang égal, une vraie remise (pourcentage, montant en euros, « offert ») passe avant un simple code créateur
+    # (Epic Games, Roblox) ou un jeu concours.
+    remise = lambda o: bool(o["pct"] or o["gain"] or VRAIE_REMISE.search(o["benefit"]))  # noqa: E731
+    pool = [o for o in pool if o["creator"].lower() not in HORS_FRANCE]
+    pool.sort(key=lambda o: (not o["gros"], o["code"].lower() in recent, rank_of(o), not remise(o), -o["subs"],
+                             -o["week"], -o["clicks"]))
+    # Un seul code du jour par créateur dans la semaine (sinon le plus suivi prendrait plusieurs jours).
     daily, seen = [], set()
     for o in pool:
         who = o["creator"].lower()
@@ -430,7 +444,7 @@ def main():
     if trending is None and not only:
         trending, source = trends(), SOURCE_SECOURS
     subs = data.get("subs") or youtube_subscribers(data)   # fixture : {"subs": {id du créateur: abonnés}}
-    recent = set() if (only or a.fixture) else last_lot_codes()
+    recent = set() if (only or a.fixture) else last_lot_codes(f"semaine du {date_fr(start)}")
     print(f"⭐ Gros créateurs (au moins {GROS // 1_000_000} M d'abonnés YouTube) : "
           f"{sum(v >= GROS for v in subs.values())} parmi les {len(subs)} créateurs des offres actives", flush=True)
     daily, top, n_offers, n_creators, since, missing = pick_offers(data, dt.date.today(), valid_until=week_end, only=only,
