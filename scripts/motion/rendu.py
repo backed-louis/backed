@@ -51,7 +51,7 @@ def offre_airtable(marque):
         cr = gw.fetch_table("Creators", {"filterByFormula": f'RECORD_ID()="{o["Creator"][0]}"'})
         createur = cr[0]["fields"].get("Name", "") if cr else ""
     bf = b["fields"]
-    logo = logos.fetch(bf.get("Name", marque), bf.get("Website", ""), logos.airtable_urls(bf.get("Logo")))
+    logo = logos.fetch(bf.get("Name", marque), bf.get("Website", ""), logos.airtable_urls(bf.get("Logo")), bf.get("slug", ""))
     data_uri = None
     if logo is not None:
         buf = io.BytesIO()
