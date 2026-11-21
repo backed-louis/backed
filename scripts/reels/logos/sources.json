@@ -1,1 +1,22 @@
-{}
+{
+  "adopte": ["appstore:adopte|adopte"],
+  "logitech": ["wikidata-site:logitech.com", "appstore:Logitech|logitech"],
+  "dyson": ["wikidata-site:dyson.com", "appstore:MyDyson|dyson"],
+  "vevor": ["appstore:VEVOR|vevor", "wikidata-site:vevor.com"],
+  "yepoda": ["https://yepoda.de/cdn/shop/files/Artboard_1.png", "appstore:Yepoda|yepoda"],
+  "les-furets": ["appstore:LesFurets|furets", "wikidata-site:lesfurets.com"],
+  "bsp-auto": ["appstore:BSP Auto|bsp", "wikidata-site:bsp-auto.com"],
+  "hostinger": ["wikidata-site:hostinger.com", "appstore:Hostinger|hostinger"],
+  "sorare": ["appstore:Sorare|sorare", "wikidata-site:sorare.com"],
+  "italki": ["appstore:italki|italki", "wikidata-site:italki.com"],
+  "cleanmymac": ["appstore:CleanMyMac|macpaw"],
+  "bitstack": ["appstore:Bitstack|bitstack"],
+  "o2switch": ["wikidata-site:o2switch.fr"],
+  "clash-of-critters": ["appstore:Clash of Critters|"],
+  "phyto": ["wikidata-site:phyto.com", "appstore:Phyto|phyto"],
+  "manucurist": ["appstore:Manucurist|manucurist"],
+  "certideal": ["appstore:Certideal|certideal"],
+  "yfood": ["appstore:yfood|yfood"],
+  "aniimo": ["appstore:Aniimo|"],
+  "pedialyte": ["wikidata-site:pedialyte.com"]
+}

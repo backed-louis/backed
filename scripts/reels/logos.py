@@ -26,6 +26,9 @@ UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML
       "Chrome/124.0 Safari/537.36")
 LOCAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logos")
 _cache = {}
+# Sites qui ne sont pas ceux de la marque (boutique, billetterie, page d'agence…) : leurs icônes seraient fausses.
+HOTES_TIERS = ("amazon.", "playstation.com", "kolsquare", "noxinfluencer", "billetweb", "youtube.com", "youtu.be",
+               "linktr.ee", "bit.ly", "instagram.com", "tiktok.com", "twitch.tv", "google.")
 
 
 def domain_of(website):
@@ -35,7 +38,18 @@ def domain_of(website):
     if "://" not in w:
         w = "https://" + w
     host = (urllib.parse.urlparse(w).hostname or "").lower()
-    return host[4:] if host.startswith("www.") else host
+    host = host[4:] if host.startswith("www.") else host
+    return "" if any(t in host for t in HOTES_TIERS) else host
+
+
+def _full_size(url):
+    """Image Shopify (…/cdn/shop/…?width=32, _96x96.png) : la même en taille d'origine."""
+    if "/cdn/shop/" not in url:
+        return url
+    u = urllib.parse.urlparse(url)
+    q = [(k, v) for k, v in urllib.parse.parse_qsl(u.query) if k not in ("width", "height", "crop")]
+    path = re.sub(r"_\d+x\d*(?=\.\w+$)", "", u.path)
+    return urllib.parse.urlunparse(u._replace(path=path, query=urllib.parse.urlencode(q)))
 
 
 def _raw(url, timeout=10, limit=3_000_000):
@@ -90,7 +104,9 @@ def page_icons(dom):
         rel, href = _attr(tag, "rel").lower(), _attr(tag, "href")
         if not href:
             continue
-        url = urllib.parse.urljoin(base, href)
+        url = _full_size(urllib.parse.urljoin(base, href))
+        if "mask" in rel:   # mask-icon (Safari) : silhouette noire, pas le logo
+            continue
         if "manifest" in rel:
             mdata, mbase = _raw(url, limit=500_000)
             try:
@@ -107,10 +123,10 @@ def _norm(s):
     return re.sub(r"[^a-z0-9]", "", (s or "").lower())
 
 
-def app_icon(brand, dom):
+def app_icon(brand, dom, seller_hint=""):
     """Icône 512 px de l'app de la marque (App Store, France), seulement si l'app est bien la sienne : son site
-    d'éditeur est celui de la marque, ou l'éditeur porte le nom de la marque."""
-    b, root = _norm(brand), _norm(dom.split(".")[0]) if dom else ""
+    d'éditeur est celui de la marque, ou l'éditeur porte le nom de la marque (ou `seller_hint`)."""
+    b, root = _norm(seller_hint or brand), _norm(dom.split(".")[0]) if dom else ""
     if len(b) < 3:
         return ""
     for entity in ("software", "macSoftware"):
@@ -132,8 +148,9 @@ def wikidata_logo(dom):
     """Logo (P154) de l'élément Wikidata dont le site officiel est ce domaine, rendu en PNG 512 px."""
     if not dom:
         return ""
+    pattern = "^https?://([a-z0-9-]+\\\\.)?" + re.escape(dom).replace("\\", "\\\\") + "/?$"
     sparql = ('SELECT ?logo WHERE { ?item wdt:P856 ?site ; wdt:P154 ?logo . '
-              f'FILTER(CONTAINS(LCASE(STR(?site)), "//{dom}") || CONTAINS(LCASE(STR(?site)), ".{dom}")) }} LIMIT 1')
+              f'FILTER(REGEX(LCASE(STR(?site)), "{pattern}")) }} LIMIT 1')
     data, _ = _raw("https://query.wikidata.org/sparql?" + urllib.parse.urlencode({"query": sparql, "format": "json"}),
                    timeout=20, limit=200_000)
     try:
@@ -156,11 +173,23 @@ def _local(slug):
 
 
 def _manual(slug):
+    """Sources choisies à la main (scripts/reels/logos/sources.json) : une adresse, ou « appstore:Recherche|éditeur »,
+    « wikidata-site:domaine.com » ; une liste pour en essayer plusieurs (la plus grande image gagne)."""
     try:
         with open(os.path.join(LOCAL, "sources.json"), encoding="utf-8") as f:
-            return json.load(f).get(slug, "")
+            spec = json.load(f).get(slug, [])
     except Exception:  # noqa: BLE001
-        return ""
+        return []
+    urls = []
+    for item in ([spec] if isinstance(spec, str) else spec):
+        if item.startswith("appstore:"):
+            term, _, seller = item[9:].partition("|")
+            urls.append(app_icon(term, "", seller))
+        elif item.startswith("wikidata-site:"):
+            urls.append(wikidata_logo(item[14:]))
+        else:
+            urls.append(item)
+    return [u for u in urls if u]
 
 
 def fetch_with_source(brand, website, airtable_logos=(), slug=""):
@@ -174,8 +203,9 @@ def fetch_with_source(brand, website, airtable_logos=(), slug=""):
         return _cache[key]
     dom = domain_of(website)
     groups = []
-    if _manual(slug):
-        groups.append([_manual(slug)])
+    manual = _manual(slug)
+    if manual:
+        groups.append(manual)
     if dom:
         groups.append([f"https://{dom}/apple-touch-icon.png", f"https://www.{dom}/apple-touch-icon.png"])
         groups.append(page_icons(dom))
