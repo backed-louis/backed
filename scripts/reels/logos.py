@@ -5,7 +5,9 @@ Ordre de recherche (on garde la plus grande image trouvée, carrée de préfére
 2. une adresse donnée à la main dans scripts/reels/logos/sources.json ({"slug": "https://…"}) ;
 3. les icônes déclarées par le site (apple-touch-icon, icônes du manifeste en 192/512 px, icône SVG) ;
 4. les services d'icônes (Google en 256 px, DuckDuckGo) ;
-5. le logo d'Airtable (souvent un favicon de 32 px).
+5. l'icône de l'app de la marque sur l'App Store (512 px, carrée), si l'app est bien la sienne (site ou éditeur) ;
+6. le logo de la marque sur Wikidata / Wikimedia Commons (souvent un logotype en longueur) ;
+7. le logo d'Airtable (souvent un favicon de 32 px).
 En dessous de 64 px, pas de logo : la vidéo afficherait l'initiale de la marque, ce qu'on ne publie pas
 (voir scripts/reels/logo_audit.py, qui liste les marques sans logo net).
 """
@@ -101,6 +103,49 @@ def page_icons(dom):
     return out
 
 
+def _norm(s):
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def app_icon(brand, dom):
+    """Icône 512 px de l'app de la marque (App Store, France), seulement si l'app est bien la sienne : son site
+    d'éditeur est celui de la marque, ou l'éditeur porte le nom de la marque."""
+    b, root = _norm(brand), _norm(dom.split(".")[0]) if dom else ""
+    if len(b) < 3:
+        return ""
+    for entity in ("software", "macSoftware"):
+        q = urllib.parse.urlencode({"term": brand, "entity": entity, "country": "fr", "limit": 8})
+        data, _ = _raw(f"https://itunes.apple.com/search?{q}", limit=2_000_000)
+        try:
+            results = json.loads(data or b"{}").get("results", [])
+        except Exception:  # noqa: BLE001
+            results = []
+        for r in results:
+            seller_site = _norm(urllib.parse.urlparse(r.get("sellerUrl") or "").hostname or "")
+            seller = _norm(r.get("sellerName") or r.get("artistName"))
+            if (root and len(root) >= 3 and root in seller_site) or (b in seller) or (seller and seller in b and len(seller) >= 4):
+                return r.get("artworkUrl512") or r.get("artworkUrl100") or ""
+    return ""
+
+
+def wikidata_logo(dom):
+    """Logo (P154) de l'élément Wikidata dont le site officiel est ce domaine, rendu en PNG 512 px."""
+    if not dom:
+        return ""
+    sparql = ('SELECT ?logo WHERE { ?item wdt:P856 ?site ; wdt:P154 ?logo . '
+              f'FILTER(CONTAINS(LCASE(STR(?site)), "//{dom}") || CONTAINS(LCASE(STR(?site)), ".{dom}")) }} LIMIT 1')
+    data, _ = _raw("https://query.wikidata.org/sparql?" + urllib.parse.urlencode({"query": sparql, "format": "json"}),
+                   timeout=20, limit=200_000)
+    try:
+        b = json.loads(data or b"{}")["results"]["bindings"]
+    except Exception:  # noqa: BLE001
+        return ""
+    if not b:
+        return ""
+    name = urllib.parse.unquote(b[0]["logo"]["value"].rsplit("/", 1)[-1])
+    return "https://commons.wikimedia.org/wiki/Special:FilePath/" + urllib.parse.quote(name) + "?width=512"
+
+
 def _local(slug):
     for ext in ("png", "jpg", "jpeg", "webp"):
         p = os.path.join(LOCAL, f"{slug}.{ext}")
@@ -136,10 +181,14 @@ def fetch_with_source(brand, website, airtable_logos=(), slug=""):
         groups.append(page_icons(dom))
         groups.append([f"https://www.google.com/s2/favicons?domain={dom}&sz=256",
                        f"https://icons.duckduckgo.com/ip3/{dom}.ico"])
+    groups.append(lambda: [app_icon(brand, dom)])
+    groups.append(lambda: [wikidata_logo(dom)])
     groups.append([u for u in airtable_logos if u])
     best, best_src = None, ""
     for urls in groups:
-        for url in dict.fromkeys(urls):
+        if callable(urls):   # sources plus lentes : seulement si rien de net avant
+            urls = urls()
+        for url in dict.fromkeys(u for u in urls if u):
             got = _get(url)
             if got and (best is None or min(got.size) > min(best.size)):
                 best, best_src = got, url
