@@ -29,6 +29,8 @@ def font(size):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="out/logos")
+    ap.add_argument("--save", help="Dossier où enregistrer les logos trouvés en ligne (<slug>.png, 512 px max), "
+                                   "pour les figer dans le dépôt après vérification")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     brands = {r["id"]: r["fields"] for r in gw.fetch_table("Brands")}
@@ -45,10 +47,18 @@ def main():
         im, src = logos.fetch_with_source(b["Name"], b.get("Website") or "", logos.airtable_urls(b.get("Logo")), slug)
         return slug, b, im, src
 
-    with cf.ThreadPoolExecutor(12) as ex:
+    with cf.ThreadPoolExecutor(4) as ex:   # l'App Store limite le nombre de recherches
         rows = sorted(ex.map(check, used.items()), key=lambda r: (r[2] is not None, r[1]["Name"].lower()))
 
     ok = [r for r in rows if r[2] is not None]
+    if a.save:
+        os.makedirs(a.save, exist_ok=True)
+        for slug, b, im, src in ok:
+            if src.startswith(logos.LOCAL):
+                continue
+            lg = im.copy()
+            lg.thumbnail((512, 512))
+            lg.save(os.path.join(a.save, f"{slug}.png"))
     lines = [f"# Logos des marques ({len(ok)} nets sur {len(rows)})", "",
              "| Marque | slug | Taille | Source |", "|---|---|---|---|"]
     for slug, b, im, src in rows:
