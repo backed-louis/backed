@@ -169,7 +169,8 @@ def trends_search_console():
         return None
 
 
-def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, trending=None, subs=None, recent=None):
+def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, trending=None, subs=None, recent=None,
+                has_logo=None):
     """`only` : liste de marques imposées (dans cet ordre) pour les codes du jour ; pas de top 3.
     `subs` : abonnés YouTube par id de créateur (voir youtube_subscribers) ; `recent` : codes des lots précédents."""
     week, total, since = click_stats(data, today)
@@ -233,13 +234,16 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, tr
     # Top 3 : les marques les plus en hausse (Search Console) qui ont un code valable toute la semaine — les 1re, 2e et 3e
     # si on a leurs codes, sinon on descend dans le classement ; pour chacune, son meilleur code (best). Au moins un gros
     # créateur : sinon la 3e place va à la marque en hausse suivante qui en a un. Jamais les « plus copiés » à la place.
-    top, missing, spare = [], [], None
+    top, missing, spare, no_logo = [], [], None, []
     for rank, key in enumerate(trending, 1):
         mine = [o for o in valid if is_brand(o, key)]
         if not mine:
             missing.append(key)   # en hausse, mais pas de code valable : à signaler
             continue
         pick = dict(best(mine), trend_rank=rank)
+        if has_logo and not has_logo(pick):
+            no_logo.append(pick["brand"])   # pas de logo net : on ne publie pas l'initiale à la place
+            continue
         if len(top) < n_top:
             top.append(pick)
         elif spare is None and pick["gros"]:
@@ -267,10 +271,14 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, tr
         who = o["creator"].lower()
         if who and who in seen:
             continue
+        if has_logo and not has_logo(o):
+            no_logo.append(o["brand"])
+            continue
         seen.add(who)
         daily.append(o)
         if len(daily) == n_daily:
             break
+    pick_offers.no_logo = list(dict.fromkeys(no_logo))   # marques écartées faute de logo net (à signaler)
     return daily, top, len(data["offers"]), len(creators), since, missing
 
 
@@ -447,8 +455,12 @@ def main():
     recent = set() if (only or a.fixture) else last_lot_codes(f"semaine du {date_fr(start)}")
     print(f"⭐ Gros créateurs (au moins {GROS // 1_000_000} M d'abonnés YouTube) : "
           f"{sum(v >= GROS for v in subs.values())} parmi les {len(subs)} créateurs des offres actives", flush=True)
+    # Une marque sans logo net (au moins 64 px) n'est pas choisie : la vidéo afficherait son initiale.
+    has_logo = None if (a.no_logo or a.fixture) else (
+        lambda o: logos.fetch(o["brand"], o["website"], o["logo_urls"], o["slug"]) is not None)
     daily, top, n_offers, n_creators, since, missing = pick_offers(data, dt.date.today(), valid_until=week_end, only=only,
-                                                                   trending=trending, subs=subs, recent=recent)
+                                                                   trending=trending, subs=subs, recent=recent,
+                                                                   has_logo=has_logo)
     if not daily:
         sys.exit("Aucune offre active avec code et marque : rien à générer.")
     # Pas de chiffre qui bouge chaque jour dans les vidéos : elles sont générées le vendredi pour toute la semaine.
@@ -457,7 +469,7 @@ def main():
     # Logos haute définition, téléchargés maintenant (le champ Logo d'Airtable est souvent un favicon de 32 px)
     logo_log = []
     for o in daily + top:
-        o["logo"] = None if a.no_logo else logos.fetch(o["brand"], o["website"], o["logo_urls"])
+        o["logo"] = None if a.no_logo else logos.fetch(o["brand"], o["website"], o["logo_urls"], o["slug"])
         logo_log.append(f"{o['brand']} : " + (f"{o['logo'].width}×{o['logo'].height} px" if o["logo"] else "pas de logo net"))
     print("🖼️  Logos — " + " · ".join(dict.fromkeys(logo_log)), flush=True)
     vid_rows, vis_rows = [], []
@@ -510,6 +522,10 @@ def main():
         shown = [names.get(k) or k for k in missing[:10]]
         md.append("### Marques en hausse sans code valable cette semaine\n\n" + ", ".join(shown)
                   + "\n\nRecherchées sur backed.fr, mais pas de code actif valable jusqu'au samedi : un code à ajouter ?\n")
+    if getattr(pick_offers, "no_logo", None):
+        md.append("### Marques écartées faute de logo net\n\n" + ", ".join(pick_offers.no_logo)
+                  + "\n\nAjouter un logo carré (au moins 180 px) dans scripts/reels/logos/<slug>.png ou son adresse "
+                  "dans scripts/reels/logos/sources.json.\n")
     for i, o in enumerate(daily):
         day = start + dt.timedelta(days=first + i)
         stem = f"{i + 1:02d}-{day.isoformat()}-{o['slug']}"
