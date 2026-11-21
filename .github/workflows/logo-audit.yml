@@ -6,6 +6,9 @@ name: Vérifier les logos des marques
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   logos:
     runs-on: ubuntu-latest
@@ -29,3 +32,15 @@ jobs:
           name: logos-${{ github.run_number }}
           path: out/logos
           retention-days: 14
+      - name: Garder la planche dans le dépôt (branche logos-apercu)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          cp -r out/logos /tmp/logos
+          git checkout --orphan logos-apercu
+          git rm -rf --quiet .
+          cp /tmp/logos/* .
+          printf '%s\n' '{ "git": { "deploymentEnabled": false }, "ignoreCommand": "exit 0" }' > vercel.json
+          git add -- *.jpg *.md vercel.json
+          git commit -q -m "Logos des marques (run ${{ github.run_number }})"
+          git push -q -f origin logos-apercu
