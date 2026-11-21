@@ -132,6 +132,10 @@ def app_icon(brand, dom, seller_hint=""):
     for entity in ("software", "macSoftware"):
         q = urllib.parse.urlencode({"term": brand, "entity": entity, "country": "fr", "limit": 8})
         data, _ = _raw(f"https://itunes.apple.com/search?{q}", limit=2_000_000)
+        if data is None:   # limite de requêtes de l'App Store : on réessaie une fois
+            import time
+            time.sleep(4)
+            data, _ = _raw(f"https://itunes.apple.com/search?{q}", limit=2_000_000)
         try:
             results = json.loads(data or b"{}").get("results", [])
         except Exception:  # noqa: BLE001
