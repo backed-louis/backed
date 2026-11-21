@@ -1,0 +1,8 @@
+PrepMyMeal : 192×192 px
+Air Up : 256×256 px
+Holy : 96×96 px
+Dyson : 512×512 px
+LegalPlace : 512×512 px
+Inshape Nutrition : 192×192 px
+Saily : 180×180 px
+Ovoko : 512×512 px
