@@ -121,7 +121,7 @@ def percent_of(benefit):
 
 def first_clause(text, n=48):
     """Première proposition lisible d'un texte d'offre (« Un dessert offert à vie et… » → « Un dessert offert à vie »)."""
-    t = " ".join((text or "").split())
+    t = " ".join(re.sub(r"\s*\([^)]*\)", "", text or "").split())   # sans parenthèses : « (versions 512 Go…) »
     for sep in [" + ", ", ", "; ", " et ", " puis "]:
         head = t.split(sep)[0]
         if 8 <= len(head) < len(t):
@@ -134,7 +134,8 @@ def hook_gain(text, n=40):
     « -10€ dès 30€ d'achat pour les nouveaux clients » → « -10€ dès 30€ d'achat »."""
     t = first_clause(text, 500)
     if len(t) > n:
-        for sep in (" pour ", " sur ", " avec ", " à partir ", " dès ", " chez ", " sans "):
+        for sep in (" pour ", " sur ", " avec ", " à partir ", " dès ", " chez ", " sans ", " pendant ", " lors ",
+                    " à l'", " à la ", " jusqu'au "):
             head = t.split(sep)[0]
             if 8 <= len(head) <= n:
                 return head
