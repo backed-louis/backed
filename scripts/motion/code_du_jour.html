@@ -97,7 +97,8 @@ function codeHTML(t) {
 }
 
 function balanced(el, text, maxw, max) {
-  // une ligne si elle tient assez grande, sinon deux lignes les plus égales possible
+  // une ligne si elle tient assez grande, sinon deux lignes les plus égales possible ; « 270 € », « 50 % » jamais coupés
+  text = text.replace(/(\d)\s+([€%])/g, "$1\u00a0$2");
   el.textContent = text; const one = fitSize(el, maxw, max);
   const ws = text.split(" ");
   if (one >= max * .72 || ws.length < 2) return [text];
