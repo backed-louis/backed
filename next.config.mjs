@@ -4,7 +4,7 @@ const nextConfig = {
   // À plusieurs processus (et quand le build de la PR et celui de production partaient en même temps),
   // Airtable dépassait sa limite de 5 requêtes par seconde, répondait 429 et le build échouait.
   experimental: { cpus: 1 },
-  // Une page peut attendre la fin d'un blocage Airtable (30 s) et ses nouveaux essais sans faire échouer le build.
+  // Une page peut attendre la fin d'un blocage Airtable (30 s) et ses nouveaux essais (35 s) sans faire échouer le build.
   staticPageGenerationTimeout: 180,
   images: {
     remotePatterns: [
