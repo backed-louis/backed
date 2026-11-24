@@ -4,7 +4,6 @@ import type { Metadata } from 'next'
 import OfferCard from '@/components/OfferCard'
 import PremiumCard, { BrandTile } from '@/components/PremiumCard'
 import Navbar from '@/components/Navbar'
-import WhatsAppBanner from '@/components/WhatsAppBanner'
 import { SITE_URL } from '@/lib/links'
 
 export const revalidate = 3600
@@ -178,8 +177,6 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
               </div>
             </>
           )}
-
-          <WhatsAppBanner context={brand.name} />
 
           {/* ─── Bloc contenu SEO ─── */}
           <section style={{ maxWidth: 720, paddingBottom: 96 }}>

@@ -1,7 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { WhatsAppIcon } from '@/components/WhatsAppBanner'
-import { WHATSAPP_CHANNEL_URL, YOUTUBE_URL } from '@/lib/links'
+import { YOUTUBE_URL } from '@/lib/links'
 import { YouTubeIcon } from '@/components/Footer'
 import { SaisonNote } from '@/components/Saison'
 import { SaisonHero } from '@/components/SaisonDecor'
@@ -36,11 +35,6 @@ export default function Hero({ offerCount, creatorCount, top }: HeroProps) {
             <Link href="/createurs" className="btn-ghost">Voir les créateurs</Link>
           </div>
           <div className="hero-links">
-            <a href={WHATSAPP_CHANNEL_URL} target="_blank" rel="noopener noreferrer">
-              <span style={{ color: '#25D366', display: 'inline-flex' }}><WhatsAppIcon size={16} /></span>
-              1 code par jour sur WhatsApp
-              <span className="hero-link-cta">Rejoindre →</span>
-            </a>
             <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer">
               <span style={{ color: '#FF0033', display: 'inline-flex' }}><YouTubeIcon size={16} /></span>
               Le code du jour en vidéo sur YouTube

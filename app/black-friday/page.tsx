@@ -1,12 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { SITE_URL, WHATSAPP_CHANNEL_URL } from '@/lib/links'
+import { SITE_URL } from '@/lib/links'
 import { getAllOffers, getCategories, type Offer } from '@/lib/airtable'
 import { CATEGORIES_BF, datesBlackFriday, estBlackFriday, estCumulable, parClics } from '@/lib/blackfriday'
 import { getPopularThreshold, isPopularOffer } from '@/lib/popularUtils'
 import Navbar from '@/components/Navbar'
 import OfferCard from '@/components/OfferCard'
-import WhatsAppBanner, { WhatsAppIcon } from '@/components/WhatsAppBanner'
 import CompteARebours from '@/components/CompteARebours'
 
 export const revalidate = 3600
@@ -103,10 +102,7 @@ export default async function BlackFridayPage() {
               <CompteARebours vendredi={vendredi.toISOString()} cyberMonday={cyberMonday.toISOString()} />
             </div>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <a href={WHATSAPP_CHANNEL_URL} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#25D366', color: '#07080F', fontWeight: 600, fontSize: 15, padding: '13px 24px', borderRadius: 'var(--r-md)' }}>
-                <WhatsAppIcon /> Reçois les codes Black Friday
-              </a>
-              <a href="#codes" style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--text-1)', fontWeight: 500, fontSize: 15, padding: '13px 24px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-hover)' }}>
+              <a href="#codes" style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 15, padding: '13px 24px', borderRadius: 'var(--r-md)' }}>
                 Voir les codes ↓
               </a>
             </div>
@@ -121,10 +117,7 @@ export default async function BlackFridayPage() {
             {bf.length ? <Grille offres={bf} seuil={seuil} /> : (
               <div style={{ padding: '32px 24px', borderRadius: 'var(--r-xl)', border: '1px dashed var(--border-hover)', background: 'var(--bg-card)', textAlign: 'center' }}>
                 <p style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Les premiers codes Black Friday arrivent en novembre.</p>
-                <p style={{ color: 'var(--text-2)', fontSize: 15, marginBottom: 20 }}>On les ajoute ici dès qu’un créateur les partage dans une vidéo.</p>
-                <a href={WHATSAPP_CHANNEL_URL} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#25D366', fontWeight: 600 }}>
-                  <WhatsAppIcon /> Être prévenu sur WhatsApp →
-                </a>
+                <p style={{ color: 'var(--text-2)', fontSize: 15 }}>On les ajoute ici dès qu’un créateur les partage dans une vidéo.</p>
               </div>
             )}
           </section>
@@ -150,8 +143,6 @@ export default async function BlackFridayPage() {
               <Grille offres={liste} seuil={seuil} />
             </section>
           ))}
-
-          <WhatsAppBanner />
 
           {/* ─── FAQ ─── */}
           <section style={{ maxWidth: 760, paddingBottom: 96 }}>
