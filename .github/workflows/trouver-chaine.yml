@@ -1,0 +1,22 @@
+name: Trouver une chaîne YouTube
+
+# Pour ajouter un créateur : donne son nom, son @handle ou l'adresse de sa chaîne ; le résumé du run liste les chaînes
+# candidates avec leur Channel ID (à mettre dans la table Creators d'Airtable), leurs abonnés et leur avatar.
+on:
+  workflow_dispatch:
+    inputs:
+      recherche:
+        description: 'Nom du créateur, @handle ou adresse de la chaîne'
+        required: true
+
+jobs:
+  chercher:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Chercher
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          RECHERCHE: ${{ inputs.recherche }}
+        run: python3 scripts/trouver_chaine.py "$RECHERCHE"
