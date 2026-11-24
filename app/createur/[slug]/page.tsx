@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/links'
 import OfferCard from '@/components/OfferCard'
-import WhatsAppBanner from '@/components/WhatsAppBanner'
 import Navbar from '@/components/Navbar'
 import { SaisonChapeau } from '@/components/Saison'
 import { getPopularThreshold, isPopularOffer } from '@/lib/popularUtils'
@@ -122,7 +121,6 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
               ))}
             </div>
           )}
-          <WhatsAppBanner />
         </div>
       </main>
     </>

@@ -1,5 +1,4 @@
-"""Visuels fixes de Backed, dans la DA des vidéos : carte WhatsApp (1080×1080), image de story
-Instagram (1080×1920, avec la place du sticker lien), carrousel de la semaine (1080×1350) et
+"""Visuels fixes de Backed, dans la DA des vidéos : image de story Instagram (1080×1920, avec la place du sticker lien), carrousel de la semaine (1080×1350) et
 carrousel « C'est quoi Backed ? ».
 
 Usage seul (carrousel « C'est quoi Backed ? ») :
@@ -15,7 +14,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from render import (F, fit, tsize, wrap, short, first_clause, logo_tile, letter_tile,  # noqa: E402
                     NIGHT, SLATE, LINE, VIO, LILAS, OFF, GREY, GREEN, SIGNATURE)
 
-SQ = (1080, 1080)      # WhatsApp
 STORY = (1080, 1920)   # story Instagram
 POST = (1080, 1350)    # carrousel 4:5 (Instagram, TikTok mode photo)
 
@@ -146,15 +144,6 @@ def day_label(d, cx, y, date_label, size=36):
 
 
 # ------------------------------------------------------------------ la semaine
-def whatsapp_card(o, date_label):
-    """Carte carrée envoyée avec le message WhatsApp du jour."""
-    img, d = canvas(SQ, glow=(540, 300, 420, 260, 70))
-    day_label(d, 540, 64, date_label, 32)
-    placed_block(img, d, o, 150, 905, 540, 840, T=170, s=0.86)
-    signature(d, 540, 995, 48, 880)
-    return img
-
-
 def story(o, date_label):
     """Image de story : le code du jour, avec une zone vide au-dessus de la barre de réponse pour le
     sticker lien (à ajouter dans Instagram, vers backed.fr/marque/<marque>)."""
@@ -166,36 +155,6 @@ def story(o, date_label):
     # zone du sticker lien : de bottom + 140 à ~1570, laissée vide
     signature(d, 540, 1650, 46, 840)
     return img, bottom + 140
-
-
-def top_card(items, size=SQ, title="Les codes en tendance"):
-    """Carte du top 3 : une ligne par code (logo, marque, code, remise)."""
-    W_, H_ = size
-    img, d = canvas(size, glow=(W_ / 2, H_ * 0.3, 420, 260, 70))
-    tall = H_ > W_
-    y = 300 if tall else 70
-    tc(d, W_ / 2, y, "TOP " + str(len(items)), F("inter", 36, "Bold"), GREY)
-    tc(d, W_ / 2, y + 75, title, fit(d, title, W_ - 160, 64), OFF)
-    rh, gap = (230, 40) if tall else (190, 26)
-    y0 = (450 if tall else 200)
-    for i, o in enumerate(items):
-        y = y0 + i * (rh + gap)
-        d.rounded_rectangle((80, y, W_ - 80, y + rh), radius=36, fill=SLATE, outline=LINE, width=3)
-        tl(d, 115, y + rh / 2, str(i + 1), F("syne", 76), LILAS)
-        T = rh - 70
-        img.alpha_composite(tile_for(o, T), (215, int(y + 35)))
-        x = 215 + T + 30
-        disc = o.get("disc") or ""
-        fd = F("syne", 64 if tall else 56)
-        dw = tsize(d, disc, fd)[1] + 30 if disc else 0
-        tl(d, x, y + rh * 0.33, o["brand"], fit(d, o["brand"], W_ - 120 - x - dw, 56), OFF)
-        tl(d, x, y + rh * 0.68, o["code"], fit(d, o["code"], W_ - 120 - x - dw, 52, "mono", "Bold"), OFF)
-        if disc:
-            tl(d, W_ - 115 - dw + 30, y + rh / 2, disc, fd, GREEN)
-    if tall:  # story : la place du sticker lien sous les codes
-        tc(d, W_ / 2, y0 + len(items) * (rh + gap) + 50, "Le lien est juste en dessous ↓", F("inter", 48, "Bold"), OFF)
-    signature(d, W_ / 2, 1650 if tall else 995, 48, W_ - 200)
-    return img
 
 
 def week_cover(items, period):

@@ -6,9 +6,8 @@ Usage :
 
 Sortie : le top 3 du dimanche qui suit (le script tourne le vendredi soir ; les marques les plus en hausse dans la Search
 Console), puis une vidéo « Code du jour » pour chaque jour du lundi au samedi suivants. Pour chaque jour :
-la vidéo (publiée à 19h sur TikTok, en Reel et en story Instagram, et en YouTube Shorts) et la carte WhatsApp
-(12h15). Pas de carrousel de la semaine : chaque code sort le jour même, une fois (WhatsApp à 12h15, réseaux à 19h).
-publications.md donne les textes TikTok, Instagram, YouTube Shorts et WhatsApp de chaque jour.
+la vidéo (publiée sur TikTok, en Reel et en story Instagram, et en YouTube Shorts). Pas de carrousel de la semaine :
+chaque code sort le jour même, une fois. publications.md donne les textes TikTok, Instagram et YouTube Shorts de chaque jour.
 """
 import argparse
 import datetime as dt
@@ -23,7 +22,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "motion"))
 import logos  # noqa: E402
 import render  # noqa: E402
-import visuels  # noqa: E402
 
 SIGN = " ".join(render.SIGNATURE)  # « Avant de payer, passe par Backed. »
 SIGN_LINK = SIGN.rstrip(".")       # devant une flèche : « Avant de payer, passe par Backed → lien en bio »
@@ -292,7 +290,6 @@ def date_fr(d):
 
 
 def texts_offer(o, weekday):
-    url = f"backed.fr/marque/{o['slug']}"
     # Les captions commencent par « Code promo <marque> » : c'est ce que les gens tapent dans la
     # recherche TikTok / Instagram (premier visiteur venu de la recherche : « code promo betclic »).
     accroche = (f"Code promo {o['brand']} : -{o['pct']} %." if o["pct"] else
@@ -308,13 +305,11 @@ def texts_offer(o, weekday):
     insta = (f"{accroche} ⚡\n{render.short(o['benefit'], 120)}\nCode {o['code']}"
              + (f", partagé par {o['creator']}" if o["creator"] else "")
              + f".\n\n{SIGN_LINK} → lien en bio\n\n{insta_tags}")
-    wa = (f"Code du jour ⚡\n{o['brand']} : {render.first_clause(o['benefit'], 80)}\nCode : {o['code']}\n"
-          + (f"via {o['creator']}\n" if o["creator"] else "") + f"→ {url}\n\n{SIGN}")
-    return tiktok, insta, wa, WA_TIME
+    return tiktok, insta
 
 
 def top_sub(items=None):
-    """Sous-titre du top 3 (vidéo, visuel WhatsApp) : les marques les plus recherchées (Search Console)."""
+    """Sous-titre du top 3 (vidéo) : les marques les plus recherchées (Search Console)."""
     return "Les codes en tendance"
 
 
@@ -328,18 +323,13 @@ def texts_top(items):
     lines = "\n".join(f"{i + 1}. {o['brand']} — {o['code']}" for i, o in enumerate(items))
     rich_insta = "\n\n".join(f"{i + 1}. {o['brand']}" + (f" : {gain(o)}" if gain(o) else "") + f"\nCode {o['code']}{via(o)}"
                               for i, o in enumerate(items))
-    rich_wa = "\n\n".join(f"{i + 1}. {o['brand']}" + (f" : {gain(o)}" if gain(o) else "")
-                           + f"\nCode : {o['code']}{via(o)}\n→ backed.fr/marque/{o['slug']}" for i, o in enumerate(items))
     n = len(items)  # marques les plus en hausse dans la Search Console cette semaine
-    head_tt, head_ig, head_wa = (f"Les {n} codes promo en tendance cette semaine. 🔥", f"Les {n} codes promo en tendance cette semaine 🔥",
-                                 f"🔥 Les {n} codes promo en tendance cette semaine")
+    head_tt, head_ig = f"Les {n} codes promo en tendance cette semaine. 🔥", f"Les {n} codes promo en tendance cette semaine 🔥"
     tiktok = (f"{head_tt}\n{lines}\n"
               f"Enregistre pour plus tard. {SIGN}\n\n#codepromo #bonplan #youtube")
     insta = (f"{head_ig}\n\n{rich_insta}\n\n"
              f"Enregistre ce post. {SIGN_LINK} → lien en bio\n\n#codepromo #bonplan #youtube")
-    wa = (f"{head_wa}\n\n{rich_wa}\n\n"
-          f"Copie le code, colle-le au paiement : tu paies moins et tu soutiens le créateur ⚡\n{SIGN_LINK} → backed.fr")
-    return tiktok, insta, wa, WA_TIME
+    return tiktok, insta
 
 
 def texts_youtube(o):
@@ -381,18 +371,13 @@ SOURCE_GSC = "les marques dont la page backed.fr monte le plus dans la Search Co
 SOURCE_SECOURS = "⚠️ Search Console indisponible cette semaine : marques de secours de scripts/reels/tendances.txt"
 
 
-WA_TIME = "12h15"   # WhatsApp, envoyé à la main chaque jour ; tout le reste se publie à 19h (Buffer)
-
-
-def block(title, video, tiktok, insta, wa, wa_time, yt=None, wa_img=None):
-    files = f"Vidéo : `{video}` — à 19h : TikTok + Reel Instagram + story Instagram (la même vidéo) + YouTube Shorts\n"
-    if wa_img:
-        files += f"\nWhatsApp ({wa_time}) : l'image `{wa_img}` avec le texte ci-dessous\n"
+def block(title, video, tiktok, insta, yt=None):
+    files = f"Vidéo : `{video}` — TikTok + Reel Instagram + story Instagram (la même vidéo) + YouTube Shorts\n"
     out = (f"## {title}\n\n{files}\n"
            f"**TikTok**\n```\n{tiktok}\n```\n\n**Instagram**\n```\n{insta}\n```\n\n")
     if yt:
         out += f"**YouTube Shorts** — titre\n```\n{yt[0]}\n```\nDescription\n```\n{yt[1]}\n```\n\n"
-    return out + f"**WhatsApp ({wa_time})**\n```\n{wa}\n```\n"
+    return out
 
 
 # ------------------------------------------------------------------ aperçu (pour vérifier sans télécharger le zip)
@@ -472,7 +457,7 @@ def main():
         o["logo"] = None if a.no_logo else logos.fetch(o["brand"], o["website"], o["logo_urls"], o["slug"])
         logo_log.append(f"{o['brand']} : " + (f"{o['logo'].width}×{o['logo'].height} px" if o["logo"] else "pas de logo net"))
     print("🖼️  Logos — " + " · ".join(dict.fromkeys(logo_log)), flush=True)
-    vid_rows, vis_rows = [], []
+    vid_rows = []
 
     # Vidéos premium (pages HTML rendues dans Chromium, voir scripts/motion) ; --classique : anciennes vidéos Pillow.
     mot = None
@@ -509,13 +494,9 @@ def main():
         dur, stills = make_video("top", top, os.path.join(a.out, name), 3)
         if dur:
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
-        stem = f"00-{top_day.isoformat()}-top{len(top)}"
-        wa_img = visuels.top_card(top, title=top_sub(top))
-        visuels.save(wa_img, os.path.join(a.out, f"{stem}-whatsapp.png"))
         vid_rows.append(stills)
-        vis_rows.append([wa_img])
         md.append(block(f"{date_fr(top_day)} — Top {len(top)} de la semaine", name, *texts_top(top),
-                        yt=texts_youtube_top(top), wa_img=f"{stem}-whatsapp.png"))
+                        yt=texts_youtube_top(top)))
         md.append(ranking_note(top, since, source))
     if missing:
         names = {(r["fields"].get("slug") or "").lower(): r["fields"].get("Name") for r in data["brands"]}
@@ -533,13 +514,9 @@ def main():
         dur, stills = make_video("offre", o, os.path.join(a.out, name), i % 4)
         if dur:
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
-        wa_img = visuels.whatsapp_card(o, date_fr(day))
-        visuels.save(wa_img, os.path.join(a.out, f"{stem}-whatsapp.png"))
         vid_rows.append(stills)
-        vis_rows.append([wa_img])
         star = f" (⭐ {o['creator']})" if o.get("gros") else ""
-        md.append(block(f"{date_fr(day)} — {o['brand']}{star}", name, *texts_offer(o, day.weekday()), yt=texts_youtube(o),
-                        wa_img=f"{stem}-whatsapp.png"))
+        md.append(block(f"{date_fr(day)} — {o['brand']}{star}", name, *texts_offer(o, day.weekday()), yt=texts_youtube(o)))
     for i in range(len(daily), 0 if only else 6):  # pas assez d'offres valables toute la semaine
         day = start + dt.timedelta(days=first + i)
         md.append(f"## {date_fr(day)} — pas de nouvelle vidéo\n\nPas assez d'offres valables toute la semaine : "
@@ -556,7 +533,6 @@ def main():
     if a.preview:
         os.makedirs(a.preview, exist_ok=True)
         preview_sheet(vid_rows, os.path.join(a.preview, "videos.jpg"))
-        preview_sheet(vis_rows, os.path.join(a.preview, "visuels.jpg"), w=240)
         with open(os.path.join(a.preview, "publications.md"), "w", encoding="utf-8") as f:
             f.write("\n".join(md))
         with open(os.path.join(a.preview, "logos.txt"), "w", encoding="utf-8") as f:

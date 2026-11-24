@@ -1,8 +1,8 @@
 # Vidéos de la semaine (TikTok / Reels)
 
 Génère chaque semaine 7 vidéos verticales (1080×1920) dans la DA « Chiffres et preuves », les visuels
-qui vont avec, et le fichier `publications.md` avec les textes TikTok, Instagram, YouTube Shorts et
-WhatsApp de chaque jour. La phrase de Backed, « Avant de payer, passe par Backed. », termine chaque
+qui vont avec, et le fichier `publications.md` avec les textes TikTok, Instagram et YouTube Shorts de
+chaque jour. La phrase de Backed, « Avant de payer, passe par Backed. », termine chaque
 vidéo, chaque visuel et chaque texte.
 
 ## Automatique
@@ -17,17 +17,16 @@ Chaque run prépare :
   la liste quand on n'a pas le code d'une marque), vidéo `00-…-top3.mp4` et textes en tête de `publications.md` ; juste
   après, les marques en hausse qui n'ont pas de code valable (un code à ajouter ?) ;
 - du lundi au samedi suivants : 1 vidéo « Code du jour » par jour ;
-- pour chaque jour (et le top 3) : une carte carrée à envoyer avec le message WhatsApp de 12h15 (`…-whatsapp.png`) ;
-  la vidéo, elle, se publie à 19h sur TikTok, en Reel et en story Instagram (la même vidéo), et en YouTube Shorts.
+- chaque vidéo se publie sur TikTok, en Reel et en story Instagram (la même vidéo), et en YouTube Shorts.
 
 Pas de carrousel de la semaine (arrêté en novembre 2026) : il donnait tous les codes d'avance, sans effet d'attente.
-Chaque code sort le jour même, une seule fois : WhatsApp à 12h15, puis les réseaux à 19h.
+Chaque code sort le jour même, une seule fois.
 
 Les vidéos et les visuels montrent le logo de la marque. Il est téléchargé pendant le run : icône haute
 définition du site (Google, 256 px, puis `apple-touch-icon`), sinon le logo d'Airtable. En dessous de 64 px,
 pas de logo (la vidéo garde le nom de la marque seul). La liste est dans `logos.txt` de l'aperçu.
 
-Un aperçu léger (planches `videos.jpg` et `visuels.jpg`, `publications.md`, `logos.txt`) est poussé sur
+Un aperçu léger (planche `videos.jpg`, `publications.md`, `logos.txt`) est poussé sur
 la branche `semaine-apercu`, remplacée à chaque run : pratique pour vérifier sans télécharger le zip.
 
 Pour récupérer les fichiers : GitHub → onglet **Actions** → **Vidéos de la semaine** →

@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
 }
-// Backed et ses comptes (YouTube, Instagram, TikTok, WhatsApp) : Google peut les relier au site.
+// Backed et ses comptes (YouTube, Instagram, TikTok) : Google peut les relier au site.
 const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
