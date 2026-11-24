@@ -1,25 +1,28 @@
 import type { Metadata } from 'next'
-import { Inter, Syne, JetBrains_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import SaisonDecor from '@/components/SaisonDecor'
 import { SITE_URL, SOCIAL_URLS } from '@/lib/links'
-const inter = Inter({
-  subsets: ['latin'],
+// Polices hébergées dans le dépôt (app/fonts, licence OFL), plus téléchargées chez Google à chaque build :
+// ce téléchargement faisait échouer des builds Vercel au hasard (« next/font/google queries have exactly one entry »).
+const inter = localFont({
+  src: './fonts/inter-latin-wght-normal.woff2',
   variable: '--font-inter',
+  weight: '100 900',
   display: 'swap',
 })
-const syne = Syne({
-  subsets: ['latin'],
+const syne = localFont({
+  src: './fonts/syne-latin-wght-normal.woff2',
   variable: '--font-syne',
-  weight: ['400', '500', '600', '700', '800'],
+  weight: '400 800',
   display: 'swap',
 })
 // Les petites étiquettes en mono espacé de la DA (« CODE DU JOUR »)
-const mono = JetBrains_Mono({
-  subsets: ['latin'],
+const mono = localFont({
+  src: './fonts/jetbrains-mono-latin-wght-normal.woff2',
   variable: '--font-mono',
-  weight: ['500', '700'],
+  weight: '100 800',
   display: 'swap',
 })
 // Laisse le temps d'attendre la fin d'un blocage Airtable (429, 30 s) au lieu d'échouer.
