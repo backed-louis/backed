@@ -5,6 +5,8 @@ on:
       marques:
         description: "slug=Nom=site, séparés par des virgules (ex. cdiscount=Cdiscount=cdiscount.com)"
         required: true
+permissions:
+  contents: write
 jobs:
   logos:
     runs-on: ubuntu-latest
@@ -29,5 +31,10 @@ jobs:
                   print("AUCUN", slug); continue
               img.save(f"out/{slug}.png"); print(slug, img.size, src)
           PY
-      - uses: actions/upload-artifact@v4
-        with: { name: logos, path: out }
+      - name: Publier sur une branche de fichiers (logos-<n°>)
+        run: |
+          cd out
+          echo '{"git":{"deploymentEnabled":false},"ignoreCommand":"exit 0"}' > vercel.json
+          git init -q -b logos && git add -A
+          git -c user.name=backed-bot -c user.email=bot@backed.fr commit -qm "Logos ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" logos:logos-${{ github.run_number }}
