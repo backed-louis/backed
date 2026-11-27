@@ -44,6 +44,7 @@ export default function Footer() {
       { label: 'Créateurs', href: '/createurs' },
       { label: 'Catégories', href: '/categories' },
       { label: 'Black Friday', href: '/black-friday' },
+      { label: 'Je suis créateur', href: '/rejoindre' },
     ],
     Légal: [
 { label: 'CGU', href: '/cgu' },

@@ -4,21 +4,22 @@ export default function Confidentialite() {
       <h1 style={{ fontFamily: 'var(--font-syne)', fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 8 }}>
         Politique de Confidentialité
       </h1>
-      <p style={{ fontSize: 13, color: 'var(--text-4)', marginBottom: 48 }}>Dernière mise à jour : mai 2026</p>
+      <p style={{ fontSize: 13, color: 'var(--text-4)', marginBottom: 48 }}>Dernière mise à jour : novembre 2026</p>
 
       <Section title="1. Responsable du traitement">
         <p>Le site backed.fr est édité à titre personnel. Pour toute question relative à vos données personnelles, vous pouvez contacter le responsable à l'adresse : <a href="mailto:hello.backedfr@gmail.com" style={{ color: 'var(--accent)' }}>hello.backedfr@gmail.com</a></p>
       </Section>
 
       <Section title="2. Données collectées">
-        <p>Le site backed.fr ne requiert aucune inscription et ne collecte aucune donnée personnelle identifiable (nom, prénom, adresse email, etc.).</p>
-        <p style={{ marginTop: 12 }}>Les seules données collectées sont des <strong>données de navigation anonymes</strong> :</p>
+        <p>Le site backed.fr ne requiert aucune inscription. Pour les visiteurs, il ne collecte aucune donnée personnelle identifiable (nom, prénom, adresse email, etc.), à une exception : le formulaire destiné aux créateurs de contenu, décrit ci-dessous.</p>
+        <p style={{ marginTop: 12 }}>Pour les visiteurs, les seules données collectées sont des <strong>données de navigation anonymes</strong> :</p>
         <ul style={{ paddingLeft: 20, marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
           <li>Pages visitées</li>
           <li>Clics sur les codes promotionnels (suivi anonyme via notre propre système)</li>
           <li>Données techniques transmises par votre navigateur (type de navigateur, langue, résolution)</li>
         </ul>
         <p style={{ marginTop: 12 }}>Ces données sont utilisées uniquement à des fins statistiques internes et ne permettent pas d'identifier un utilisateur.</p>
+        <p style={{ marginTop: 12 }}><strong>Formulaire créateurs (page /rejoindre).</strong> Un créateur qui demande le référencement de son code renseigne volontairement : nom ou pseudo, adresse e-mail, plateformes utilisées, lien de son compte, marque, code promo, conditions de l'offre, justificatif et message éventuels. Ces informations servent uniquement à traiter la demande et à répondre au créateur. Elles sont enregistrées dans notre base de données (Airtable) et ne sont ni vendues ni transmises à des tiers.</p>
       </Section>
 
       <Section title="3. Cookies">
@@ -31,10 +32,12 @@ export default function Confidentialite() {
 
       <Section title="5. Base légale du traitement">
         <p>Le traitement des données de navigation anonymes repose sur l'intérêt légitime de l'éditeur à mesurer l'audience de son site et améliorer son service.</p>
+        <p style={{ marginTop: 12 }}>Le traitement des données du formulaire créateurs repose sur le consentement de la personne, donné en cochant la case prévue à cet effet.</p>
       </Section>
 
       <Section title="6. Durée de conservation">
         <p>Les données de navigation anonymes sont conservées pour une durée maximale de 13 mois, conformément aux recommandations de la CNIL.</p>
+        <p style={{ marginTop: 12 }}>Les demandes envoyées via le formulaire créateurs sont conservées le temps de leur traitement, puis pendant la durée du référencement du code sur Backed. Elles sont supprimées sur simple demande.</p>
       </Section>
 
       <Section title="7. Vos droits">
