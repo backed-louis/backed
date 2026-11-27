@@ -5,13 +5,22 @@ import Footer from '@/components/Footer'
 import FormulaireCreateur from '@/components/FormulaireCreateur'
 
 const TITRE = 'Référence ton code promo sur Backed | Créateurs'
-const DESCRIPTION = 'Tu es créateur et tu as un code promo ? Envoie ta demande pour le faire référencer sur Backed.'
+const DESCRIPTION = 'Tu es créateur et tu as un code promo ? Envoie ta demande pour le faire référencer sur Backed : ton code est présenté sous ton nom, gratuitement.'
 
 export const metadata: Metadata = {
   title: TITRE,
   description: DESCRIPTION,
   alternates: { canonical: `${SITE_URL}/rejoindre` },
-  openGraph: { title: TITRE, description: DESCRIPTION, url: `${SITE_URL}/rejoindre` },
+  openGraph: {
+    title: TITRE,
+    description: DESCRIPTION,
+    url: `${SITE_URL}/rejoindre`,
+    siteName: 'Backed',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Backed — Les codes promo de tes créateurs YouTube' }],
+    locale: 'fr_FR',
+    type: 'website',
+  },
+  twitter: { card: 'summary_large_image', title: TITRE, description: DESCRIPTION, images: ['/og-image.png'] },
 }
 
 export default function RejoindrePage() {
