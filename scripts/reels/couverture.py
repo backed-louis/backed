@@ -76,6 +76,9 @@ def gain_court(o):
     t = first_clause(o.get("benefit") or "", 500)
     t = re.sub(r"(\d)\s?(%|€)", "\\1 \\2", t)
     reduc = " de réduction" in t
+    head = t.split(" sur ")[0]
+    if head != t and re.fullmatch(r"-?\d+ (%|€)", head):   # « -22 € sur la MagGo 2 Pro » → « -22 € »
+        t = head
     if len(t) > 28:
         # « -300 € sur le Xiaomi 18 Pro Max » → « -300 € » ; « Jusqu'à 270 € offerts à l'ouverture… » → « Jusqu'à 270 € offerts »
         for sep in (" de réduction", " pour ", " sur ", " avec ", " à partir ", " dès ", " chez ", " pendant ",
