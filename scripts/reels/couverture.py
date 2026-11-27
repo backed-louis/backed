@@ -52,7 +52,7 @@ def image(frame, createur, label="LE CODE DE"):
     im.paste(o.crop((0, 0, W, top - 30)).resize((W, top - 30 + shift)), (0, 0))
     size = 128
     d0 = ImageDraw.Draw(im)
-    while d0.textlength(createur, font=_font("Syne", size, "ExtraBold")) > 880 and size > 60:
+    while d0.textlength(createur, font=_font("Syne", size, "ExtraBold")) > 880 and size > 44:
         size -= 4
     nom = _font("Syne", size, "ExtraBold")
     glow = Image.new("RGBA", im.size, (0, 0, 0, 0))
