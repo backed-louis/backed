@@ -1,69 +1,151 @@
-"""Couverture des vidéos « Code du jour » : la première image montre le créateur, la marque et la remise.
+"""Couverture des vidéos TikTok : une image dédiée, pensée pour la grille du profil, mise en première image de la vidéo.
 
-TikTok prend la première image de la vidéo comme couverture (thumbnailOffset 0 dans Buffer). On ajoute donc au tout
-début de la vidéo 2 images (≈ 0,07 s) : l'image à 1 s (logo, marque, carte de remise), descendue un peu, avec
-« LE CODE DE » + le nom du créateur au-dessus. Tout tient dans la zone visible de la grille TikTok (recadrage 3:4,
-de y = 240 à y = 1680 sur une vidéo 1080 × 1920).
+TikTok prend la première image de la vidéo comme couverture (thumbnailOffset 0 dans Buffer) et l'affiche recadrée en
+3:4 sur le profil (de y = 240 à y = 1680 sur une vidéo 1080 × 1920). On ajoute donc au tout début de la vidéo
+2 images (≈ 0,07 s) avec, centrés dans cette zone :
+- code du jour : « LE CODE DE » + le créateur en très gros, le logo et le nom de la marque, puis la remise en énorme ;
+- top 3 : « TOP 3 » et, pour chaque code, le logo, la marque et le créateur.
 
-  python3 scripts/reels/couverture.py video.mp4 "Créateur" [sortie.mp4]       # sans sortie : remplace la vidéo
-  python3 scripts/reels/couverture.py --image video.mp4 "Créateur" image.jpg  # seulement l'image (couverture à importer)
+  python3 scripts/reels/couverture.py video.mp4 couverture.jpg [sortie.mp4]          # ajoute l'image en tête
+  python3 scripts/reels/couverture.py --offre "Créateur" "Marque" logo.png "-10 %" sortie.jpg   # seulement l'image
 """
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 
-import numpy as np
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFilter
 
-FONTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
-LABEL = (167, 139, 250)
-GLOW = (139, 0, 255, 160)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from render import F, fit, tsize, wrap, logo_tile, first_clause, NIGHT, VIO, LILAS, OFF  # noqa: E402
+
 W, H = 1080, 1920
-TOP = 600        # haut du bloc logo + marque après décalage
-IMAGES = 2       # images de couverture ajoutées au début de la vidéo
+TOP, BOT = 240, 1680   # zone visible sur la grille du profil (3:4)
+START = 300
+IMAGES = 2             # images de couverture ajoutées au début de la vidéo
 
 
-def _font(name, size, var):
-    f = ImageFont.truetype(os.path.join(FONTS, f"{name}.ttf"), size)
-    f.set_variation_by_name(var)
-    return f
+# ------------------------------------------------------------------ dessin
+def _base(glow_y=800):
+    img = Image.new("RGBA", (W, H), NIGHT + (255,))
+    g = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(g).ellipse((540 - 560, glow_y - 420, 540 + 560, glow_y + 420), fill=VIO + (120,))
+    img.alpha_composite(g.filter(ImageFilter.GaussianBlur(190)))
+    return img, ImageDraw.Draw(img)
 
 
-def _spaced(d, cx, y, text, font, fill, sp):
-    w = sum(d.textlength(c, font=font) for c in text) + sp * (len(text) - 1)
-    x = cx - w / 2
-    for c in text:
-        d.text((x, y), c, font=font, fill=fill, anchor="ls")
-        x += d.textlength(c, font=font) + sp
+def _tc(d, cx, yc, s, f, fill):
+    b, w, h = tsize(d, s, f)
+    d.text((cx - w / 2 - b[0], yc - h / 2 - b[1]), s, font=f, fill=fill)
 
 
-def image(frame, createur, label="LE CODE DE"):
-    """frame : l'image de la vidéo à 1 s. Renvoie la couverture 1080 × 1920 (label : « LES CODES DE » pour un top 3)."""
-    o = frame.convert("RGB").resize((W, H))
-    a = np.asarray(o.convert("L"))
-    rows = np.where(a.max(axis=1) > 60)[0]
-    top = int(rows.min()) if len(rows) else 445
-    shift = max(0, TOP - top)
-    im = o.copy()
-    im.paste(o.crop((0, top - 30, W, 1350)), (0, top - 30 + shift))
-    im.paste(o.crop((0, 0, W, top - 30)).resize((W, top - 30 + shift)), (0, 0))
-    size = 128
-    d0 = ImageDraw.Draw(im)
-    while d0.textlength(createur, font=_font("Syne", size, "ExtraBold")) > 880 and size > 44:
-        size -= 4
-    nom = _font("Syne", size, "ExtraBold")
-    glow = Image.new("RGBA", im.size, (0, 0, 0, 0))
-    ImageDraw.Draw(glow).text((W // 2, 470), createur, font=nom, fill=GLOW, anchor="ms")
-    im = Image.alpha_composite(im.convert("RGBA"), glow.filter(ImageFilter.GaussianBlur(30)))
-    d = ImageDraw.Draw(im)
-    _spaced(d, W // 2, 350, label, _font("Mono", 36, "Medium"), LABEL, 12)
-    d.text((W // 2, 470), createur, font=nom, fill=(255, 255, 255), anchor="ms")
-    return im.convert("RGB")
+def _glow(img, cx, yc, s, f, fill, glow=VIO + (200,), blur=24):
+    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    _tc(ImageDraw.Draw(layer), cx, yc, s, f, glow)
+    img.alpha_composite(layer.filter(ImageFilter.GaussianBlur(blur)))
+    _tc(ImageDraw.Draw(img), cx, yc, s, f, fill)
 
 
+def _lines(d, text, maxw, size, min_size, max_lines=2):
+    """Plus grande police Syne (≤ size) pour laquelle le texte tient en max_lines lignes de maxw."""
+    s = size
+    while True:
+        f = F("syne", s)
+        ls = wrap(d, text, f, maxw)
+        if (len(ls) <= max_lines and all(tsize(d, ln, f)[1] <= maxw for ln in ls)) or s <= min_size:
+            return ls[:max_lines], f
+        s -= 4
+
+
+def _centered(build):
+    """Dessine une première fois pour mesurer, puis recentre le bloc dans la zone visible du profil."""
+    _, end = build(0)
+    h = end - START
+    return build(max(0, ((TOP + BOT) / 2 - 30) - (START + h / 2)))[0]
+
+
+def gain_court(o):
+    """La remise en quelques mots : « -10 % », « -15 % livraison », « Jusqu'à 270 € offerts »."""
+    if o.get("disc"):
+        return o["disc"]
+    if o.get("gain"):
+        return o["gain"].replace(" sur la livraison", " livraison")
+    t = first_clause(o.get("benefit") or "", 500)
+    t = re.sub(r"(\d)\s?(%|€)", "\\1 \\2", t)
+    reduc = " de réduction" in t
+    if len(t) > 28:
+        # « -300 € sur le Xiaomi 18 Pro Max » → « -300 € » ; « Jusqu'à 270 € offerts à l'ouverture… » → « Jusqu'à 270 € offerts »
+        for sep in (" de réduction", " pour ", " sur ", " avec ", " à partir ", " dès ", " chez ", " pendant ",
+                    " lors ", " en ", " via ", " à l'", " à la ", " jusqu'au "):
+            head = t.split(sep)[0].strip()
+            if head != t and len(head) <= 28 and (re.search(r"\d", head) or len(head) >= 14):
+                t = head
+                break
+        else:   # coupé à la fin d'un mot
+            t = t[:29].rsplit(" ", 1)[0]
+    t = t.replace(" de réduction", "")
+    if reduc:   # « Jusqu'à 85 € de réduction » → « Jusqu'à -85 € »
+        t = re.sub(r"^(Jusqu'à|jusqu'à)\s+(\d)", "\\1 -\\2", t)
+    return t
+
+
+def _offre(off, createur, marque, logo, gain):
+    img, d = _base(800)
+    _tc(d, 540, START + 30 + off, "LE CODE DE", F("mono", 44, "Medium"), LILAS)
+    ls, f = _lines(d, createur, 960, 150, 80)
+    y = START + 95 + off
+    for ln in ls:
+        _glow(img, 540, y + f.size / 2, ln, f, OFF)
+        y += f.size * 1.02
+    y += 50
+    if logo is not None:
+        t = logo_tile(logo, 250)
+        img.alpha_composite(t, (540 - 125, int(y)))
+        y += 250 + 40
+    fb = fit(d, marque, 940, 110)
+    _tc(d, 540, y + fb.size / 2, marque, fb, OFF)
+    y += fb.size + 50
+    f1 = fit(d, gain, 980, 240)
+    ls, f = ([gain], f1) if f1.size >= 150 else _lines(d, gain, 980, 200, 70, max_lines=3)
+    for ln in ls:
+        _glow(img, 540, y + f.size / 2, ln, f, LILAS, glow=VIO + (150,), blur=30)
+        y += f.size
+    return img, y
+
+
+def offre(o):
+    """Couverture d'un code du jour (o : offre du générateur, avec creator, brand, logo, disc/gain/benefit)."""
+    return _centered(lambda off: _offre(off, o["creator"], o["brand"], o.get("logo"), gain_court(o))).convert("RGB")
+
+
+def _top(off, items, titre):
+    img, d = _base(900)
+    _tc(d, 540, START + 30 + off, titre, F("mono", 44, "Medium"), LILAS)
+    _glow(img, 540, START + 170 + off, "TOP 3" if len(items) == 3 else f"TOP {len(items)}", F("syne", 190), OFF)
+    y = START + 320 + off
+    T = 190
+    for o in items:
+        if o.get("logo") is not None:
+            img.alpha_composite(logo_tile(o["logo"], T), (90, int(y)))
+        fb = fit(d, o["brand"], 640, 92)
+        b = tsize(d, o["brand"], fb)[0]
+        d.text((330 - b[0], y + 18 - b[1]), o["brand"], font=fb, fill=OFF)
+        if o.get("creator"):
+            fc = fit(d, o["creator"], 640, 64, "inter", "Bold")
+            b = tsize(d, o["creator"], fc)[0]
+            d.text((330 - b[0], y + 130 - b[1]), o["creator"], font=fc, fill=LILAS)
+        y += T + 60
+    return img, y - 60
+
+
+def top(items, titre="LES CODES EN TENDANCE"):
+    return _centered(lambda off: _top(off, items, titre)).convert("RGB")
+
+
+# ------------------------------------------------------------------ vidéo
 def _probe(src):
     out = subprocess.run(["ffprobe", "-v", "error", "-show_streams", "-of", "json", src],
                          check=True, capture_output=True, text=True).stdout
@@ -74,19 +156,13 @@ def _probe(src):
     return round(int(num) / int(den)) or 30, (int(a["sample_rate"]) if a else None)
 
 
-def frame_a_1s(src, dst):
-    subprocess.run(["ffmpeg", "-nostdin", "-loglevel", "error", "-y", "-ss", "1", "-i", src,
-                    "-frames:v", "1", dst], check=True)
-
-
-def appliquer(src, createur, dst=None):
-    """Ajoute la couverture (créateur + marque + remise) en première image de la vidéo src."""
+def appliquer(src, couv, dst=None):
+    """Ajoute l'image couv (PIL, 1080 × 1920) en première image de la vidéo src."""
     dst = dst or src
     fps, sr = _probe(src)
     with tempfile.TemporaryDirectory() as tmp:
-        f1, cov, out = (os.path.join(tmp, n) for n in ("f.png", "c.png", "o.mp4"))
-        frame_a_1s(src, f1)
-        image(Image.open(f1), createur).save(cov)
+        cov, out = os.path.join(tmp, "c.png"), os.path.join(tmp, "o.mp4")
+        couv.convert("RGB").resize((W, H)).save(cov)
         dur = f"{IMAGES / fps:.4f}"
         cmd = ["ffmpeg", "-nostdin", "-loglevel", "error", "-y",
                "-loop", "1", "-framerate", str(fps), "-t", dur, "-i", cov]
@@ -109,11 +185,9 @@ def appliquer(src, createur, dst=None):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    if args and args[0] == "--image":
-        _, src, createur, dst = args
-        with tempfile.TemporaryDirectory() as tmp:
-            f1 = os.path.join(tmp, "f.png")
-            frame_a_1s(src, f1)
-            image(Image.open(f1), createur).save(dst, quality=92)
+    if args and args[0] == "--offre":
+        _, createur, marque, logo, gain, dst = args
+        lg = Image.open(logo) if logo and os.path.exists(logo) else None
+        offre({"creator": createur, "brand": marque, "logo": lg, "disc": gain}).save(dst, quality=92)
     else:
-        appliquer(args[0], args[1], args[2] if len(args) > 2 else None)
+        appliquer(args[0], Image.open(args[1]), args[2] if len(args) > 2 else None)
