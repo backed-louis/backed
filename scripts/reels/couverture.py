@@ -40,8 +40,8 @@ def _spaced(d, cx, y, text, font, fill, sp):
         x += d.textlength(c, font=font) + sp
 
 
-def image(frame, createur):
-    """frame : l'image de la vidéo à 1 s. Renvoie la couverture 1080 × 1920."""
+def image(frame, createur, label="LE CODE DE"):
+    """frame : l'image de la vidéo à 1 s. Renvoie la couverture 1080 × 1920 (label : « LES CODES DE » pour un top 3)."""
     o = frame.convert("RGB").resize((W, H))
     a = np.asarray(o.convert("L"))
     rows = np.where(a.max(axis=1) > 60)[0]
@@ -52,14 +52,14 @@ def image(frame, createur):
     im.paste(o.crop((0, 0, W, top - 30)).resize((W, top - 30 + shift)), (0, 0))
     size = 128
     d0 = ImageDraw.Draw(im)
-    while d0.textlength(createur, font=_font("Syne", size, "ExtraBold")) > 940 and size > 60:
+    while d0.textlength(createur, font=_font("Syne", size, "ExtraBold")) > 880 and size > 60:
         size -= 4
     nom = _font("Syne", size, "ExtraBold")
     glow = Image.new("RGBA", im.size, (0, 0, 0, 0))
     ImageDraw.Draw(glow).text((W // 2, 470), createur, font=nom, fill=GLOW, anchor="ms")
     im = Image.alpha_composite(im.convert("RGBA"), glow.filter(ImageFilter.GaussianBlur(30)))
     d = ImageDraw.Draw(im)
-    _spaced(d, W // 2, 350, "LE CODE DE", _font("Mono", 36, "Medium"), LABEL, 12)
+    _spaced(d, W // 2, 350, label, _font("Mono", 36, "Medium"), LABEL, 12)
     d.text((W // 2, 470), createur, font=nom, fill=(255, 255, 255), anchor="ms")
     return im.convert("RGB")
 
