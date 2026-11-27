@@ -46,13 +46,15 @@ Pour lancer à la main : **Actions → Vidéos de la semaine → Run workflow**
   créateur », ⭐ dans `publications.md`), sinon la plus copiée. Les abonnés viennent de l'API YouTube (champ `Channel ID`
   de la table Creators, secret `YOUTUBE_API_KEY`) ; sans réponse, le lot se fait comme avant, sans cette priorité.
 - Top 3 : au moins un gros créateur ; sinon la 3e place va à la marque en hausse suivante qui en a un.
-- Couverture TikTok : la première image de chaque vidéo « Code du jour » est sa couverture : « LE CODE DE » + le
-  créateur, puis le logo, la marque et la carte de remise (`couverture.py`, 2 images ajoutées au début de la vidéo ;
+- Couverture TikTok : la première image de chaque vidéo est une couverture dédiée, pensée pour la grille du profil
+  (recadrage 3:4 au centre) : « LE CODE DE » + le créateur en très gros, le logo et la marque, puis la remise en énorme ;
+  pour le top 3 : « TOP 3 », logos, marques et créateurs (`couverture.py`, 2 images ajoutées au début de la vidéo ;
   Louis veut voir le créateur et la marque, 27/11). Dans Buffer, mettre **`thumbnailOffset` 0** pour TikTok (première
   image, réglage par défaut de Buffer). Avec 1000 ms, les vidéos publiées du 23 au 26/11 ont eu l'en-tête de fin
   (barre de recherche vide, vers 6,5 s) au lieu de l'image à 1 s. Instagram : 1000 ms (la carte de remise).
-  `python3 scripts/reels/couverture.py --image video.mp4 "Créateur" couverture.jpg` donne l'image seule, à importer
-  dans TikTok Studio pour une vidéo déjà publiée.
+  TikTok Studio permet d'importer une autre couverture sur une vidéo publiée, mais seulement dans les jours qui
+  suivent la publication et une fois par jour (ça n'a plus marché à 5,5 jours le 27/11).
+  `python3 scripts/reels/couverture.py --offre "Créateur" "Marque" logo.png "-10 %" couverture.jpg` donne l'image seule.
 - Codes du jour : d'abord les gros créateurs (marques en hausse d'abord, puis les plus suivis), puis les autres marques
   en hausse dans la Search Console, puis les plus copiées ; les codes des lots précédents (branches `semaine-fichiers`
   et `lot-special`) passent après les autres. Pas les marques du top 3, sauf un gros créateur : il passe alors deux fois,

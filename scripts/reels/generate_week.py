@@ -494,6 +494,8 @@ def main():
         name = f"00-{top_day.isoformat()}-top{len(top)}.mp4"
         dur, stills = make_video("top", top, os.path.join(a.out, name), 3)
         if dur:
+            # Première image = couverture TikTok : « TOP 3 », logos, marques et créateurs.
+            couverture.appliquer(os.path.join(a.out, name), couverture.top(top))
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
         vid_rows.append(stills)
         md.append(block(f"{date_fr(top_day)} — Top {len(top)} de la semaine", name, *texts_top(top),
@@ -514,8 +516,8 @@ def main():
         name = f"{stem}.mp4"
         dur, stills = make_video("offre", o, os.path.join(a.out, name), i % 4)
         if dur and o.get("creator"):
-            # Première image = couverture TikTok (thumbnailOffset 0) : « LE CODE DE » + créateur, marque, remise.
-            couverture.appliquer(os.path.join(a.out, name), o["creator"])
+            # Première image = couverture TikTok (thumbnailOffset 0) : créateur, logo et marque, remise.
+            couverture.appliquer(os.path.join(a.out, name), couverture.offre(o))
         if dur:
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
         vid_rows.append(stills)
