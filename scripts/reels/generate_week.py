@@ -20,6 +20,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "motion"))
+import couverture  # noqa: E402
 import logos  # noqa: E402
 import render  # noqa: E402
 
@@ -512,6 +513,9 @@ def main():
         stem = f"{i + 1:02d}-{day.isoformat()}-{o['slug']}"
         name = f"{stem}.mp4"
         dur, stills = make_video("offre", o, os.path.join(a.out, name), i % 4)
+        if dur and o.get("creator"):
+            # Première image = couverture TikTok (thumbnailOffset 0) : « LE CODE DE » + créateur, marque, remise.
+            couverture.appliquer(os.path.join(a.out, name), o["creator"])
         if dur:
             print(f"✅ {name} ({dur:.1f} s)", flush=True)
         vid_rows.append(stills)
