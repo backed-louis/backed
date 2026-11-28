@@ -23,6 +23,8 @@ function show(el, on) { el.style.display = on ? (el.dataset.d || "block") : "non
 function sweep(el, t, a, d) { const p = eio(prog(t, a, d)); el.style.backgroundPosition = `${130 - 160 * p}% 0, 0 0`; }   // reflet sur .grad
 function blur(el, px) { el.style.filter = px > .05 ? `blur(${px}px)` : "none"; }
 const de = n => (/^[aeiouyhéèêàâîôû]/i.test(n) ? "d'" : "de ") + n;
+// le symbole Backed (ticket à deux encoches + b), en SVG : ticketSVG("#8b00ff", "#fff")
+const ticketSVG = (t, b) => `<svg viewBox="0 0 120 90"><path fill="${t}" d="M16 0H104A16 16 0 0 1 120 16V32A13 13 0 0 0 120 58V74A16 16 0 0 1 104 90H16A16 16 0 0 1 0 74V58A13 13 0 0 0 0 32V16A16 16 0 0 1 16 0Z"/><path fill="${b}" transform="translate(19.99 68) scale(0.07 -0.07)" d="M690 -14Q600 -14 528.0 4.5Q456 23 405.0 57.5Q354 92 327.0 139.5Q300 187 300 245Q300 303 327.0 351.0Q354 399 405.0 433.5Q456 468 528.0 486.5Q600 505 690 505Q798 505 882.5 476.0Q967 447 1015.0 389.0Q1063 331 1063 245Q1063 163 1015.0 105.0Q967 47 882.5 16.5Q798 -14 690 -14ZM600 138Q668 138 716.0 150.0Q764 162 789.0 186.0Q814 210 814 245Q814 299 758.0 325.5Q702 352 600 352Q524 352 460.5 343.0Q397 334 358.5 311.0Q320 288 320 245Q320 203 358.5 180.0Q397 157 460.5 147.5Q524 138 600 138ZM320 690V190Q320 126 315.5 74.5Q311 23 306 0H80V690Z"/></svg>`;
 
 // tuile du logo : style "opaque" (carré plein cadre), "pad" (posé sur blanc), "pad-dark" (logo clair, posé sur sombre) ;
 // sans logo, l'initiale de la marque sur violet
@@ -44,24 +46,35 @@ function setupCommon() {
   const f = $("frame");
   f.insertAdjacentHTML("afterbegin", `<div class="orb" id="orb1"></div><div class="orb" id="orb2"></div>`);
   $("outro").innerHTML = `<div class="orb" id="oglow"></div>
-    <div id="bar"><div id="mag"></div><div id="typed"></div></div>
+    <div id="bar"></div><div id="typed"></div><div id="tk"></div>
     <div id="dot"></div><div class="ring" id="ring1"></div><div class="ring" id="ring2"></div><div id="sparks"></div><div id="ocaret"></div>
-    <div class="sig" id="sig1">Avant de payer,</div><div class="sig" id="sig2" style="color:var(--lilas)">passe par Backed.</div>
+    <div class="sig" id="sig1">avant de payer,</div><div class="sig" id="sig2"><span class="hl">passe par backed.</span></div>
     <div id="pill"><span>backed.fr</span><i id="shine"></i></div>
     <div id="free">Gratuit · sans compte</div>
     <div id="ocover"><div class="kicker" id="ock"></div><div class="line" id="oct"></div><div class="line" id="ocs"></div></div>`;
   f.insertAdjacentHTML("beforeend", `<div id="flash"></div><canvas id="grain" width="540" height="960"></canvas><div id="vignette"></div>`);
   $("outro").style.display = "block";   // visible le temps de mesurer les textes
-  $("typed").innerHTML = "Backed".split("").map(c => `<span>${c}</span>`).join("");
-  const ts = fitSize($("typed"), 470, 150);
+  // logo final : ticket (1,43 × la taille du texte) + écart (0,3 ×) + « backed », le tout ≤ 780 px, centré sur la zone sûre
+  $("typed").innerHTML = "backed".split("").map(c => `<span>${c}</span>`).join("") + `<span id="bl"></span>`;
+  $("typed").style.fontSize = "100px"; [...$("typed").children].forEach(s => s.style.fontSize = "100px");
+  const wt = textWidth($("typed"));
+  const ts = Math.min(150, 780 / (1.73 + wt / 100));
   [...$("typed").children].forEach(s => s.style.fontSize = ts + "px");
   $("typed").style.fontSize = ts + "px";
-  window.OUT = { ts };
+  const tw = 1.43 * ts, th = tw * .75, total = tw + .3 * ts + wt * ts / 100, x0 = CX - total / 2;
+  $("tk").innerHTML = ticketSVG("#8b00ff", "#ffffff");
+  $("tk").style.width = tw + "px"; $("tk").style.height = th + "px";
+  $("tk").style.left = x0 + "px"; $("tk").style.top = (720 - th / 2) + "px";
+  // ligne de base du mot : au même niveau que dans le logo (ticket haut de H, base à 0,822 H depuis le haut)
+  $("typed").style.left = (x0 + tw + .3 * ts) + "px"; $("typed").style.top = "0px";
+  const base0 = $("bl").getBoundingClientRect().top;
+  $("typed").style.top = (720 - th / 2 + .822 * th - base0) + "px";
+  window.OUT = { ts, tw, th, x0, cx: x0 + tw / 2 };
   $("sparks").innerHTML = Array.from({ length: 10 }, () => `<div class="spark"></div>`).join("");
-  const sz = Math.min(fitSize($("sig1"), 790, 92), fitSize($("sig2"), 790, 92));
+  const sz = Math.min(fitSize($("sig1"), 790, 92), fitSize($("sig2"), 720, 92));
   $("sig1").style.fontSize = $("sig2").style.fontSize = sz + "px";
   OUT.sigTop = 940; OUT.sig = sz;
-  $("sig1").style.top = OUT.sigTop + "px"; $("sig2").style.top = (OUT.sigTop + sz * 1.12) + "px";
+  $("sig1").style.top = OUT.sigTop + "px"; $("sig2").style.top = (OUT.sigTop + sz * 1.32) + "px";
   $("outro").style.display = "none";
   const g = $("grain").getContext("2d"), img = g.createImageData(540, 960);
   let seed = 7;
@@ -117,39 +130,39 @@ function renderOutro(t, T0) {
   const g = .5 + .25 * eo(prog(lt, 0, .6)) + .35 * eo(prog(lt, DOT_T, .15)) * (1 - prog(lt, DOT_T + .15, .8));
   $("oglow").style.cssText = `left:0px;top:${720 - 380}px;width:1040px;height:760px;background:radial-gradient(ellipse, rgba(139,0,255,${.5 * g}), rgba(139,0,255,0) 65%)`;
   const ain = back(prog(lt, 0, .38));
-  $("bar").style.opacity = clamp(prog(lt, 0, .25));
-  $("bar").style.transform = `translateY(${(1 - clamp(ain)) * 120}px) scale(${.92 + .08 * ain})`;
-  const spans = [...$("typed").children];
+  const spans = [...$("typed").children].slice(0, 6);
   spans.forEach((sp, i) => {
     const p = prog(lt, TYPE_T0 + i * TYPE_DT, .12);
     sp.style.opacity = clamp(p * 1.5);
     sp.style.transform = `scale(${1.35 - .35 * eo(p)})`;
   });
-  const by = 605 + (1 - clamp(ain)) * 120, ts = OUT.ts, last = spans[5];
-  const textEnd = 120 + 165 + last.offsetLeft + last.offsetWidth;
-  const r = ts * .105, dx = textEnd + ts * .03 + r, dy = by + 112 + ts * .34 - r;
+  const ts = OUT.ts, r = OUT.th * .5, dx = OUT.cx, dy = 720;
+  // le ticket arrive sur la 1re note (DOT_T), respire sur la 2e (PULSE_T)
   const pd = prog(lt, DOT_T, .3);
-  const rr = pd > .001 ? r * back(pd, 2.4) * (1 + .22 * Math.sin(Math.PI * prog(lt, PULSE_T, .25))) : 0;
-  $("dot").style.cssText = `left:${dx - rr}px;top:${dy - rr}px;width:${2 * rr}px;height:${2 * rr}px`;
-  [["ring1", DOT_T, 5], ["ring2", PULSE_T, 3.2]].forEach(([id, at, amp]) => {
-    const rp = prog(lt, at, .45), R = r * (1 + amp * eo(rp));
+  const k = pd > .001 ? back(pd, 2.4) * (1 + .08 * Math.sin(Math.PI * prog(lt, PULSE_T, .25))) : 0;
+  $("tk").style.opacity = pd > .001 ? 1 : 0;
+  $("tk").style.transform = `scale(${k}) rotate(${-6 * (1 - clamp(pd))}deg)`;
+  $("dot").style.display = "none";
+  [["ring1", DOT_T, 1.1], ["ring2", PULSE_T, .75]].forEach(([id, at, amp]) => {
+    const rp = prog(lt, at, .45), R = OUT.tw * .58 * (1 + amp * eo(rp));
     $(id).style.cssText = `left:${dx - R}px;top:${dy - R}px;width:${2 * R}px;height:${2 * R}px;opacity:${rp > 0 && rp < 1 ? (1 - rp) * .86 : 0}`;
   });
   const spk = prog(lt, DOT_T, .4);
   [...$("sparks").children].forEach((el, k) => {
-    const ang = k * 2 * Math.PI / 10 + .3, dist = r * (1.5 + 6 * eo(spk)), q = 18 * (1 - spk);
-    el.style.cssText = `left:${dx + Math.cos(ang) * dist - q / 2}px;top:${dy + Math.sin(ang) * dist - q / 2}px;width:${q}px;height:${q}px;opacity:${spk > 0 && spk < 1 ? 1 - spk : 0};background:${k % 2 ? "var(--lilas)" : "var(--vio)"}`;
+    const ang = k * 2 * Math.PI / 10 + .3, dist = OUT.tw * (.6 + 1.3 * eo(spk)), q = 18 * (1 - spk);
+    el.style.cssText = `left:${dx + Math.cos(ang) * dist - q / 2}px;top:${dy + Math.sin(ang) * dist - q / 2}px;width:${q}px;height:${q}px;opacity:${spk > 0 && spk < 1 ? 1 - spk : 0};background:${k % 2 ? "var(--acid)" : "var(--vio)"}`;
   });
   const n = Math.min(6, Math.floor(Math.max(0, lt - TYPE_T0) / TYPE_DT) + 1);
-  const cxp = lt < DOT_T ? 120 + 165 + (lt > TYPE_T0 ? spans[n - 1].offsetLeft + spans[n - 1].offsetWidth : 0) + 12 : dx + r + 16;
+  const tl = parseFloat($("typed").style.left);
+  const cxp = tl + (lt > TYPE_T0 ? spans[n - 1].offsetLeft + spans[n - 1].offsetWidth : 0) + 10;
   const ca = 1 - prog(lt, PULSE_T + .15, .2);
-  $("ocaret").style.cssText = `left:${cxp}px;top:${by + 112 - 56}px;opacity:${ca > 0 && lt > TYPE_T0 - .05 && (lt < DOT_T || Math.floor(lt * 3.2) % 2 === 0) ? ca * clamp(ain) : 0}`;
+  $("ocaret").style.cssText = `left:${cxp}px;top:${720 - ts * .5}px;height:${ts * .9}px;opacity:${ca > 0 && lt > TYPE_T0 - .05 && (lt < DOT_T || Math.floor(lt * 3.2) % 2 === 0) ? ca * clamp(ain) : 0}`;
   const t0 = TXT_T - .15;
   [["sig1", t0], ["sig2", t0 + .12]].forEach(([id, at]) => {
     const p = expo(prog(lt, at, .55));
     $(id).style.opacity = p; $(id).style.transform = `translateY(${(1 - p) * 50}px)`; blur($(id), (1 - p) * 10);
   });
-  const pillTop = OUT.sigTop + OUT.sig * 2.35 + 30, pp = back(prog(lt, t0 + .3, .45));
+  const pillTop = OUT.sigTop + OUT.sig * 2.6 + 40, pp = back(prog(lt, t0 + .3, .45));
   $("pill").style.top = pillTop + "px";
   $("pill").style.opacity = clamp(pp * 2);
   $("pill").style.transform = `translateX(-50%) scale(${clamp(pp, 0, 1.2) * .3 + .7})`;

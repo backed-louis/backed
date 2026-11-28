@@ -7,25 +7,22 @@
 /*FONTS*/
 /*COMMUN_CSS*/
 #head { position: absolute; left: 0; width: 1040px; text-align: center; }
-#head .lab { font: 700 25px var(--mono); letter-spacing: .34em; color: var(--lilas); white-space: nowrap; }
+#head .lab { font: 800 25px var(--mono); letter-spacing: .34em; color: var(--lilas); white-space: nowrap; }
 #head .tt { font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; line-height: 1.05; margin-top: 14px; white-space: nowrap; padding-bottom: .05em; }
 #stage { position: absolute; inset: 0; perspective: 1900px; }
 #card { position: absolute; left: 120px; width: 800px; border-radius: 48px; overflow: hidden; padding: 18px 46px;
-  background:
-    radial-gradient(ellipse 70% 60% at 92% 0%, rgba(178,102,255,.55), rgba(139,0,255,0) 60%),
-    radial-gradient(ellipse 60% 60% at 0% 100%, rgba(80,30,160,.5), rgba(80,30,160,0) 65%),
-    repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0 2px, rgba(255,255,255,0) 2px 9px),
-    linear-gradient(135deg, #1e1238 0%, #120d22 45%, #0b0b14 100%);
-  box-shadow: 0 0 0 1.5px rgba(200,160,255,.45) inset, 0 70px 130px rgba(0,0,0,.7), 0 0 160px rgba(139,0,255,.38); }
+  background: var(--violet-depth); isolation: isolate;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.28), 0 70px 130px rgba(0,0,0,.6), 0 40px 160px -30px rgba(139,0,255,.75); }
+#card .wm { z-index: -1; }
 #shine { position: absolute; top: -30%; width: 220px; height: 160%; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.2), rgba(255,255,255,0)); transform: rotate(20deg); }
 .row { position: relative; display: flex; align-items: center; gap: 26px; padding: 30px 0; }
-.row + .row { border-top: 1.5px solid rgba(200,160,255,.16); }
-.rk { width: 64px; flex-shrink: 0; text-align: center; font-family: var(--inter); font-weight: 800; font-size: 92px; line-height: 1; letter-spacing: -.05em; padding-bottom: .04em; }
+.row + .row { border-top: 2px dashed rgba(255,255,255,.22); }
+.rk { width: 64px; flex-shrink: 0; text-align: center; font-family: var(--syne); font-weight: 800; font-size: 92px; line-height: 1; letter-spacing: -.05em; padding-bottom: .04em; color: var(--acid) !important; }
 .mid { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 .br { font-family: var(--syne); font-weight: 800; letter-spacing: -.01em; line-height: 1.02; padding-bottom: .04em; }
-.chip { padding: 9px 16px; border-radius: 13px; font: 700 28px var(--mono); letter-spacing: .1em; white-space: nowrap;
-  background: rgba(0,0,0,.38); border: 1.5px solid rgba(200,160,255,.5); color: var(--off); }
-.chip i, .chip b { font-style: normal; font-weight: 700; color: var(--lilas); }
+.chip { padding: 9px 16px; border-radius: 13px; font: 800 28px var(--mono); letter-spacing: .1em; white-space: nowrap;
+  background: var(--acid); color: var(--night); }
+.chip i, .chip b { font-style: normal; font-weight: 800; color: rgba(7,8,15,.42); }
 .ds { flex-shrink: 0; font-family: var(--syne); font-weight: 800; font-size: 56px; letter-spacing: -.04em; line-height: 1; display: flex; align-items: flex-start; padding-bottom: .05em; }
 .ds .u { font-size: .5em; margin: .1em 0 0 .04em; letter-spacing: 0; }
 #floor { position: absolute; left: 170px; width: 700px; height: 120px; border-radius: 50%; background: radial-gradient(ellipse, rgba(139,0,255,.5), rgba(139,0,255,0) 70%); filter: blur(20px); }
@@ -35,7 +32,7 @@
 <div id="frame">
   <div id="head"><div class="lab" id="kick"></div><div class="tt grad" id="tt"></div></div>
   <div id="floor"></div>
-  <div id="stage"><div id="card"><div id="shine"></div><div id="rows"></div></div></div>
+  <div id="stage"><div id="card"><div class="wm" id="wm"></div><div id="shine"></div><div id="rows"></div></div></div>
   <div id="save">Enregistre pour plus tard ↓</div>
   <div id="outro"></div>
 </div>
@@ -79,6 +76,7 @@ function setup() {
   const marques = [...D.items.filter(o => o.gros && o.createur), ...D.items.filter(o => !(o.gros && o.createur))].map(o => o.marque);
   if (gros.length) setCover(`TOP ${N} DE LA SEMAINE`, gros.join(" · "), marques.join(" · "));
   else setCover(`TOP ${N} DE LA SEMAINE`, D.items.map(o => o.marque).join(" · "), "Les codes en tendance");
+  $("wm").innerHTML = ticketSVG("#4e00a0", "#7a10f0");
   $("kick").textContent = D.kicker || "LES CODES EN TENDANCE";
   $("tt").textContent = `Top ${N} de la semaine`;
   $("tt").style.fontSize = Math.min(84, fitSize($("tt"), 800, 84)) + "px";
@@ -142,9 +140,8 @@ function render(t) {
     $(`c${i}`).innerHTML = codeHTML(o.code, t, at);
     const gl = Math.sin(Math.PI * prog(t, at, .6));
     const c = $(`c${i}`);
-    c.style.borderColor = t > at ? "rgba(214,180,255,.95)" : "";
-    c.style.boxShadow = t > at ? `0 0 ${24 + 36 * gl}px rgba(139,0,255,${.4 + .35 * gl})` : "";
-    c.style.transform = `scale(${1 + .06 * gl})`; c.style.transformOrigin = "0 50%";
+    c.style.boxShadow = t > at ? `0 0 ${24 + 36 * gl}px rgba(200,255,61,${.25 + .3 * gl})` : "";
+    c.style.transform = `rotate(-1.5deg) scale(${1 + .06 * gl})`; c.style.transformOrigin = "0 50%";
     $(`r${i}`).querySelectorAll(".grad").forEach(el => sweep(el, t, first ? .25 : at, first ? 1.0 : .8));
   });
   // « Enregistre pour plus tard » sous la carte redressée
