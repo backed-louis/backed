@@ -472,3 +472,31 @@ img { max-width: 100%; display: block; }
   .cc-ticket { --pad: 20px; --av: 76px; --fs: 15px; --gap: 10px; padding-left: 12px; padding-right: 12px; }
   .cc-foot { flex-direction: column; gap: 6px; }
 }
+
+/* Listes de A à Z : barre de lettres collée sous le menu, une section par lettre */
+.az-bar { position: sticky; top: 64px; z-index: 40; display: flex; flex-wrap: wrap; gap: 4px; padding: 12px 0; margin-bottom: 8px;
+  background: linear-gradient(var(--night) 80%, rgba(7,8,15,0)); }
+html[data-saison="black-friday"] .az-bar { top: 94px; }
+.az-bar a, .az-bar span { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px;
+  font-family: var(--font-mono), monospace; font-weight: 800; font-size: 14px; }
+.az-bar a { color: #FFFFFF; background: var(--ink); box-shadow: 0 0 0 1px var(--ink-border) inset; transition: background .15s ease, transform .15s ease; }
+.az-bar a:hover { background: var(--accent); box-shadow: none; transform: rotate(-4deg); }
+.az-bar span { color: var(--text-4); opacity: .6; }
+.az-section { scroll-margin-top: 170px; padding-top: 28px; }
+.az-letter { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.az-letter span { font-family: var(--font-syne); font-weight: 800; font-size: 56px; line-height: 1; color: #FFFFFF;
+  min-width: 64px; height: 64px; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px;
+  background: var(--violet-depth); box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 14px 34px -14px rgba(139,0,255,.8); transform: rotate(-3deg); font-size: 40px; }
+.az-letter i { flex: 1; border-top: 2px dashed var(--ink-border); }
+.az-letter small { font-family: var(--font-mono), monospace; font-size: 12px; color: var(--text-3); letter-spacing: .08em; }
+.az-section .cc-grid { padding-bottom: 12px; }
+.cc-avatar.is-logo { border-radius: 26px; }
+.cc-avatar.is-logo img, .cc-avatar.is-logo span { border-radius: 22px; background: #FFFFFF; object-fit: contain; padding: 14%; }
+.cc-avatar.is-logo span { background: var(--night); padding: 0; }
+.cc-gain { font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+@media (max-width: 640px) {
+  .az-bar { gap: 3px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .az-bar a, .az-bar span { width: 30px; height: 30px; flex-shrink: 0; font-size: 13px; }
+  .az-letter span { min-width: 52px; height: 52px; font-size: 32px; }
+  .cc-gain { max-width: 100%; }
+}

@@ -68,6 +68,7 @@ export default function Navbar() {
           <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
             {[
               { href: '/createurs', label: 'Créateurs' },
+              { href: '/marques', label: 'Marques' },
               { href: '/categories', label: 'Catégories' },
             ].map(({ href, label }) => (
               <Link
