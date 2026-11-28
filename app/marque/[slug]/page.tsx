@@ -173,7 +173,7 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
                 Code promo · {count} offre{count !== 1 ? 's' : ''} active{count !== 1 ? 's' : ''}
               </span>
               <h1 className="brand-hero-title">
-                Code promo <span className="grad">{brand.name}</span>
+                code promo <span className="hl">{brand.name}</span>
               </h1>
               <p className="brand-hero-maj">
                 Mis à jour le {aujourdhui()} · {pluriel(count, 'code partagé par', 'codes partagés par')} {listeCourte(creators, 3, k => `${k} ${pluriel(k, 'autre', 'autres')}`)}

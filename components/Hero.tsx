@@ -1,7 +1,6 @@
 'use client'
 import Link from 'next/link'
 import { SaisonNote } from '@/components/Saison'
-import { SaisonHero } from '@/components/SaisonDecor'
 import PremiumCard from '@/components/PremiumCard'
 import { type Offer } from '@/lib/airtable'
 
@@ -14,7 +13,6 @@ interface HeroProps {
 export default function Hero({ offerCount, creatorCount, top }: HeroProps) {
   return (
     <section className="hero">
-      <SaisonHero />
       <div className={`hero-grid${top ? '' : ' hero-solo'}`}>
         <div className="hero-copy">
           <span className="hero-pill">
@@ -22,7 +20,7 @@ export default function Hero({ offerCount, creatorCount, top }: HeroProps) {
           </span>
           <SaisonNote />
           <h1 className="hero-title">
-            Paie le <span className="grad">bon prix.</span>
+            paie le <span className="hl">bon prix.</span>
           </h1>
           <p className="hero-sub">
             {offerCount} offres de tes créateurs YouTube.

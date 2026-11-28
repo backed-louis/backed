@@ -1,5 +1,6 @@
 'use client'
 import { INSTAGRAM_URL, TIKTOK_URL, YOUTUBE_URL } from '@/lib/links'
+import Logo from '@/components/Logo'
 
 export function YouTubeIcon({ size = 18 }: { size?: number }) {
   return (
@@ -67,8 +68,8 @@ export default function Footer() {
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 40, marginBottom: 48 }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-syne)', fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 10 }}>
-              Backed
+            <div style={{ marginBottom: 14 }}>
+              <Logo height={26} />
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-3)', maxWidth: 220, lineHeight: 1.7, marginBottom: 20 }}>
               Avant de payer, passe par Backed. Les codes promo de tes créateurs YouTube, au même endroit.

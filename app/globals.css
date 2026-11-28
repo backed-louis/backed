@@ -367,3 +367,67 @@ img { max-width: 100%; display: block; }
   .seo-table td:nth-child(4) { display: inline; font-size: 13px; color: var(--text-3); }
   .seo-table td:nth-child(4)::before { content: ' · '; }
 }
+
+/* ═══════════ Identité Backed, piste C « Signal » (novembre 2026) ═══════════
+   Fond nuit, violet électrique, vert acide réservé au code et au surligneur. Plus de texte en dégradé ni de halos
+   qui dérivent : le relief vient des fonds violets (lumière en haut à gauche, ticket en filigrane, halo).
+   Logo : components/Logo.tsx, fichiers dans public/brand/. */
+:root {
+  --night: #07080F; --ink: #121426; --ink-border: #23264A;
+  --acid: #C8FF3D; --acid-hover: #D6FF66;
+  --mauve: #CC77FF; --lilas: #CC77FF;
+  --violet-depth: radial-gradient(130% 120% at 0% 0%, #A93BFF 0%, #8B00FF 40%, #5A00B5 100%);
+}
+::selection { background: var(--acid); color: var(--night); }
+.ambience::before, .ambience::after, .ambience-grain, .ambience-vignette { display: none; }
+
+/* Le surligneur : un seul par écran, sur l'info qui compte */
+.hl { display: inline-block; background: var(--acid); color: var(--night); padding: 0 .16em; border-radius: .12em; transform: rotate(-2deg); line-height: 1.1; }
+.hero-title .hl { white-space: nowrap; }
+.hero-title { letter-spacing: -.05em; }
+
+/* Plus de texte en dégradé : les grands chiffres sont blancs */
+.grad { background: none !important; -webkit-background-clip: border-box; background-clip: border-box; color: inherit; animation: none; filter: none !important; }
+.pc-big, .oc-big { filter: none; }
+.kicker, .section-label { color: var(--acid); }
+.oc-cat { color: var(--mauve); }
+
+/* Cartes d'offre : encre, liseré discret, contour acide au survol */
+.pcard { background: var(--ink); box-shadow: 0 0 0 1px var(--ink-border) inset; }
+.pcard-shine { display: none; }
+.offer-card:hover { box-shadow: 0 0 0 1.5px rgba(200,255,61,.6) inset, 0 24px 60px rgba(0,0,0,.5); }
+.oc-credit { border-top-color: var(--ink-border); }
+.oc-top { color: #FFFFFF; background: var(--accent); border: 0; font-family: var(--font-mono), monospace; letter-spacing: .06em; }
+
+/* La grande carte « le plus copié » et le meilleur code des pages marques : violet en relief */
+.pc-card.pcard { background: var(--violet-depth); isolation: isolate;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 40px 100px -30px rgba(139,0,255,.65), 0 30px 60px rgba(0,0,0,.45); }
+.pc-watermark { position: absolute; right: -150px; bottom: -140px; z-index: -1; transform: rotate(-14deg); opacity: .55; pointer-events: none; line-height: 0; }
+.pc-float .pc-card { animation: none; transform: rotate(-1.5deg); }
+.pc-floor { display: none; }
+.pc-rest { color: #F1E8FF; }
+.pc-credit { color: #E9DDFF; }
+.pc-credit a { color: #FFFFFF; }
+
+/* Le code : étiquette vert acide, légèrement inclinée */
+.code-chip { background: var(--acid); border: 0; color: var(--night); transform: rotate(-1.5deg); }
+.code-chip:hover { box-shadow: 0 0 0 2px var(--night), 0 0 0 4px var(--acid); transform: rotate(-1.5deg) translateY(-1px); }
+.code-chip-dim { color: rgba(7,8,15,.45); }
+.code-chip-hint { color: var(--night); border-left-color: rgba(7,8,15,.25); }
+.code-chip-ok { background: var(--night); border-color: var(--acid); color: var(--acid); }
+
+/* Boutons */
+.btn-primary { background: var(--acid); color: var(--night); font-weight: 700; box-shadow: none; }
+.btn-primary:hover { background: var(--acid-hover); box-shadow: none; }
+.btn-ghost { border-color: rgba(255,255,255,.5); background: transparent; }
+.btn-ghost:hover { border-color: #FFFFFF; background: rgba(255,255,255,.06); }
+
+/* Accroche */
+.hero-pill { color: var(--acid); background: transparent; border: 1px solid rgba(200,255,61,.35); }
+.hero-dot { background: var(--acid); box-shadow: none; }
+
+/* Tuiles de marque, catégories, liens */
+.brand-tile { box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+.category-card { background: var(--ink) !important; border-color: var(--ink-border) !important; }
+.category-card:hover { border-color: var(--acid) !important; box-shadow: none; background: var(--ink) !important; }
+.seo-link { color: var(--mauve); }
