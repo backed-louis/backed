@@ -31,15 +31,15 @@ export default async function Categories({ offerCounts = {} }: { offerCounts?: R
         </h2>
         <p className="section-sub">Tech, food, voyage, finance… Trouve le code qu'il te faut.</p>
 
-        <div style={{
+        <div className="cat-grid" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
           gap: 10,
         }}>
           {categories.map(cat => (
             <Link key={cat.id} href={`/categorie/${cat.slug}`} className="category-card">
-              <span style={{ fontSize: 22, lineHeight: 1 }}>{ICONS[cat.slug] || '📦'}</span>
-              <span style={{
+              <span className="cat-icon" style={{ fontSize: 22, lineHeight: 1 }}>{ICONS[cat.slug] || '📦'}</span>
+              <span className="cat-name" style={{
                 fontFamily: 'var(--font-syne)',
                 fontSize: 14, fontWeight: 700,
                 letterSpacing: '-0.01em',
@@ -47,7 +47,7 @@ export default async function Categories({ offerCounts = {} }: { offerCounts?: R
               }}>
                 {cat.name}
               </span>
-              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+              <span className="cat-count" style={{ fontSize: 12, color: 'var(--text-3)' }}>
                 {offerCounts[cat.name] || 0} offres
               </span>
             </Link>
