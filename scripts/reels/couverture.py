@@ -3,8 +3,9 @@
 TikTok prend la première image de la vidéo comme couverture (thumbnailOffset 0 dans Buffer) et l'affiche recadrée en
 3:4 sur le profil (de y = 240 à y = 1680 sur une vidéo 1080 × 1920). On ajoute donc au tout début de la vidéo
 2 images (≈ 0,07 s) avec, centrés dans cette zone :
-- code du jour : « LE CODE DE » + le créateur en très gros, le logo et le nom de la marque, puis la remise en énorme ;
-- top 3 : « TOP 3 » et, pour chaque code, le logo, la marque et le créateur.
+- code du jour : « le code de » + le créateur en très gros surligné en vert acide, le logo et le nom de la marque,
+  puis la remise en énorme, sur le fond nuit au halo violet ;
+- top 3 : « TOP 3 » et, pour chaque code, le logo, la marque et le créateur, sur le fond violet en relief.
 
   python3 scripts/reels/couverture.py video.mp4 couverture.jpg [sortie.mp4]          # ajoute l'image en tête
   python3 scripts/reels/couverture.py --offre "Créateur" "Marque" logo.png "-10 %" sortie.jpg   # seulement l'image
@@ -20,7 +21,8 @@ import tempfile
 from PIL import Image, ImageDraw, ImageFilter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from render import F, fit, tsize, wrap, logo_tile, first_clause, NIGHT, VIO, LILAS, OFF  # noqa: E402
+from render import (F, fit, tsize, wrap, logo_tile, first_clause, halo_bg, violet_bg, hl_layer,  # noqa: E402
+                    NIGHT, VIO, LILAS, OFF, SOFT)
 
 W, H = 1080, 1920
 TOP, BOT = 240, 1680   # zone visible sur la grille du profil (3:4)
@@ -29,12 +31,19 @@ IMAGES = 2             # images de couverture ajoutées au début de la vidéo
 
 
 # ------------------------------------------------------------------ dessin
-def _base(glow_y=800):
-    img = Image.new("RGBA", (W, H), NIGHT + (255,))
-    g = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(g).ellipse((540 - 560, glow_y - 420, 540 + 560, glow_y + 420), fill=VIO + (120,))
-    img.alpha_composite(g.filter(ImageFilter.GaussianBlur(190)))
+def _base(violet=False):
+    img = Image.new("RGB", (W, H), NIGHT)
+    if violet:
+        img.paste(violet_bg())
+    else:
+        halo_bg(img)
+    img = img.convert("RGBA")
     return img, ImageDraw.Draw(img)
+
+
+def _hl(img, cx, yc, s, f):
+    lay = hl_layer(ImageDraw.Draw(img), s, f, 2)
+    img.alpha_composite(lay, (int(cx - lay.width / 2), int(yc - lay.height / 2)))
 
 
 def _tc(d, cx, yc, s, f, fill):
@@ -96,14 +105,14 @@ def gain_court(o):
 
 
 def _offre(off, createur, marque, logo, gain):
-    img, d = _base(800)
-    _tc(d, 540, START + 30 + off, "LE CODE DE", F("mono", 44, "Medium"), LILAS)
-    ls, f = _lines(d, createur, 960, 150, 80)
-    y = START + 95 + off
+    img, d = _base()
+    _tc(d, 540, START + 30 + off, "le code de", F("syne", 72), OFF)
+    ls, f = _lines(d, createur, 900, 150, 80)
+    y = START + 110 + off
     for ln in ls:
-        _glow(img, 540, y + f.size / 2, ln, f, OFF)
-        y += f.size * 1.02
-    y += 50
+        _hl(img, 540, y + f.size * 0.6, ln, f)
+        y += f.size * 1.3
+    y += 40
     if logo is not None:
         t = logo_tile(logo, 250)
         img.alpha_composite(t, (540 - 125, int(y)))
@@ -114,7 +123,7 @@ def _offre(off, createur, marque, logo, gain):
     f1 = fit(d, gain, 980, 240)
     ls, f = ([gain], f1) if f1.size >= 150 else _lines(d, gain, 980, 200, 70, max_lines=3)
     for ln in ls:
-        _glow(img, 540, y + f.size / 2, ln, f, LILAS, glow=VIO + (150,), blur=30)
+        _tc(d, 540, y + f.size / 2, ln, f, OFF)
         y += f.size
     return img, y
 
@@ -125,9 +134,9 @@ def offre(o):
 
 
 def _top(off, items, titre):
-    img, d = _base(900)
-    _tc(d, 540, START + 30 + off, titre, F("mono", 44, "Medium"), LILAS)
-    _glow(img, 540, START + 170 + off, "TOP 3" if len(items) == 3 else f"TOP {len(items)}", F("syne", 190), OFF)
+    img, d = _base(violet=True)
+    _tc(d, 540, START + 30 + off, titre, F("mono", 44, "ExtraBold"), SOFT)
+    _tc(d, 540, START + 170 + off, "TOP 3" if len(items) == 3 else f"TOP {len(items)}", F("syne", 190), OFF)
     y = START + 320 + off
     T = 190
     for o in items:
@@ -139,7 +148,7 @@ def _top(off, items, titre):
         if o.get("creator"):
             fc = fit(d, o["creator"], 640, 64, "inter", "Bold")
             b = tsize(d, o["creator"], fc)[0]
-            d.text((330 - b[0], y + 130 - b[1]), o["creator"], font=fc, fill=LILAS)
+            d.text((330 - b[0], y + 130 - b[1]), o["creator"], font=fc, fill=SOFT)
         y += T + 60
     return img, y - 60
 
