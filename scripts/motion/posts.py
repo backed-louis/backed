@@ -83,7 +83,9 @@ html, body {{ overflow: hidden; }}
 .r-row b {{ font-weight: 800; }}
 .r-row > :last-child {{ text-align: right; white-space: nowrap; }}
 .r-sub {{ display: flex; justify-content: space-between; gap: {u(2)}; font-size: {u(2.6)}; opacity: .85; margin-bottom: {u(2)}; }}
-.r-code {{ font-weight: 800; padding: 0 {u(.6)}; }}
+.r-code {{ font-weight: 800; padding: 0 {u(.8)}; background: {A}; box-shadow: 0 0 0 {u(.3)} {A}; transform: rotate(-1.5deg); display: inline-block; }}
+.r-num {{ font-family: Syne, sans-serif; font-weight: 800; font-size: {u(4.3)}; letter-spacing: -.03em; color: {V}; line-height: 1; white-space: nowrap; }}
+.r-stamp {{ position: absolute; left: {u(1)}; bottom: {u(5)}; width: {u(26)}; height: {u(26)}; transform: rotate(-16deg); opacity: .9; mix-blend-mode: multiply; z-index: 2; }}
 .r-total {{ font-size: {u(3.6)}; }}
 .r-small2 {{ font-size: {u(2.6)}; opacity: .8; }}
 .r-bar {{ height: {u(9)}; margin: {u(3)} {u(4)} {u(1)}; background: repeating-linear-gradient(90deg,{N} 0 2px,transparent 2px 4px,{N} 4px 7px,transparent 7px 9px,{N} 9px 10px,transparent 10px 13px); }}
@@ -134,9 +136,9 @@ def recu(items, numero, periode):
         lines += (f'<div class="r-row"><b>{e(o["creator"].upper())}</b><span>{e(o["gain"])}</span></div>'
                   f'<div class="r-sub"><span>{e(o["brand"].upper())}</span><span class="r-code">{e(o["code"])}</span></div>')
     return f"""<div class="rcpt">
-<div class="r-head">{ticket_svg(N, P)}<div class="r-brand">BACKED</div><div class="r-small">backed.fr · codes vérifiés</div></div>
+<div class="r-head">{ticket_svg(V, W)}<div class="r-brand">BACKED</div><div class="r-small">backed.fr · codes vérifiés</div></div>
 <div class="r-dash"></div>
-<div class="r-row"><b>TICKET N°{e(str(numero))}</b><span>{e(periode)}</span></div>
+<div style="text-align:center"><div class="r-num">TICKET N°{e(str(numero))}</div><div class="r-small" style="margin-top:{u(1.2)}">SEMAINE DU {e(periode)}</div></div>
 <div class="r-dash"></div>
 {lines}
 <div class="r-dash"></div>
@@ -146,6 +148,7 @@ def recu(items, numero, periode):
 <div class="r-small" style="text-align:center">MERCI ET À LA SEMAINE PROCHAINE</div>
 <div class="r-bar"></div>
 <div class="r-small" style="text-align:center">BACKED.FR/L/INSTAGRAM</div>
+<div class="r-stamp">{tampon_svg(V, P, "CODE VÉRIFIÉ ✦ BACKED.FR ✦ CODE VÉRIFIÉ ✦ BACKED.FR ✦", "")}</div>
 </div>"""
 
 
@@ -153,17 +156,22 @@ def ticket(items, numero, periode):
     """items : [{creator, brand, gain, code}], dans l'ordre de sortie."""
     inner = (f'<div style="position:absolute;left:50%;top:{u(5)};transform:translateX(-50%) rotate(-4deg);'
              f'filter:drop-shadow(0 {u(4)} {u(5)} rgba(0,0,0,.5))"><div data-fith=".9">{recu(items, numero, periode)}</div></div>')
-    return "nuit", inner, '<div class="blinds"></div>'
+    return "violet", inner, '<div class="blinds"></div>'
+
+
+_n = [0]
 
 
 def tampon_svg(col, bg, texte, sous):
+    _n[0] += 1
+    i = _n[0]
     return f"""<svg viewBox="0 0 200 200" style="display:block;width:100%;height:100%;overflow:visible">
-<defs><path id="sc" d="M100,100 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0"/>
-<filter id="sr"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="5" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3"/></filter></defs>
-<g filter="url(#sr)">
+<defs><path id="sc{i}" d="M100,100 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0"/>
+<filter id="sr{i}"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="5" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3"/></filter></defs>
+<g filter="url(#sr{i})">
 <circle cx="100" cy="100" r="97" fill="none" stroke="{col}" stroke-width="3.5"/>
 <circle cx="100" cy="100" r="63" fill="none" stroke="{col}" stroke-width="2"/>
-<text font-family="Mono, monospace" font-weight="800" font-size="14.5" fill="{col}" textLength="496" lengthAdjust="spacing"><textPath href="#sc">{e(texte)}</textPath></text>
+<text font-family="Mono, monospace" font-weight="800" font-size="14.5" fill="{col}" textLength="496" lengthAdjust="spacing"><textPath href="#sc{i}">{e(texte)}</textPath></text>
 <g transform="translate(64 73) scale(.6)"><path fill="{col}" d="{TICKET}"/><path fill="{bg}" {BPATH}/></g>
 <text x="100" y="146" text-anchor="middle" font-family="Mono, monospace" font-weight="800" font-size="9" letter-spacing="1.5" fill="{col}">{e(sous)}</text>
 </g></svg>"""
