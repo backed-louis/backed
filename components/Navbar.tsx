@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { SaisonMark } from '@/components/Saison'
+import Logo from '@/components/Logo'
 import { datesBlackFriday } from '@/lib/blackfriday'
 
 export default function Navbar() {
@@ -47,23 +47,19 @@ export default function Navbar() {
           maxWidth: 1200, margin: '0 auto',
           display: 'flex', alignItems: 'center', width: '100%', gap: 40,
         }}>
-          <Link href="/" style={{
-            fontFamily: 'var(--font-syne)',
-            fontSize: 20, fontWeight: 800,
-            letterSpacing: '-0.02em',
+          <Link href="/" aria-label="Backed, accueil" style={{
             marginRight: 'auto',
-            display: 'inline-flex', alignItems: 'center', position: 'relative',
+            display: 'inline-flex', alignItems: 'center',
           }}>
-            Backed
-            <SaisonMark />
+            <Logo height={26} />
           </Link>
 
           {bf && (
             <Link href="/black-friday" className="nav-bf" style={{
-              fontSize: 12, fontWeight: 800, letterSpacing: '.06em', fontFamily: 'var(--font-syne)',
-              color: '#07080F', background: '#F4F2EE', padding: '6px 12px', borderRadius: 100, whiteSpace: 'nowrap',
+              fontSize: 13, fontWeight: 800, letterSpacing: '-.02em', fontFamily: 'var(--font-syne)',
+              color: '#07080F', background: '#FFFFFF', padding: '6px 12px', borderRadius: 100, whiteSpace: 'nowrap',
             }}>
-              BLACK FRIDAY
+              black friday
             </Link>
           )}
 
@@ -88,17 +84,17 @@ export default function Navbar() {
             href="/explorer"
             className="nav-cta"
             style={{
-              background: 'var(--accent)',
-              color: '#fff',
-              fontSize: 14, fontWeight: 500,
+              background: 'var(--acid)',
+              color: 'var(--night)',
+              fontSize: 14, fontWeight: 700,
               padding: '9px 20px',
               borderRadius: 'var(--r-md)',
               letterSpacing: '-0.01em',
               transition: 'background 0.15s',
               whiteSpace: 'nowrap',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'var(--accent)')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--acid-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--acid)')}
           >
             Trouver un code
           </Link>

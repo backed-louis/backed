@@ -35,7 +35,7 @@ export default function OfferCard({ offer, isPopular = false }: { offer: Offer; 
             {offer.category && <span className="oc-cat">{offer.category}</span>}
           </span>
         </Link>
-        {isPopular && <span className="oc-top">🔥 Top 10 %</span>}
+        {isPopular && <span className="oc-top">Top 10 %</span>}
       </div>
 
       {offer.benefit && (

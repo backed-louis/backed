@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { type Offer } from '@/lib/airtable'
 import { gainParts } from '@/lib/gain'
 import CodeChip from '@/components/CodeChip'
+import { LogoSymbole } from '@/components/Logo'
 
 function toSlug(name: string) {
   return name.normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -41,7 +42,7 @@ export default function PremiumCard({
       )}
       <div className={`pc-stage${float ? ' pc-float' : ''}`}>
         <div className="pcard pc-card">
-          <span className="pcard-shine" aria-hidden />
+          <span className="pc-watermark" aria-hidden><LogoSymbole size={420} ticket="#4E00A0" ink="#7A10F0" /></span>
           <div className="pc-gain">
             {g.value ? (
               <>
