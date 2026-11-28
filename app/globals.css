@@ -318,5 +318,6 @@ img { max-width: 100%; display: block; }
   .hero-ctas { gap: 10px; }
   .hero-ctas .btn-primary, .hero-ctas .btn-ghost { font-size: 14px; padding: 12px 20px; border-radius: 11px; }
   .hero-links { margin-top: 22px; }
-  .hero-links a { font-size: 13px; }
+  .hero-links a { font-size: 13px; flex-wrap: wrap; justify-content: center; text-align: center; gap: 4px 8px; }
+  .hero-link-cta { white-space: nowrap; }
 }
