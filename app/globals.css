@@ -356,7 +356,14 @@ img { max-width: 100%; display: block; }
 .seo-chip-sub { font-size: 12px; font-weight: 500; color: var(--text-2); }
 @media (max-width: 640px) {
   .seo-h2 { font-size: 21px; margin-top: 36px; }
-  .seo-table { font-size: 13px; }
-  .seo-table th, .seo-table td { padding: 10px 11px; }
-  .seo-table td:nth-child(2) { min-width: 180px; }
+  /* Sur téléphone, chaque ligne devient une petite fiche : code, avantage, puis créateur · date */
+  .seo-table thead { display: none; }
+  .seo-table, .seo-table tbody, .seo-table tr { display: block; width: 100%; }
+  .seo-table tr { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .seo-table tr:last-child { border-bottom: 0; }
+  .seo-table td { display: block; padding: 0; border: 0; font-size: 14px; }
+  .seo-table td.seo-code { font-size: 15px; margin-bottom: 3px; white-space: normal; }
+  .seo-table td:nth-child(3) { display: inline-block; margin-top: 6px; font-size: 13px; }
+  .seo-table td:nth-child(4) { display: inline; font-size: 13px; color: var(--text-3); }
+  .seo-table td:nth-child(4)::before { content: ' · '; }
 }
