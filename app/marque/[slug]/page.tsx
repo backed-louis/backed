@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import { SITE_URL } from '@/lib/links'
 import { parClassement } from '@/lib/classement'
-import { aujourdhui, dateLongue, gainCourt, listeCourte, listeFr, moisAnnee, pluriel } from '@/lib/seo'
+import { aujourdhui, dateLongue, gainCourt, listeCourte, listeFr, meilleurGain, moisAnnee, pluriel } from '@/lib/seo'
 import {
   CodesTable, Faq, JsonLd, LinkChips, PastCodesTable, SeoTitle,
   breadcrumbSchema, faqSchema, type FaqItem,
@@ -48,9 +48,9 @@ async function getBrandData(slug: string) {
 }
 
 // Titre Google : « Code promo NordVPN : -73 % (novembre 2026) | Backed ».
-function titreMarque(brand: string, best: Offer, count: number, mois: string) {
-  const gain = gainCourt(best.benefit)
-  if (gain && gain.length <= 28) return `Code promo ${brand} : ${gain} (${mois}) | Backed`
+function titreMarque(brand: string, offers: Offer[], count: number, mois: string) {
+  const gain = meilleurGain(offers.filter(o => o.code.trim()).map(o => o.benefit))
+  if (gain) return `Code promo ${brand} : ${gain} (${mois}) | Backed`
   return `Code promo ${brand} (${mois}) : ${count} ${pluriel(count, 'offre', 'offres')} de créateurs | Backed`
 }
 
@@ -66,7 +66,7 @@ export async function generateMetadata(
   const mois = moisAnnee()
   const best = offers[0]
   const creators = Array.from(new Set(offers.map(o => o.creator).filter(Boolean)))
-  const title = titreMarque(brand.name, best, count, mois)
+  const title = titreMarque(brand.name, offers, count, mois)
   const avec = best.code ? ` ${gainCourt(best.benefit) || best.benefit} avec le code ${best.code}.` : ''
   const description = `${count} ${pluriel(count, 'code promo', 'codes promo')} ${brand.name} en ${mois}, repérés dans les vidéos de ${listeCourte(creators, 3, () => "d'autres créateurs")}.${avec} Copie-le en un clic, sans compte.`
 
