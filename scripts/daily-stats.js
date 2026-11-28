@@ -89,7 +89,10 @@ async function main() {
     if (r.fields['Copies']) copies[r.id] = r.fields['Copies']
   }
   const linkClicks = {}
-  for (const r of links) if (r.fields['Source']) linkClicks[r.fields['Source']] = r.fields['Clics'] || 0
+  for (const r of links) {
+    const s = r.fields['Source']
+    if (s) linkClicks[s] = (linkClicks[s] || 0) + (r.fields['Clics'] || 0) // deux lignes possibles si deux premiers clics simultanés
+  }
 
   const fields = {
     Date: day,
