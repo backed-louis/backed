@@ -52,7 +52,7 @@ export function SaisonNote() {
   const s = useSaisons()[0]
   if (!s) return null
   return (
-    <p style={{
+    <p className="saison-note" style={{
       fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6,
       marginTop: -20, marginBottom: 36, animation: 'fadeInUp 0.5s ease-out both',
     }}>

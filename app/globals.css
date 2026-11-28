@@ -306,3 +306,18 @@ img { max-width: 100%; display: block; }
   .cat-name { font-size: 13px !important; margin-top: 3px !important; }
   .cat-count { font-size: 11px !important; }
 }
+
+/* Téléphone : accueil plus aéré (titre, texte et boutons plus petits, moins d'éléments empilés) */
+@media (max-width: 640px) {
+  .hero { padding: 100px 22px 52px; }
+  .hero-grid { gap: 40px; }
+  .hero-pill { margin-bottom: 22px; font-size: 9.5px; padding: 6px 12px 6px 10px; gap: 8px; }
+  .saison-note { display: none; }
+  .hero-title { font-size: 40px; margin-bottom: 16px; }
+  .hero-sub { font-size: 15px; line-height: 1.55; max-width: 310px; margin-bottom: 26px; }
+  .hero-ctas { gap: 10px; }
+  .hero-ctas .btn-primary, .hero-ctas .btn-ghost { font-size: 14px; padding: 12px 20px; border-radius: 11px; }
+  .hero-links { margin-top: 22px; }
+  .hero-links a { font-size: 13px; flex-wrap: wrap; justify-content: center; text-align: center; gap: 4px 8px; }
+  .hero-link-cta { white-space: nowrap; }
+}

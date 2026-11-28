@@ -62,6 +62,9 @@ html[data-saison="black-friday"] body { padding-bottom: 40px; }
   .sd-web { transform: scale(.6) }
   .sd-tag { transform: scale(.7) }
   html[data-saison="halloween"] body, html[data-saison="noel"] body { padding-bottom: 64px; }
+  /* Black Friday sur téléphone : seulement le bandeau du haut, pas de sacs ni de bandeau en bas */
+  .sd-band-bottom { display: none !important }
+  html[data-saison="black-friday"] body { padding-bottom: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .sd, .sd * { animation: none !important } .sd-moving { display: none !important } }
 `
@@ -275,7 +278,7 @@ const TICKER = 'BLACK FRIDAY ✦ VÉRIFIE LE CODE DE TON CRÉATEUR AVANT DE PAYE
 
 function Bandeau({ position, sens }: { position: 'top' | 'bottom'; sens: 1 | -1 }) {
   return (
-    <div className="sd" style={{ [position]: position === 'top' ? 64 : 0, left: 0, right: 0, height: 30, zIndex: 99, background: '#000', borderTop: position === 'bottom' ? '1px solid rgba(255,255,255,.14)' : undefined, borderBottom: position === 'top' ? '1px solid rgba(255,255,255,.14)' : undefined, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+    <div className={`sd sd-band-${position}`} style={{ [position]: position === 'top' ? 64 : 0, left: 0, right: 0, height: 30, zIndex: 99, background: '#000', borderTop: position === 'bottom' ? '1px solid rgba(255,255,255,.14)' : undefined, borderBottom: position === 'top' ? '1px solid rgba(255,255,255,.14)' : undefined, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
       <div style={{ display: 'flex', whiteSpace: 'nowrap', animation: `${sens === 1 ? 'sd-marquee' : 'sd-marquee-rev'} 26s linear infinite` }}>
         {[0, 1].map((k) => (
           <span key={k} style={{ fontFamily: 'var(--font-syne)', fontWeight: 800, fontSize: 13, letterSpacing: '.08em', color: '#F4F2EE', paddingRight: 8 }}>
@@ -295,7 +298,7 @@ function BlackFriday() {
       <Bandeau position="top" sens={1} />
       <Bandeau position="bottom" sens={-1} />
       {/* étiquettes qui tombent */}
-      <Chute n={30} nMobile={7} seed={13} render={(i, v) => (
+      <Chute n={30} nMobile={3} seed={13} render={(i, v) => (
         <span className="sd-tag" style={{ display: 'block', opacity: .5 + v() * .35 }}><PriceTag size={22 + v() * 16} label={ETIQUETTES[i % 5]} /></span>
       )} />
       {/* étiquettes qui se balancent */}
@@ -305,11 +308,11 @@ function BlackFriday() {
         </div>
       ))}
       {/* sacs de shopping */}
-      <div className="sd sd-scene" style={{ bottom: 30, left: 6, display: 'flex', alignItems: 'flex-end', transformOrigin: 'bottom left' }}>
+      <div className="sd sd-scene sd-desktop" style={{ bottom: 30, left: 6, display: 'flex', alignItems: 'flex-end', transformOrigin: 'bottom left' }}>
         <ShoppingBag size={96} color="#8B00FF" label="B" />
         <ShoppingBag size={70} color="#F4F2EE" ink="#07080F" label="%" style={{ marginLeft: -16 }} />
       </div>
-      <div className="sd sd-scene" style={{ bottom: 30, right: 6, display: 'flex', alignItems: 'flex-end', transformOrigin: 'bottom right' }}>
+      <div className="sd sd-scene sd-desktop" style={{ bottom: 30, right: 6, display: 'flex', alignItems: 'flex-end', transformOrigin: 'bottom right' }}>
         <ShoppingBag size={64} color="#F4F2EE" ink="#07080F" label="€" style={{ marginRight: -14 }} />
         <ShoppingBag size={90} color="#8B00FF" label="-%" />
       </div>
