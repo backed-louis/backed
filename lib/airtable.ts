@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache'
+import { AVANTAGE } from './seo'
 import { clickStats, parClassement, parisDate, type ClickRecord, type ClickStats, type Snapshot } from './classement'
 
 const BASE_ID = process.env.AIRTABLE_BASE_ID
@@ -89,6 +90,17 @@ export interface Offer {
   weekClicks: number // clics des 7 derniers jours
   endDate: string | null
   blackFriday: boolean
+  seen: string | null // dernière vidéo où le créateur a partagé l'offre (« Vu le »), sinon sa date d'ajout
+}
+
+// Ancien code (offre inactive ou expirée) : affiché sur les pages marques et créateurs, sans bouton copier.
+export interface PastOffer {
+  code: string
+  benefit: string
+  brand: string
+  brandSlug: string
+  creator: string
+  seen: string | null
 }
 
 export interface Category {
@@ -116,7 +128,7 @@ export interface Brand {
 
 // ─── Données Airtable, mises en cache une fois pour tout le site ─────────────
 
-type RawData = { offers: any[]; brands: any[]; creators: any[]; categories: any[]; clickRecords: ClickRecord[]; snapshots: Snapshot[] }
+type RawData = { offers: any[]; brands: any[]; creators: any[]; categories: any[]; clickRecords: ClickRecord[]; snapshots: Snapshot[]; past: any[] }
 
 type MapsResult = {
   brandsMap: Record<string, { name: string; slug: string; description: string; logo: string | null; website: string | null; category: string }>
@@ -137,7 +149,26 @@ async function fetchAll(): Promise<RawData> {
   const creators = (await fetchTable('Creators')).records
   const categories = (await fetchTable('Categories')).records
   const { clickRecords, snapshots } = await fetchClicks()
-  return { offers, brands, creators, categories, clickRecords, snapshots }
+  const past = await fetchPast()
+  return { offers, brands, creators, categories, clickRecords, snapshots, past }
+}
+
+// Anciens codes des 12 derniers mois (offres inactives ou expirées, avec un code). En cas
+// d'échec, les pages s'affichent simplement sans la section « Anciens codes ».
+const PAST_OFFERS =
+  'AND({Code}!="", IS_AFTER(CREATED_TIME(), DATEADD(TODAY(), -365, \'days\')), ' +
+  'OR({Status}!="Active", AND({End Date}!="", IS_BEFORE({End Date}, TODAY()))))'
+
+async function fetchPast(): Promise<any[]> {
+  try {
+    return (await fetchTable('Offers', {
+      filterByFormula: PAST_OFFERS,
+      'fields[]': ['Code', 'Benefit', 'Brand', 'Creator', 'Vu le', 'End Date'],
+    })).records
+  } catch (err) {
+    console.error('Anciens codes indisponibles :', err)
+    return []
+  }
 }
 
 // Clics de toutes les offres (actives ou non, pour retrouver les clics mal attribués) et
@@ -168,7 +199,7 @@ async function fetchClicks(): Promise<Pick<RawData, 'clickRecords' | 'snapshots'
 // Une seule entrée de cache partagée par toutes les pages et toutes les fonctions
 // Vercel, renouvelée au plus une fois par heure (comme l'ISR du site). Tant que le
 // renouvellement échoue, Next continue de servir la dernière version réussie.
-const cachedFetchAll = unstable_cache(fetchAll, ['airtable-data-v3'], { revalidate: 3600, tags: ['airtable'] })
+const cachedFetchAll = unstable_cache(fetchAll, ['airtable-data-v4'], { revalidate: 3600, tags: ['airtable'] })
 
 // En plus, dans chaque instance : une seule lecture en cours à la fois, et la
 // dernière lecture réussie en secours si Airtable ne répond pas.
@@ -281,6 +312,7 @@ function mapOffer(r: any, brandsMap: any, creatorsMap: any, stats?: ClickStats):
     weekClicks: stats?.week[key] ?? 0,
     endDate: r.fields['End Date'] || null,
     blackFriday: Boolean(r.fields['Black Friday']),
+    seen: r.fields['Vu le'] || (r.createdTime ? String(r.createdTime).slice(0, 10) : null),
   }
 }
 
@@ -377,6 +409,37 @@ export async function getAllOffers(): Promise<Offer[]> {
 }
 
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, 'fr')
+
+// Anciens codes, du plus récent au plus ancien, un seul par marque + code, sans les codes
+// encore actifs pour la même marque ni ceux sans avantage concret.
+export async function getPastOffers(): Promise<PastOffer[]> {
+  const data = await loadData()
+  const { brandsMap, creatorsMap } = buildMapsFrom(data)
+  const active = new Set(
+    (await getAllOffers()).map((o) => `${o.brandSlug}|${o.code.trim().toLowerCase()}`)
+  )
+  const seen = new Set<string>()
+  return (data.past || [])
+    .map((r: any): PastOffer => {
+      const brand = brandsMap[r.fields['Brand']?.[0]]
+      return {
+        code: String(r.fields['Code'] || '').trim(),
+        benefit: r.fields['Benefit'] || '',
+        brand: brand?.name || '',
+        brandSlug: brand?.slug || '',
+        creator: creatorsMap[r.fields['Creator']?.[0]] || '',
+        seen: r.fields['Vu le'] || r.fields['End Date'] || (r.createdTime ? String(r.createdTime).slice(0, 10) : null),
+      }
+    })
+    .filter((p: PastOffer) => p.code && p.brandSlug && p.creator && p.code.length <= 24 && !/\s/.test(p.code) && AVANTAGE.test(p.benefit))
+    .sort((a: PastOffer, b: PastOffer) => String(b.seen).localeCompare(String(a.seen)))
+    .filter((p: PastOffer) => {
+      const k = `${p.brandSlug}|${p.code.toLowerCase()}`
+      if (active.has(k) || seen.has(k)) return false
+      seen.add(k)
+      return true
+    })
+}
 
 export async function getAllCreators(): Promise<Creator[]> {
   const data = await loadData()
