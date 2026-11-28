@@ -3,6 +3,7 @@ import { SITE_URL } from '@/lib/links'
 import { getAllCreators, getAllOffers } from '@/lib/airtable'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
+import { SaisonChapeau } from '@/components/Saison'
 
 export const metadata: Metadata = {
   title: "Les créateurs YouTube et leurs codes promo | Backed",
@@ -36,72 +37,40 @@ export default async function CreateursPage() {
             <h1 style={{
               fontFamily: 'var(--font-syne)',
               fontSize: 'clamp(32px, 5vw, 56px)',
-              fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 8,
+              fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 12,
             }}>
-              Les créateurs
+              les <span className="hl">créateurs</span>
             </h1>
             <p style={{ color: 'var(--text-2)', fontSize: 16 }}>
-              {creatorsWithOffers.length} créateurs actifs
+              {creatorsWithOffers.length} créateurs actifs, leurs codes vérifiés et à jour
             </p>
           </div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-            gap: 12, paddingBottom: 96,
-          }}>
+          <div className="cc-grid">
             {creatorsWithOffers.map(creator => {
               const count = offerCounts[creator.name] || 0
               return (
-                <Link key={creator.id} href={`/createur/${creator.slug}`} className="creator-card">
-                  <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <div style={{
-                    width: 48, height: 48, borderRadius: '50%',
-                    overflow: 'hidden',
-                    border: '1px solid var(--accent-border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'var(--accent-subtle)',
-                    flexShrink: 0,
-                  }}>
-                    {creator.avatar ? (
-                      <img
-                        src={creator.avatar}
-                        alt={creator.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <span style={{
-                        fontFamily: 'var(--font-syne)',
-                        fontSize: 18, fontWeight: 800, color: 'var(--accent-text)',
-                      }}>
-                        {creator.name.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  </div>
-                  <div>
-                    <div style={{
-                      fontFamily: 'var(--font-syne)',
-                      fontSize: 16, fontWeight: 700,
-                      letterSpacing: '-0.01em', marginBottom: 4,
-                    }}>
-                      {creator.name}
-                    </div>
-                    <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
-                      {count} offre{count !== 1 ? 's' : ''} active{count !== 1 ? 's' : ''}
+                <Link key={creator.id} href={`/createur/${creator.slug}`} className="cc-card">
+                  <div className="cc-ticket">
+                  <div className="cc-avatar-wrap">
+                    <SaisonChapeau size={52} />
+                    <div className="cc-avatar">
+                      {creator.avatar ? (
+                        <img src={creator.avatar} alt={creator.name} loading="lazy" />
+                      ) : (
+                        <span>{creator.name.charAt(0).toUpperCase()}</span>
+                      )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {creator.platforms.map(p => (
-                      <span key={p} style={{
-                        fontSize: 11, fontWeight: 600,
-                        padding: '3px 8px', borderRadius: 'var(--r-sm)',
-                        background: p === 'Youtube' ? 'rgba(255,0,0,0.1)' : 'rgba(145,71,255,0.1)',
-                        color: p === 'Youtube' ? '#FF4444' : '#9147FF',
-                        border: `1px solid ${p === 'Youtube' ? 'rgba(255,0,0,0.2)' : 'rgba(145,71,255,0.2)'}`,
-                      }}>
-                        {p}
-                      </span>
-                    ))}
+                  <div className="cc-name">{creator.name}</div>
+                  <div className="cc-perf" aria-hidden />
+                  <div className="cc-foot">
+                    <span className="cc-count"><b>{count}</b> code{count !== 1 ? 's' : ''}</span>
+                    <span className="cc-platforms">
+                      {creator.platforms.map(p => (
+                        <span key={p} className={`cc-pf cc-pf-${p.toLowerCase()}`}>{p.toLowerCase()}</span>
+                      ))}
+                    </span>
+                  </div>
                   </div>
                 </Link>
               )

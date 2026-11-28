@@ -369,6 +369,8 @@ img { max-width: 100%; display: block; }
 }
 
 /* ═══════════ Identité Backed, piste C « Signal » (novembre 2026) ═══════════
+   Hiérarchie : nuit (fond, ~60 %) > violet (la marque : logo, boutons, survols, petits titres, grandes surfaces, ~25 %)
+   > blanc (texte) > vert acide (l'économie : le code à copier et un mot surligné par titre, 5 % maximum).
    Fond nuit, violet électrique, vert acide réservé au code et au surligneur. Plus de texte en dégradé ni de halos
    qui dérivent : le relief vient des fonds violets (lumière en haut à gauche, ticket en filigrane, halo).
    Logo : components/Logo.tsx, fichiers dans public/brand/. */
@@ -379,7 +381,8 @@ img { max-width: 100%; display: block; }
   --violet-depth: radial-gradient(130% 120% at 0% 0%, #A93BFF 0%, #8B00FF 40%, #5A00B5 100%);
 }
 ::selection { background: var(--acid); color: var(--night); }
-.ambience::before, .ambience::after, .ambience-grain, .ambience-vignette { display: none; }
+.ambience-grain { display: none; }
+.ambience::before, .ambience::after { animation: none !important; }
 
 /* Le surligneur : un seul par écran, sur l'info qui compte */
 .hl { display: inline-block; background: var(--acid); color: var(--night); padding: 0 .16em; border-radius: .12em; transform: rotate(-2deg); line-height: 1.1; }
@@ -389,13 +392,13 @@ img { max-width: 100%; display: block; }
 /* Plus de texte en dégradé : les grands chiffres sont blancs */
 .grad { background: none !important; -webkit-background-clip: border-box; background-clip: border-box; color: inherit; animation: none; filter: none !important; }
 .pc-big, .oc-big { filter: none; }
-.kicker, .section-label { color: var(--acid); }
+.kicker, .section-label { color: var(--mauve); }
 .oc-cat { color: var(--mauve); }
 
-/* Cartes d'offre : encre, liseré discret, contour acide au survol */
+/* Cartes d'offre : encre, liseré discret, contour violet au survol */
 .pcard { background: var(--ink); box-shadow: 0 0 0 1px var(--ink-border) inset; }
 .pcard-shine { display: none; }
-.offer-card:hover { box-shadow: 0 0 0 1.5px rgba(200,255,61,.6) inset, 0 24px 60px rgba(0,0,0,.5); }
+.offer-card:hover { box-shadow: 0 0 0 1.5px var(--accent) inset, 0 24px 60px rgba(139,0,255,.25); }
 .oc-credit { border-top-color: var(--ink-border); }
 .oc-top { color: #FFFFFF; background: var(--accent); border: 0; font-family: var(--font-mono), monospace; letter-spacing: .06em; }
 
@@ -416,18 +419,56 @@ img { max-width: 100%; display: block; }
 .code-chip-hint { color: var(--night); border-left-color: rgba(7,8,15,.25); }
 .code-chip-ok { background: var(--night); border-color: var(--acid); color: var(--acid); }
 
-/* Boutons */
-.btn-primary { background: var(--acid); color: var(--night); font-weight: 700; box-shadow: none; }
-.btn-primary:hover { background: var(--acid-hover); box-shadow: none; }
+/* Boutons : violet en relief */
+.btn-primary { background: var(--violet-depth); color: #FFFFFF; font-weight: 700; box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 12px 32px -10px rgba(139,0,255,.7); }
+.btn-primary:hover { background: var(--violet-depth); filter: brightness(1.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 16px 44px -10px rgba(139,0,255,.9); }
 .btn-ghost { border-color: rgba(255,255,255,.5); background: transparent; }
 .btn-ghost:hover { border-color: #FFFFFF; background: rgba(255,255,255,.06); }
 
 /* Accroche */
-.hero-pill { color: var(--acid); background: transparent; border: 1px solid rgba(200,255,61,.35); }
-.hero-dot { background: var(--acid); box-shadow: none; }
+.hero-pill { color: #E9DDFF; background: var(--accent-subtle); border: 1px solid var(--accent-border); }
+.hero-dot { background: var(--acid); box-shadow: 0 0 10px rgba(200,255,61,.6); }
 
 /* Tuiles de marque, catégories, liens */
 .brand-tile { box-shadow: 0 10px 30px rgba(0,0,0,.45); }
 .category-card { background: var(--ink) !important; border-color: var(--ink-border) !important; }
-.category-card:hover { border-color: var(--acid) !important; box-shadow: none; background: var(--ink) !important; }
+.category-card:hover { border-color: var(--accent) !important; box-shadow: 0 16px 40px -16px rgba(139,0,255,.6); background: var(--ink) !important; }
 .seo-link { color: var(--mauve); }
+
+/* Page « les créateurs » : chaque créateur sur un ticket (deux encoches découpées + pointillés), grande photo cerclée de violet */
+.cc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding-bottom: 96px; }
+.cc-card { display: block; transition: transform .18s ease, filter .18s ease; }
+.cc-card:hover { transform: translateY(-4px) rotate(-1deg); filter: drop-shadow(0 18px 30px rgba(139,0,255,.45)); }
+.cc-ticket { --pad: 26px; --av: 96px; --fs: 18px; --gap: 14px;
+  --ny: calc(var(--pad) + var(--av) + 16px + 2.3 * var(--fs) + var(--gap) + 1px);
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: var(--pad) 20px 16px; background: var(--ink); border-radius: 20px; box-shadow: 0 0 0 1px var(--ink-border) inset;
+  -webkit-mask: radial-gradient(circle at 0 var(--ny), transparent 11px, #000 11.5px) left / 51% 100% no-repeat,
+                radial-gradient(circle at 100% var(--ny), transparent 11px, #000 11.5px) right / 51% 100% no-repeat;
+          mask: radial-gradient(circle at 0 var(--ny), transparent 11px, #000 11.5px) left / 51% 100% no-repeat,
+                radial-gradient(circle at 100% var(--ny), transparent 11px, #000 11.5px) right / 51% 100% no-repeat;
+  transition: box-shadow .18s ease; }
+.cc-card:hover .cc-ticket { box-shadow: 0 0 0 1.5px var(--accent) inset; }
+.cc-avatar-wrap { position: relative; width: var(--av); height: var(--av); margin-bottom: 16px; }
+.cc-avatar { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; padding: 3px;
+  background: linear-gradient(135deg, #A93BFF, #8B00FF 50%, #5A00B5); }
+.cc-card:hover .cc-avatar { background: linear-gradient(135deg, #CC77FF, #A93BFF 50%, #8B00FF); }
+.cc-avatar img, .cc-avatar span { width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  object-fit: cover; background: var(--night); border: 3px solid var(--ink); }
+.cc-avatar span { font-family: var(--font-syne); font-weight: 800; font-size: 34px; color: var(--mauve); }
+.cc-name { font-family: var(--font-syne); font-weight: 800; font-size: var(--fs); letter-spacing: -0.02em; line-height: 1.15;
+  height: 2.3em; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.cc-perf { align-self: stretch; margin: var(--gap) 6px 12px; border-top: 2px dashed var(--ink-border); }
+.cc-foot { align-self: stretch; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cc-count { font-family: var(--font-mono), monospace; font-size: 12px; letter-spacing: .06em; color: var(--text-2); text-transform: uppercase; white-space: nowrap; }
+.cc-count b { display: inline-block; background: var(--accent); color: #FFFFFF; padding: 1px 6px; border-radius: 4px; transform: rotate(-3deg); margin-right: 4px; font-weight: 800; }
+.cc-platforms { display: inline-flex; gap: 8px; }
+.cc-pf { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono), monospace; font-size: 11px; color: var(--text-2); }
+.cc-pf::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--mauve); }
+.cc-pf-youtube::before { background: #FF3B3B; }
+.cc-pf-twitch::before { background: #9147FF; }
+@media (max-width: 640px) {
+  .cc-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .cc-ticket { --pad: 20px; --av: 76px; --fs: 15px; --gap: 10px; padding-left: 12px; padding-right: 12px; }
+  .cc-foot { flex-direction: column; gap: 6px; }
+}

@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/links'
 import OfferCard from '@/components/OfferCard'
 import Navbar from '@/components/Navbar'
+import { SaisonChapeau } from '@/components/Saison'
 import { getPopularThreshold, isPopularOffer } from '@/lib/popularUtils'
 import { parClassement } from '@/lib/classement'
 import { aujourdhui, dateLongue, gainCourt, listeCourte, listeFr, moisAnnee, pluriel } from '@/lib/seo'
@@ -155,6 +156,7 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
         <div className="container">
           <div style={{ paddingTop: 32, marginBottom: 48 }}>
             <div style={{ position: 'relative', width: 72, marginBottom: 20 }}>
+            <SaisonChapeau size={50} />
             <div style={{
               width: 72, height: 72, borderRadius: '50%',
               overflow: 'hidden',

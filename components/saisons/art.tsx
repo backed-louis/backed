@@ -198,13 +198,13 @@ export function Ribbon({ size = 40, style, className, color = '#FF5FA2' }: P & {
   )
 }
 
-export function PriceTag({ size = 54, label = '-%', style, className }: P & { label?: string }) {
+export function PriceTag({ size = 54, label = '-%', color = '#F4F2EE', ink = '#07080F', style, className }: P & { label?: string; color?: string; ink?: string }) {
   return (
     <svg width={size} height={size * 1.5} viewBox="0 0 40 60" style={style} className={className} aria-hidden>
       <line x1="20" y1="0" x2="20" y2="16" stroke="rgba(244,242,238,.5)" strokeWidth="1" />
-      <path d="M8 22l12-8 12 8v32a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3z" fill="#F4F2EE" />
+      <path d="M8 22l12-8 12 8v32a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3z" fill={color} />
       <circle cx="20" cy="21" r="2.2" fill="#07080F" />
-      <text x="20" y="44" textAnchor="middle" fontFamily="var(--font-syne), sans-serif" fontWeight="800" fontSize="12" fill="#07080F">{label}</text>
+      <text x="20" y="44" textAnchor="middle" fontFamily="var(--font-syne), sans-serif" fontWeight="800" fontSize="12" fill={ink}>{label}</text>
     </svg>
   )
 }
