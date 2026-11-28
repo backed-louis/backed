@@ -43,6 +43,7 @@ export default function Footer() {
     Explorer: [
       { label: 'Toutes les offres', href: '/explorer' },
       { label: 'Créateurs', href: '/createurs' },
+      { label: 'Marques', href: '/marques' },
       { label: 'Catégories', href: '/categories' },
       { label: 'Black Friday', href: '/black-friday' },
       { label: 'Je suis créateur', href: '/rejoindre' },

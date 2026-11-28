@@ -2,8 +2,7 @@ import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/links'
 import { getAllCreators, getAllOffers } from '@/lib/airtable'
 import Navbar from '@/components/Navbar'
-import Link from 'next/link'
-import { SaisonChapeau } from '@/components/Saison'
+import { BarreLettres, SectionLettre, Ticket, parLettre } from '@/components/AZ'
 
 export const metadata: Metadata = {
   title: "Les créateurs YouTube et leurs codes promo | Backed",
@@ -27,12 +26,13 @@ export default async function CreateursPage() {
     }
   })
   const creatorsWithOffers = creators.filter(c => offerCounts[c.name] > 0)
+  const groupes = parLettre(creatorsWithOffers)
   return (
     <>
       <Navbar />
       <main style={{ paddingTop: 96, minHeight: '100vh' }}>
         <div className="container">
-          <div style={{ paddingTop: 32, marginBottom: 56 }}>
+          <div style={{ paddingTop: 32, marginBottom: 32 }}>
             <div className="section-label">Communauté</div>
             <h1 style={{
               fontFamily: 'var(--font-syne)',
@@ -42,39 +42,32 @@ export default async function CreateursPage() {
               les <span className="hl">créateurs</span>
             </h1>
             <p style={{ color: 'var(--text-2)', fontSize: 16 }}>
-              {creatorsWithOffers.length} créateurs actifs, leurs codes vérifiés et à jour
+              {creatorsWithOffers.length} créateurs actifs, de A à Z, leurs codes vérifiés et à jour
             </p>
           </div>
-          <div className="cc-grid">
-            {creatorsWithOffers.map(creator => {
-              const count = offerCounts[creator.name] || 0
-              return (
-                <Link key={creator.id} href={`/createur/${creator.slug}`} className="cc-card">
-                  <div className="cc-ticket">
-                  <div className="cc-avatar-wrap">
-                    <SaisonChapeau size={52} />
-                    <div className="cc-avatar">
-                      {creator.avatar ? (
-                        <img src={creator.avatar} alt={creator.name} loading="lazy" />
-                      ) : (
-                        <span>{creator.name.charAt(0).toUpperCase()}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="cc-name">{creator.name}</div>
-                  <div className="cc-perf" aria-hidden />
-                  <div className="cc-foot">
-                    <span className="cc-count"><b>{count}</b> code{count !== 1 ? 's' : ''}</span>
-                    <span className="cc-platforms">
-                      {creator.platforms.map(p => (
-                        <span key={p} className={`cc-pf cc-pf-${p.toLowerCase()}`}>{p.toLowerCase()}</span>
-                      ))}
-                    </span>
-                  </div>
-                  </div>
-                </Link>
-              )
-            })}
+          <BarreLettres presentes={groupes.map(([l]) => l)} />
+          <div style={{ paddingBottom: 96 }}>
+            {groupes.map(([lettre, liste]) => (
+              <SectionLettre key={lettre} lettre={lettre} n={liste.length}>
+                {liste.map(creator => (
+                  <Ticket
+                    key={creator.id}
+                    href={`/createur/${creator.slug}`}
+                    nom={creator.name}
+                    image={creator.avatar}
+                    chapeau
+                    count={offerCounts[creator.name] || 0}
+                    droite={
+                      <span className="cc-platforms">
+                        {creator.platforms.map(p => (
+                          <span key={p} className={`cc-pf cc-pf-${p.toLowerCase()}`}>{p.toLowerCase()}</span>
+                        ))}
+                      </span>
+                    }
+                  />
+                ))}
+              </SectionLettre>
+            ))}
           </div>
         </div>
       </main>
