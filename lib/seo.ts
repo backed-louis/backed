@@ -67,6 +67,22 @@ export function gainCourt(benefit: string, max = 28): string {
   return t
 }
 
+// L'avantage le plus parlant d'une liste d'offres, pour un titre : le plus gros pourcentage, sinon le plus
+// gros montant en euros, sinon le premier avantage chiffré (« 4 mois offerts »). Vide si rien n'est chiffré
+// (« Grosse réduction ») : le titre se rabat alors sur le nombre d'offres.
+export function meilleurGain(benefits: string[], max = 28): string {
+  const gains = benefits.map((b) => gainCourt(b, max)).filter((g) => g && g.length <= max)
+  const val = (g: string, unit: string) => {
+    const m = g.match(new RegExp(`(\\d+(?:[.,]\\d+)?) ?${unit}`))
+    return m ? parseFloat(m[1].replace(',', '.')) : 0
+  }
+  for (const unit of ['%', '€']) {
+    const best = [...gains].sort((a, b) => val(b, unit) - val(a, unit))[0]
+    if (best && val(best, unit) > 0) return best
+  }
+  return gains.find((g) => /\d/.test(g)) || ''
+}
+
 // Avantage concret et chiffré (même filtre que lib/airtable.ts) : sert à écarter les anciens
 // codes sans intérêt (« Offre spéciale », « Participation au jeu concours »).
 export const AVANTAGE = /\d+([.,]\d+)?\s?(%|€|euros?\b|mois\b|jours?\b|ans?\b|go\b)|offert|gratuit|essai/i
