@@ -8,35 +8,28 @@
 /*COMMUN_CSS*/
 /* accroche : en-tête, puis la carte premium (avantage + code à moitié masqué) */
 #head { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 24px; }
-#head .lab { font: 700 24px var(--mono); letter-spacing: .34em; color: var(--lilas); white-space: nowrap; }
+#head .lab { font: 800 24px var(--mono); letter-spacing: .34em; color: var(--lilas); white-space: nowrap; }
 #head .br { font-family: var(--syne); font-weight: 800; letter-spacing: -.01em; white-space: nowrap; margin-top: 4px; }
 #hstage { position: absolute; inset: 0; perspective: 1900px; }
 #hcard { position: absolute; left: 120px; width: 800px; border-radius: 48px; overflow: hidden;
-  background:
-    radial-gradient(ellipse 70% 80% at 92% 0%, rgba(178,102,255,.55), rgba(139,0,255,0) 60%),
-    radial-gradient(ellipse 60% 70% at 0% 100%, rgba(80,30,160,.5), rgba(80,30,160,0) 65%),
-    repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0 2px, rgba(255,255,255,0) 2px 9px),
-    linear-gradient(135deg, #1e1238 0%, #120d22 45%, #0b0b14 100%);
-  box-shadow: 0 0 0 1.5px rgba(200,160,255,.45) inset, 0 70px 130px rgba(0,0,0,.7), 0 0 160px rgba(139,0,255,.38); }
+  background: var(--violet-depth); isolation: isolate;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.28), 0 70px 130px rgba(0,0,0,.6), 0 40px 160px -30px rgba(139,0,255,.75); }
+#hcard .wm { z-index: -1; }
 #hshine { position: absolute; top: -60%; width: 220px; height: 220%; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.2), rgba(255,255,255,0)); transform: rotate(20deg); }
 #hhero { position: absolute; left: 54px; top: 50px; display: flex; align-items: flex-start; white-space: nowrap; }
 #hhero .n { font-family: var(--syne); font-weight: 800; letter-spacing: -.05em; line-height: .9; padding: 0 .02em .06em 0; }
 #hhero .u { font-family: var(--syne); font-weight: 800; line-height: 1; margin-left: .04em; }
 #hhero .txt { font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; line-height: 1.04; padding-bottom: .05em; }
-#hrest { position: absolute; left: 56px; width: 692px; font: 600 40px var(--inter); color: #d6d3e4; line-height: 1.25; }
+#hrest { position: absolute; left: 56px; width: 692px; font: 600 40px var(--inter); color: #f1e8ff; line-height: 1.25; }
 #hchip { position: absolute; right: 50px; bottom: 50px; padding: 14px 22px; border-radius: 16px; font: 700 32px var(--mono); letter-spacing: .1em; transform-origin: 100% 100%; min-width: 250px; text-align: center;
-  background: rgba(0,0,0,.38); border: 1.5px solid rgba(200,160,255,.5); color: var(--off); white-space: nowrap; }
-#hcode i, #hcode b { font-style: normal; font-weight: 700; color: var(--lilas); }
-#hchip .ok { position: absolute; inset: -1.5px; display: flex; align-items: center; justify-content: center; border-radius: 16px; opacity: 0;
-  background: #11331f; border: 1.5px solid rgba(76,217,100,.6); color: var(--green2); font: 700 32px var(--mono); letter-spacing: .04em; }
+  background: var(--acid); color: var(--night); font-weight: 800; white-space: nowrap; }
+#hcode i, #hcode b { font-style: normal; font-weight: 800; color: rgba(7,8,15,.42); }
+#hchip .ok { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 16px; opacity: 0;
+  background: var(--night); border: 2.5px solid var(--acid); color: var(--acid); font: 800 32px var(--mono); letter-spacing: .04em; }
 #hfloor { position: absolute; left: 170px; width: 700px; height: 120px; border-radius: 50%; background: radial-gradient(ellipse, rgba(139,0,255,.5), rgba(139,0,255,0) 70%); filter: blur(20px); }
 #ck { position: absolute; left: 140px; top: 470px; width: 760px; border-radius: 44px; transform-origin: 380px 220px; padding: 42px 46px 44px; display: none;
-  background:
-    radial-gradient(ellipse 70% 80% at 92% 0%, rgba(178,102,255,.4), rgba(139,0,255,0) 60%),
-    repeating-linear-gradient(115deg, rgba(255,255,255,.022) 0 2px, rgba(255,255,255,0) 2px 9px),
-    linear-gradient(135deg, #1b1233 0%, #110d20 45%, #0b0b14 100%);
-  box-shadow: 0 0 0 1.5px rgba(200,160,255,.4) inset, 0 60px 120px rgba(0,0,0,.65), 0 0 140px rgba(139,0,255,.28); }
-#ck .k { color: #c9b3ef; }
+  background: var(--ink);
+  box-shadow: 0 0 0 1.5px var(--ink-line) inset, 0 60px 120px rgba(0,0,0,.65), 0 30px 120px -30px rgba(139,0,255,.45); }
 #field { background: rgba(7,8,15,.75); }
 #ck .k { font: 700 22px var(--mono); letter-spacing: .26em; color: var(--grey); white-space: nowrap; overflow: hidden; }
 #ck .row { display: flex; align-items: center; justify-content: space-between; margin-top: 26px; }
@@ -44,8 +37,8 @@
 #field .ph { position: absolute; left: 26px; top: 25px; font: 500 27px var(--inter); color: #5c5f75; }
 #field .tx { position: absolute; left: 26px; top: 23px; font: 700 30px var(--mono); letter-spacing: .08em; color: var(--off); white-space: nowrap; }
 #apply { width: 196px; height: 86px; border-radius: 18px; background: var(--vio); display: flex; align-items: center; justify-content: center; font: 700 27px var(--inter); position: relative; overflow: hidden; }
-#apply .ok { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--green); font-size: 36px; opacity: 0; }
-#res { color: var(--green2); font: 700 30px var(--inter); overflow: hidden; }
+#apply .ok { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--acid); color: var(--night); font-size: 36px; font-weight: 800; opacity: 0; }
+#res { color: var(--acid); font: 700 30px var(--inter); overflow: hidden; }
 #resv { font-family: var(--syne); font-weight: 800; font-size: 46px; }
 .msg { position: absolute; left: 0; width: 1040px; text-align: center; font-family: var(--syne); font-weight: 800; letter-spacing: -.02em; white-space: nowrap; opacity: 0; }
 </style>
@@ -54,7 +47,7 @@
   <div id="hook">
     <div id="head"></div>
     <div id="hfloor"></div>
-    <div id="hstage"><div id="hcard"><div id="hshine"></div><div id="hhero"></div><div id="hrest"></div><div id="hchip"></div></div></div>
+    <div id="hstage"><div id="hcard"><div class="wm" id="hwm"></div><div id="hshine"></div><div id="hhero"></div><div id="hrest"></div><div id="hchip"></div></div></div>
   </div>
   <div class="st" id="st2"><div class="n" id="st2n"></div><div class="t">Le code à copier</div></div>
   <div class="st" id="st3"><div class="n">AU PAIEMENT</div><div class="t">Colle-le, c'est appliqué</div></div>
@@ -132,6 +125,7 @@ function setup() {
   if (D.gros && D.createur) setCover("LE CODE DE", D.createur, gain ? `${D.marque} ${gain}` : [D.marque, D.gainText].filter(Boolean).join(" · "));
   else setCover("CODE PROMO", gain ? `${D.marque} ${gain}` : D.marque, sub.charAt(0).toUpperCase() + sub.slice(1));
   // en-tête : logo, « CODE DU JOUR », marque
+  $("hwm").innerHTML = ticketSVG("#4e00a0", "#7a10f0");
   $("head").innerHTML = `${tileHTML(D.logo, D.marque, 112, D.logoStyle)}<div><div class="lab">CODE DU JOUR</div><div class="br" id="hbr">${esc(D.marque)}</div></div>`;
   $("hbr").style.fontSize = Math.min(58, fitSize($("hbr"), 620, 58)) + "px";
   $("head").style.left = (CX - $("head").offsetWidth / 2) + "px";
@@ -227,9 +221,8 @@ function render(t) {
     // le code se dévoile, s'illumine, puis « ✓ Copié ! »
     $("hcode").innerHTML = codeHTML(t);
     const done = T.reveal + L.hidden * .05 + .16, gl = Math.sin(Math.PI * prog(t, done - .05, .5));
-    $("hchip").style.transform = `scale(${lerp(1, CHIP2, p) * (1 + .07 * gl)})`;
-    $("hchip").style.borderColor = t > T.reveal ? "rgba(214,180,255,.95)" : "";
-    $("hchip").style.boxShadow = t > T.reveal ? `0 0 ${30 + 40 * gl}px rgba(139,0,255,${.45 + .35 * gl}), 0 0 0 ${6 * gl}px rgba(178,102,255,.25)` : "";
+    $("hchip").style.transform = `rotate(-1.5deg) scale(${lerp(1, CHIP2, p) * (1 + .07 * gl)})`;
+    $("hchip").style.boxShadow = t > T.reveal ? `0 0 ${30 + 40 * gl}px rgba(200,255,61,${.3 + .3 * gl}), 0 0 0 ${6 * gl}px rgba(200,255,61,.25)` : "0 14px 30px rgba(0,0,0,.35)";
     const ok = $("hchip").querySelector(".ok"), cp = eo(prog(t, T.tap, .25));
     ok.style.opacity = t >= T.tap ? cp : 0;
     ok.style.transform = `scale(${t >= T.tap ? .9 + .1 * back(cp) : 1})`;
@@ -271,8 +264,8 @@ function render(t) {
     const landed = t >= T.land;
     $("fph").style.display = landed || t > T.dive + .3 ? "none" : "";
     $("ftx").textContent = landed ? D.code : "";
-    $("field").style.borderColor = landed ? "var(--green)" : (t > T.dive ? "var(--vio)" : "var(--line)");
-    $("field").style.boxShadow = t > T.dive ? `0 0 0 5px ${landed ? "rgba(46,204,113,.18)" : "rgba(139,0,255,.22)"}` : "none";
+    $("field").style.borderColor = landed ? "var(--acid)" : (t > T.dive ? "var(--vio)" : "var(--ink-line)");
+    $("field").style.boxShadow = t > T.dive ? `0 0 0 5px ${landed ? "rgba(200,255,61,.2)" : "rgba(139,0,255,.22)"}` : "none";
     $("field").style.transform = landed ? `scale(${1 + .04 * Math.sin(prog(t, T.land, .3) * Math.PI)})` : "none";
     const ok = eo(prog(t, T.apply, .25));
     $("applyok").style.opacity = ok; $("applyok").style.transform = `scale(${.6 + .4 * back(ok)})`;
