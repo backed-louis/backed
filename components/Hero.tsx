@@ -1,7 +1,5 @@
 'use client'
 import Link from 'next/link'
-import { YOUTUBE_URL } from '@/lib/links'
-import { YouTubeIcon } from '@/components/Footer'
 import { SaisonNote } from '@/components/Saison'
 import { SaisonHero } from '@/components/SaisonDecor'
 import PremiumCard from '@/components/PremiumCard'
@@ -33,13 +31,6 @@ export default function Hero({ offerCount, creatorCount, top }: HeroProps) {
           <div className="hero-ctas">
             <Link href="/explorer" className="btn-primary">Trouver un code</Link>
             <Link href="/createurs" className="btn-ghost">Voir les créateurs</Link>
-          </div>
-          <div className="hero-links">
-            <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer">
-              <span style={{ color: '#FF0033', display: 'inline-flex' }}><YouTubeIcon size={16} /></span>
-              Le code du jour en vidéo sur YouTube
-              <span className="hero-link-cta">S&apos;abonner →</span>
-            </a>
           </div>
         </div>
         {top && (
