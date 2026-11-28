@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { SaisonNote } from '@/components/Saison'
+import { SaisonHero } from '@/components/SaisonDecor'
 import PremiumCard from '@/components/PremiumCard'
 import { type Offer } from '@/lib/airtable'
 
@@ -13,6 +14,7 @@ interface HeroProps {
 export default function Hero({ offerCount, creatorCount, top }: HeroProps) {
   return (
     <section className="hero">
+      <SaisonHero />
       <div className={`hero-grid${top ? '' : ' hero-solo'}`}>
         <div className="hero-copy">
           <span className="hero-pill">

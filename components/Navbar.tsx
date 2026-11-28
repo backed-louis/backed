@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import Logo from '@/components/Logo'
+import { SaisonMark } from '@/components/Saison'
 import { datesBlackFriday } from '@/lib/blackfriday'
 
 export default function Navbar() {
@@ -49,9 +50,10 @@ export default function Navbar() {
         }}>
           <Link href="/" aria-label="Backed, accueil" style={{
             marginRight: 'auto',
-            display: 'inline-flex', alignItems: 'center',
+            display: 'inline-flex', alignItems: 'center', position: 'relative',
           }}>
             <Logo height={26} />
+            <SaisonMark />
           </Link>
 
           {bf && (
@@ -84,8 +86,8 @@ export default function Navbar() {
             href="/explorer"
             className="nav-cta"
             style={{
-              background: 'var(--acid)',
-              color: 'var(--night)',
+              background: 'var(--accent)',
+              color: '#FFFFFF',
               fontSize: 14, fontWeight: 700,
               padding: '9px 20px',
               borderRadius: 'var(--r-md)',
@@ -93,8 +95,8 @@ export default function Navbar() {
               transition: 'background 0.15s',
               whiteSpace: 'nowrap',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--acid-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'var(--acid)')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--accent)')}
           >
             Trouver un code
           </Link>
