@@ -68,7 +68,7 @@ export default async function CategoriesPage() {
             </p>
           </div>
 
-          <div style={{
+          <div className="cat-grid" style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
             gap: 12,
@@ -78,8 +78,8 @@ export default async function CategoriesPage() {
               const count = offerCounts[cat.name] || 0
               return (
                 <Link key={cat.id} href={`/categorie/${cat.slug}`} className="category-card">
-                  <span style={{ fontSize: 32, lineHeight: 1 }}>{ICONS[cat.slug] || '📦'}</span>
-                  <span style={{
+                  <span className="cat-icon" style={{ fontSize: 32, lineHeight: 1 }}>{ICONS[cat.slug] || '📦'}</span>
+                  <span className="cat-name" style={{
                     fontFamily: 'var(--font-syne)',
                     fontSize: 16, fontWeight: 700,
                     letterSpacing: '-0.01em',
@@ -87,7 +87,7 @@ export default async function CategoriesPage() {
                   }}>
                     {cat.name}
                   </span>
-                  <span style={{ fontSize: 13, color: count > 0 ? 'var(--text-3)' : 'var(--text-4)' }}>
+                  <span className="cat-count" style={{ fontSize: 13, color: count > 0 ? 'var(--text-3)' : 'var(--text-4)' }}>
                     {count} offre{count !== 1 ? 's' : ''}
                   </span>
                 </Link>
