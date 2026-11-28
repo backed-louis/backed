@@ -224,6 +224,7 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, tr
             mine = [o for o in offers if o["brand"].lower() == brand and (not code or o["code"].lower() == code)]
             if mine:
                 daily.append(best(mine))
+        pick_offers.plus_copie = None
         return daily, [], len(data["offers"]), len(creators), since, []
     # Codes du jour et top 3 : l'offre doit tenir jusqu'à la fin de la semaine (la vidéo reste en ligne après sa
     # publication).
@@ -278,6 +279,9 @@ def pick_offers(data, today, n_daily=6, n_top=3, valid_until=None, only=None, tr
         if len(daily) == n_daily:
             break
     pick_offers.no_logo = list(dict.fromkeys(no_logo))   # marques écartées faute de logo net (à signaler)
+    # Le code le plus copié des 7 derniers jours (puis au total) : le tampon « le plus copié » du mercredi.
+    copiables = [o for o in valid if o["creator"] and o["creator"].lower() not in HORS_FRANCE and (o["week"] or o["clicks"])]
+    pick_offers.plus_copie = max(copiables, key=lambda o: (o["week"], o["clicks"])) if copiables else None
     return daily, top, len(data["offers"]), len(creators), since, missing
 
 
@@ -331,6 +335,34 @@ def texts_top(items):
     insta = (f"{head_ig}\n\n{rich_insta}\n\n"
              f"Enregistre ce post. {SIGN_LINK} → lien en bio\n\n#codepromo #bonplan #youtube")
     return tiktok, insta
+
+
+def post_item(o):
+    """Une offre pour les posts image (ticket, tampon) : créateur, marque, gain court, code."""
+    return {"creator": o["creator"], "brand": o["brand"], "gain": couverture.gain_court(o), "code": o["code"]}
+
+
+def texts_ticket(items, numero):
+    lines = "\n".join(f"• {o['creator']} × {o['brand']} : {o['gain']} avec {o['code']}" for o in items)
+    insta = (f"Ticket N°{numero} 🧾 Les {len(items)} codes de la semaine, vérifiés :\n\n{lines}\n\n"
+             f"Enregistre ce ticket pour ton prochain achat. {SIGN_LINK} → lien en bio\n\n"
+             "#codepromo #bonplan #reduction #youtube #backed")
+    tiktok = (f"Ticket N°{numero} 🧾 les {len(items)} codes de la semaine, vérifiés. Enregistre-le pour ton prochain achat.\n"
+              f"{SIGN_LINK} → backed.fr\n\n#codepromo #bonplan #reduction #youtube #backed")
+    return tiktok, insta
+
+
+def texts_tampon(o):
+    insta = (f"Le code le plus copié de la semaine sur Backed ✓\n\n{o['creator']} × {o['brand']} : {o['gain']} avec le code "
+             f"{o['code']}.\n\n{SIGN_LINK} → lien en bio\n\n#codepromo {tag(o['brand'])} {tag(o['creator'])} #bonplan #backed")
+    tiktok = (f"Le code le plus copié de la semaine ✓ {o['creator']} × {o['brand']} : {o['gain']}, code {o['code']}.\n"
+              f"{SIGN_LINK} → backed.fr\n\n#codepromo {tag(o['brand'])} {tag(o['creator'])} #bonplan #backed")
+    return tiktok, insta
+
+
+def block_post(title, stem, tiktok, insta):
+    files = (f"Images : `{stem}-instagram.png` (post Instagram 4:5) · `{stem}-tiktok.png` (TikTok, mode photo)\n")
+    return f"## {title}\n\n{files}\n**TikTok**\n```\n{tiktok}\n```\n\n**Instagram**\n```\n{insta}\n```\n\n"
 
 
 def texts_youtube(o):
@@ -527,6 +559,30 @@ def main():
         day = start + dt.timedelta(days=first + i)
         md.append(f"## {date_fr(day)} — pas de nouvelle vidéo\n\nPas assez d'offres valables toute la semaine : "
                   "republie la vidéo qui a le mieux marché, ou saute ce jour.\n")
+    # Posts image (Instagram + TikTok mode photo), dans la grille de novembre 2026 : le tampon « le plus copié » du
+    # mercredi et le ticket de caisse du dimanche suivant (les codes déjà sortis dans la semaine, rien d'avance).
+    post_files = []
+    if mot and daily and not only:
+        import posts
+        rendu = posts.Posts(browser=mot._browser)
+        md.append("# Posts image\n\nPublier en post Instagram (pas en Reel) et en post photo TikTok.\n")
+        plus = getattr(pick_offers, "plus_copie", None)
+        if plus:
+            day = start + dt.timedelta(days=first + 2)
+            stem = f"03b-{day.isoformat()}-tampon-{plus['slug']}"
+            item = post_item(plus)
+            post_files += rendu.rendre(posts.tampon(item, sous=day.strftime("%d.%m.%Y")), os.path.join(a.out, stem))
+            clics = f", {plus['week']} clics en 7 jours" if plus["week"] else ""
+            md.append(block_post(f"{date_fr(day)} — Tampon : le code le plus copié ({plus['brand']}{clics})", stem,
+                                 *texts_tampon(item)))
+        lundi, samedi = start + dt.timedelta(days=first), start + dt.timedelta(days=first + len(daily) - 1)
+        day = start + dt.timedelta(days=first + 6)   # le dimanche qui suit le samedi
+        numero = lundi.isocalendar()[1]
+        items = [post_item(o) for o in daily]
+        stem = f"07-{day.isoformat()}-ticket-n{numero}"
+        post_files += rendu.rendre(posts.ticket(items, numero, posts.periode_fr(lundi, samedi)), os.path.join(a.out, stem))
+        md.append(block_post(f"{date_fr(day)} — Ticket N°{numero} (les codes de la semaine)", stem, *texts_ticket(items, numero)))
+        print(f"🧾 posts image : {', '.join(os.path.basename(p) for p in post_files)}", flush=True)
     if not only:
         md.append(f"## {date_fr(start + dt.timedelta(days=7))} — Top 3\n\nIl sera généré le vendredi soir d'avant, avec "
                   "les chiffres de la semaine : c'est le premier fichier du lot suivant.\n")
@@ -541,6 +597,10 @@ def main():
         preview_sheet(vid_rows, os.path.join(a.preview, "videos.jpg"))
         with open(os.path.join(a.preview, "publications.md"), "w", encoding="utf-8") as f:
             f.write("\n".join(md))
+        for p in post_files:
+            if p.endswith("-instagram.png"):
+                from PIL import Image
+                Image.open(p).convert("RGB").resize((540, 675)).save(os.path.join(a.preview, os.path.basename(p)[:-4] + ".jpg"), quality=85)
         with open(os.path.join(a.preview, "logos.txt"), "w", encoding="utf-8") as f:
             f.write("\n".join(dict.fromkeys(logo_log)) + "\n")
         print(f"👀 aperçu dans {a.preview}")

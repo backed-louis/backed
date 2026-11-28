@@ -25,6 +25,29 @@ Chaque run prépare :
 Pas de carrousel de la semaine (arrêté en novembre 2026) : il donnait tous les codes d'avance, sans effet d'attente.
 Chaque code sort le jour même, une seule fois.
 
+## Posts image (Instagram + TikTok mode photo)
+
+Depuis fin novembre 2026, chaque lot prépare aussi deux posts image, dans la grille de la nouvelle identité (une paire de
+couleurs par post, grain papier, tampon, ticket de caisse, typo géante ; maquette dans la planche de branding, page
+« Instagram — grille test ») :
+
+- **mercredi** : le tampon « LE PLUS COPIÉ · CODE VÉRIFIÉ » sur le code le plus copié des 7 derniers jours
+  (`03b-…-tampon-<marque>`) ;
+- **dimanche suivant** : le ticket de caisse « TICKET N°<semaine> » avec les codes sortis du lundi au samedi
+  (`07-…-ticket-n<semaine>`) : rien n'est donné d'avance.
+
+Chaque post sort en deux formats : `-instagram.png` (4:5, 1080 × 1350, post Instagram, pas un Reel) et `-tiktok.png`
+(9:16, post photo TikTok). Le contenu tient dans la zone 3:4 que montrent les grilles des profils. Les textes sont dans
+`publications.md`, section « Posts image ». Rendus par `scripts/motion/posts.py` (Chromium, comme les vidéos premium).
+
+Pour les temps forts (Cyber Monday, Noël, soldes), un post typo géante à la demande :
+
+```
+python3 scripts/motion/posts.py typo --mots CYBER MON DAY. --fond violet --pied "les codes de tes créateurs" --out out/cyber
+```
+
+`--fond` : `violet`, `nuit` ou `acide` ; `--surligne-dernier` met le dernier mot sur une étiquette (ex. `PASSE PAR BACKED.`).
+
 Les vidéos et les visuels montrent le logo de la marque. Il est téléchargé pendant le run : icône haute
 définition du site (Google, 256 px, puis `apple-touch-icon`), sinon le logo d'Airtable. En dessous de 64 px,
 pas de logo (la vidéo garde le nom de la marque seul). La liste est dans `logos.txt` de l'aperçu.
