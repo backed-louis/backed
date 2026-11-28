@@ -18,6 +18,9 @@ Chaque run prépare :
   après, les marques en hausse qui n'ont pas de code valable (un code à ajouter ?) ;
 - du lundi au samedi suivants : 1 vidéo « Code du jour » par jour ;
 - chaque vidéo se publie sur TikTok, en Reel et en story Instagram (la même vidéo), et en YouTube Shorts.
+- la story Instagram porte un sticker lien suivi vers la page de la marque : `https://www.backed.fr/l/story/marque/<slug>`
+  (champ `metadata.instagram.link` du post Buffer ; `https://www.backed.fr/l/story` pour le top 3). Les clics sont
+  comptés dans la table Airtable « Liens suivis ». Liens des bios : `backed.fr/l/tiktok`, `/l/instagram`, `/l/youtube`.
 
 Pas de carrousel de la semaine (arrêté en novembre 2026) : il donnait tous les codes d'avance, sans effet d'attente.
 Chaque code sort le jour même, une seule fois.
