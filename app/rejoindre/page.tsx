@@ -47,7 +47,7 @@ export default function RejoindrePage() {
               fontSize: 14, color: 'var(--text-1)', lineHeight: 1.7,
             }}
           >
-            <strong>Pour l’instant, Backed ne référence que les créateurs YouTube.</strong> Les codes sont repérés dans les descriptions des vidéos. Tu publies surtout ailleurs ? Envoie ta demande quand même : elle est conservée et étudiée au cas par cas.
+            <strong>Backed référence les codes promo de tes créateurs.</strong> Quand ta communauté passe par Backed et utilise ton code, elle te soutient directement.
           </div>
 
           <FormulaireCreateur />
