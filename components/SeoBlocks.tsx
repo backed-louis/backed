@@ -50,7 +50,7 @@ export function CodesTable({
             <th>Code</th>
             <th>Avantage</th>
             <th>{col === 'creator' ? 'Créateur' : 'Marque'}</th>
-            <th>Repéré le</th>
+            <th>Vu le</th>
           </tr>
         </thead>
         <tbody>
@@ -86,7 +86,7 @@ export function PastCodesTable({
             <th>Ancien code</th>
             <th>Avantage</th>
             <th>{col === 'creator' ? 'Créateur' : 'Marque'}</th>
-            <th>Dernière mention</th>
+            <th>Vu le</th>
           </tr>
         </thead>
         <tbody>

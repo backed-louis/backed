@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import { SITE_URL } from '@/lib/links'
 import { parClassement } from '@/lib/classement'
-import { aujourdhui, dateLongue, gainCourt, listeFr, moisAnnee, pluriel } from '@/lib/seo'
+import { aujourdhui, dateLongue, gainCourt, listeCourte, listeFr, moisAnnee, pluriel } from '@/lib/seo'
 import {
   CodesTable, Faq, JsonLd, LinkChips, PastCodesTable, SeoTitle,
   breadcrumbSchema, faqSchema, type FaqItem,
@@ -68,7 +68,7 @@ export async function generateMetadata(
   const creators = Array.from(new Set(offers.map(o => o.creator).filter(Boolean)))
   const title = titreMarque(brand.name, best, count, mois)
   const avec = best.code ? ` ${gainCourt(best.benefit) || best.benefit} avec le code ${best.code}.` : ''
-  const description = `${count} ${pluriel(count, 'code promo', 'codes promo')} ${brand.name} en ${mois}, repérés dans les vidéos de ${listeFr(creators.slice(0, 3))}${creators.length > 3 ? ' et d\'autres créateurs' : ''}.${avec} Copie-le en un clic, sans compte.`
+  const description = `${count} ${pluriel(count, 'code promo', 'codes promo')} ${brand.name} en ${mois}, repérés dans les vidéos de ${listeCourte(creators, 3, () => "d'autres créateurs")}.${avec} Copie-le en un clic, sans compte.`
 
   return {
     title,
@@ -114,7 +114,7 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
   const meilleur = best.code
     ? `En ${mois}, le meilleur code ${brand.name} sur Backed est ${best.code} : ${best.benefit}. Il est partagé par ${best.creator}.`
     : `En ${mois}, la meilleure offre ${brand.name} sur Backed passe par le lien de ${best.creator} : ${best.benefit}.`
-  const actifs = `Oui : les ${count > 1 ? `${count} offres affichées sont actives` : 'offre affichée est active'}. Chaque code a été repéré dans une vidéo récente du créateur${lastSeen ? ` (dernière mention le ${dateLongue(lastSeen)})` : ''}. Backed retire un code à sa date de fin, ou 3 mois après sa dernière mention.`
+  const actifs = `Oui : les ${count > 1 ? `${count} offres affichées sont actives` : 'offre affichée est active'}. Chaque code a été repéré dans une vidéo du créateur${lastSeen ? ` (dernière mention le ${dateLongue(lastSeen)})` : ''}. Un code est retiré à sa date de fin, ou automatiquement quand le créateur ne le repartage plus depuis plusieurs mois.`
   const qui = creators.length > 1
     ? `${listeFr(creators)} ont chacun leur code ${brand.name}. En utilisant le code d'un créateur, tu soutiens directement son travail.`
     : `${creators[0]} partage le code ${brand.name} référencé sur Backed. En l'utilisant, tu soutiens directement son travail.`
@@ -176,7 +176,7 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
                 Code promo <span className="grad">{brand.name}</span>
               </h1>
               <p className="brand-hero-maj">
-                Mis à jour le {aujourdhui()} · {pluriel(creators.length, 'code partagé par', 'codes partagés par')} {listeFr(creators.slice(0, 3))}{creators.length > 3 ? ` et ${creators.length - 3} autre${creators.length - 3 > 1 ? 's' : ''}` : ''}
+                Mis à jour le {aujourdhui()} · {pluriel(count, 'code partagé par', 'codes partagés par')} {listeCourte(creators, 3, k => `${k} ${pluriel(k, 'autre', 'autres')}`)}
               </p>
               {brand.description && <p className="brand-hero-desc">{brand.description}</p>}
               {brand.website && (
@@ -217,9 +217,7 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
             <SeoTitle>Comment utiliser un code promo {brand.name} ?</SeoTitle>
             <p className="seo-p">{howTo}</p>
             <p className="seo-p">
-              Toutes les offres {brand.name} référencées sur Backed viennent de créateurs YouTube partenaires
-              de la marque, qui les partagent dans la description de leurs vidéos. En utilisant le code ou le
-              lien d&apos;un créateur, tu soutiens directement son travail.
+              {`Toutes les offres ${brand.name} référencées sur Backed viennent de créateurs YouTube partenaires de la marque, qui les partagent dans la description de leurs vidéos. En utilisant le code ou le lien d'un créateur, tu soutiens directement son travail.`}
             </p>
 
             {past.length > 0 && (

@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar'
 import { SaisonChapeau } from '@/components/Saison'
 import { getPopularThreshold, isPopularOffer } from '@/lib/popularUtils'
 import { parClassement } from '@/lib/classement'
-import { aujourdhui, dateLongue, gainCourt, listeFr, moisAnnee, pluriel } from '@/lib/seo'
+import { aujourdhui, dateLongue, gainCourt, listeCourte, listeFr, moisAnnee, pluriel } from '@/lib/seo'
 import {
   CodesTable, Faq, JsonLd, LinkChips, PastCodesTable, SeoTitle,
   breadcrumbSchema, faqSchema, type FaqItem,
@@ -55,7 +55,7 @@ export async function generateMetadata(
   const title = titreCreateur(creator.name, brands, mois)
   const best = offers[0]
   const description = count
-    ? `Les ${count > 1 ? `${count} codes promo` : 'codes promo'} de ${creator.name} en ${mois} : ${listeFr(brands.slice(0, 4))}${brands.length > 4 ? '…' : ''}.${best?.code ? ` ${gainCourt(best.benefit) || best.benefit} chez ${best.brand} avec le code ${best.code}.` : ''} Copie son code et soutiens ${creator.name}. Gratuit, sans compte.`
+    ? `Les ${count > 1 ? `${count} codes promo` : 'codes promo'} de ${creator.name} en ${mois} : ${listeCourte(brands, 4, () => "d'autres marques")}.${best?.code ? ` ${gainCourt(best.benefit) || best.benefit} chez ${best.brand} avec le code ${best.code}.` : ''} Copie son code et soutiens ${creator.name}. Gratuit, sans compte.`
     : `Les codes promo partagés par ${creator.name} sur YouTube, au même endroit sur Backed.`
   const url = `${SITE_URL}/createur/${creator.slug}`
 
@@ -95,7 +95,7 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
     : withCode.length === 1
       ? `En ${mois}, ${creator.name} partage le code ${withCode[0].code} chez ${withCode[0].brand} : ${withCode[0].benefit}.`
       : `En ${mois}, ${creator.name} partage ${withCode.length} codes promo : ${listeFr(liste)}${withCode.length > 6 ? ', et d\'autres plus haut sur la page' : ''}.`
-  const actifs = `Oui : ${count > 1 ? `les ${count} offres affichées sont actives` : "l'offre affichée est active"}. Chaque code a été repéré dans une vidéo récente de ${creator.name}${lastSeen ? ` (dernière mention le ${dateLongue(lastSeen)})` : ''}. Backed retire un code à sa date de fin, ou 3 mois après sa dernière mention.`
+  const actifs = `Oui : ${count > 1 ? `les ${count} offres affichées sont actives` : "l'offre affichée est active"}. Chaque code a été repéré dans une vidéo de ${creator.name}${lastSeen ? ` (dernière mention le ${dateLongue(lastSeen)})` : ''}. Un code est retiré à sa date de fin, ou automatiquement quand le créateur ne le repartage plus depuis plusieurs mois.`
   const soutenir = `Utilise son code ou son lien quand tu commandes chez ${brands.length > 1 ? 'une de ses marques partenaires' : brands[0] || 'sa marque partenaire'} : la marque sait que tu viens de la part de ${creator.name}, et c'est ce qui compte pour ses partenariats. Tu ne paies rien de plus, au contraire.`
 
   const faq: FaqItem[] = count ? [
@@ -192,7 +192,7 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
             </h1>
             {count > 0 && (
               <p className="brand-hero-maj" style={{ marginBottom: 16 }}>
-                Mis à jour le {aujourdhui()} · {count} {pluriel(count, 'offre', 'offres')} chez {listeFr(brands.slice(0, 4))}{brands.length > 4 ? ` et ${brands.length - 4} autre${brands.length - 4 > 1 ? 's' : ''} marque${brands.length - 4 > 1 ? 's' : ''}` : ''}
+                Mis à jour le {aujourdhui()} · {count} {pluriel(count, 'offre', 'offres')} chez {listeCourte(brands, 4, k => `${k} ${pluriel(k, 'autre marque', 'autres marques')}`)}
               </p>
             )}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -245,7 +245,7 @@ export default async function CreateurPage({ params }: { params: Promise<{ slug:
                 <>
                   <SeoTitle first={count === 0}>Anciens codes de {creator.name}</SeoTitle>
                   <p className="seo-p">
-                    Ces codes ne sont plus actifs : leur date de fin est passée, ou {creator.name} ne les partage plus.
+                    {`Ces codes ne sont plus actifs : leur date de fin est passée, ou ${creator.name} ne les partage plus.`}
                   </p>
                   <PastCodesTable past={past} col="brand" creatorSlugs={creatorSlugs} activeBrands={activeBrands} />
                 </>

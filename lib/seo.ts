@@ -77,6 +77,12 @@ export function listeFr(items: string[]): string {
   return `${items.slice(0, -1).join(', ')} et ${items[items.length - 1]}`
 }
 
+// « A, B, C et 2 autres » : les premiers éléments, puis le nombre restant.
+export function listeCourte(items: string[], n: number, autres: (k: number) => string): string {
+  if (items.length <= n) return listeFr(items)
+  return `${items.slice(0, n).join(', ')} et ${autres(items.length - n)}`
+}
+
 export function pluriel(n: number, un: string, plusieurs: string): string {
   return n > 1 ? plusieurs : un
 }
