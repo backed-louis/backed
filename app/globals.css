@@ -328,3 +328,42 @@ img { max-width: 100%; display: block; }
   .section-label { margin-bottom: 16px; }
   .section-sub { margin-bottom: 36px; }
 }
+
+/* ─── Pages marques et créateurs : contenu pour Google (tableaux, FAQ, liens) ─── */
+.brand-hero-maj { color: var(--text-2); font-size: 13px; line-height: 1.5; margin: -4px 0 14px; }
+.seo-section { max-width: 820px; padding-bottom: 96px; }
+.seo-h2 { font-family: var(--font-syne); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin: 40px 0 16px; }
+.seo-h2-first { margin-top: 24px; }
+.seo-p { color: var(--text-2); font-size: 15px; line-height: 1.7; margin-bottom: 16px; }
+.seo-link { color: var(--accent-text); font-weight: 600; }
+.seo-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: 8px; }
+.seo-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.seo-table th { text-align: left; font-family: var(--font-mono), monospace; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); padding: 12px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.seo-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text-2); line-height: 1.5; vertical-align: top; }
+.seo-table tr:last-child td { border-bottom: 0; }
+.seo-table td a { color: var(--text-1); font-weight: 600; }
+.seo-table td a:hover { color: var(--accent-text); }
+.seo-code { font-family: var(--font-mono), monospace; font-weight: 700; color: var(--text-1) !important; white-space: nowrap; }
+.seo-date { white-space: nowrap; }
+.seo-muted { color: var(--text-3); font-family: inherit; font-weight: 500; }
+.seo-table-past .seo-code s { color: var(--text-3); }
+.seo-badge { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); border: 1px solid var(--border-hover); border-radius: 100px; padding: 1px 7px; vertical-align: 1px; font-family: var(--font-mono), monospace; }
+.seo-faq h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.seo-faq p { color: var(--text-2); font-size: 15px; line-height: 1.7; margin-bottom: 20px; }
+.seo-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.seo-chip { display: inline-flex; align-items: baseline; gap: 8px; padding: 9px 14px; border: 1px solid var(--border-hover); border-radius: 100px; font-size: 14px; font-weight: 600; color: var(--text-1); background: var(--bg-surface); }
+.seo-chip:hover { border-color: var(--accent-border); color: var(--accent-text); }
+.seo-chip-sub { font-size: 12px; font-weight: 500; color: var(--text-2); }
+@media (max-width: 640px) {
+  .seo-h2 { font-size: 21px; margin-top: 36px; }
+  /* Sur téléphone, chaque ligne devient une petite fiche : code, avantage, puis créateur · date */
+  .seo-table thead { display: none; }
+  .seo-table, .seo-table tbody, .seo-table tr { display: block; width: 100%; }
+  .seo-table tr { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .seo-table tr:last-child { border-bottom: 0; }
+  .seo-table td { display: block; padding: 0; border: 0; font-size: 14px; }
+  .seo-table td.seo-code { font-size: 15px; margin-bottom: 3px; white-space: normal; }
+  .seo-table td:nth-child(3) { display: inline-block; margin-top: 6px; font-size: 13px; }
+  .seo-table td:nth-child(4) { display: inline; font-size: 13px; color: var(--text-3); }
+  .seo-table td:nth-child(4)::before { content: ' · '; }
+}

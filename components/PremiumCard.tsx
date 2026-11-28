@@ -25,7 +25,7 @@ export default function PremiumCard({
   offer, kicker, masked = false, float = true, header = true,
 }: { offer: Offer; kicker: string; masked?: boolean; float?: boolean; header?: boolean }) {
   const g = gainParts(offer.benefit)
-  const track = () => { fetch(`/api/track/${offer.id}`).catch(() => {}) }
+  const track = (a: 'copie' | 'ouvre' = 'ouvre') => { fetch(`/api/track/${offer.id}?a=${a}`, { keepalive: true }).catch(() => {}) }
   const open = () => { track(); if (offer.sourceUrl) window.open(offer.sourceUrl, '_blank') }
 
   return (
@@ -60,7 +60,7 @@ export default function PremiumCard({
               </span>
             ) : <span />}
             {offer.code
-              ? <CodeChip code={offer.code} masked={masked} size="lg" onCopy={track} />
+              ? <CodeChip code={offer.code} masked={masked} size="lg" onCopy={() => track('copie')} />
               : offer.sourceUrl && (
                 <button type="button" className="code-chip code-chip-lg is-revealed" onClick={open}>
                   <span className="code-chip-code">Profiter de l&apos;offre ↗</span>

@@ -18,7 +18,7 @@ function formatDate(iso: string) {
 // Carte d'une offre dans la DA des vidéos : matière violette, l'avantage en grand, le code qui se dévoile et se copie.
 export default function OfferCard({ offer, isPopular = false }: { offer: Offer; isPopular?: boolean }) {
   const g = gainParts(offer.benefit)
-  const track = () => { fetch(`/api/track/${offer.id}`).catch(() => {}) } // l'offre affichée, pas la première au même slug
+  const track = (a: 'copie' | 'ouvre' = 'ouvre') => { fetch(`/api/track/${offer.id}?a=${a}`, { keepalive: true }).catch(() => {}) } // l'offre affichée, pas la première au même slug
   const trackAndOpen = () => {
     track()
     if (offer.sourceUrl) window.open(offer.sourceUrl, '_blank')
@@ -54,7 +54,7 @@ export default function OfferCard({ offer, isPopular = false }: { offer: Offer; 
       {offer.brandDescription && <p className="oc-desc">{offer.brandDescription}</p>}
 
       <div className="oc-action">
-        {offer.code && <CodeChip code={offer.code} onCopy={track} />}
+        {offer.code && <CodeChip code={offer.code} onCopy={() => track('copie')} />}
         {!offer.code && offer.sourceUrl && (
           <button type="button" className="code-chip is-revealed" onClick={e => { e.stopPropagation(); trackAndOpen() }}>
             <span className="code-chip-code">Profiter de l&apos;offre ↗</span>

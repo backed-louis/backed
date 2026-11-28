@@ -39,21 +39,26 @@ export async function GET(
 
     const currentClicks = record.fields['Clicks'] || 0
     const sourceUrl = record.fields['Source URL'] || ''
+    // ?a=copie : le code a été copié ; ?a=ouvre : le visiteur part sur le site de la marque.
+    // Clicks compte les deux (classement « Les plus copiés ») ; Copies ne compte que les copies.
+    const action = request.nextUrl.searchParams.get('a')
+    const fields: Record<string, number> = { Clicks: currentClicks + 1 }
+    if (action === 'copie') fields.Copies = (record.fields['Copies'] || 0) + 1
 
-    // Incrémenter le compteur
     await fetch(`${API_URL}/Offers/${record.id}`, {
       method: 'PATCH',
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: { Clicks: currentClicks + 1 } }),
+      body: JSON.stringify({ fields }),
       cache: 'no-store',
     })
 
-    // Rediriger vers la source
-    if (sourceUrl) {
+    // Appel depuis une carte du site : simple réponse (la carte ouvre elle-même le lien).
+    // Sans paramètre (anciennes pages en cache, liens directs) : redirection vers la source.
+    if (sourceUrl && !action) {
       return NextResponse.redirect(sourceUrl)
     }
 
-    return NextResponse.json({ clicks: currentClicks + 1 })
+    return NextResponse.json({ clicks: fields.Clicks })
   } catch (err) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }

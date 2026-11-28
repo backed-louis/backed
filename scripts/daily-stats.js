@@ -5,7 +5,8 @@
  * Écrit (ou remplace) la ligne du jour, date de Paris :
  * - les compteurs du site, calculés avec les mêmes règles que lib/airtable.ts
  *   (offre Active et non expirée, marque avec slug, sans doublons) ;
- * - les clics cumulés de chaque offre, pour calculer les clics jour par jour.
+ * - les clics et les copies cumulés de chaque offre, pour les calculer jour par jour ;
+ * - les clics cumulés de chaque lien suivi (backed.fr/l/…).
  */
 
 const { isDisplayable } = require('./lib/offres')
@@ -67,8 +68,10 @@ async function main() {
       filterByFormula: ACTIVE_NOT_EXPIRED,
       'fields[]': ['Code', 'Brand', 'Creator', 'Source URL', 'Benefit'],
     }),
-    fetchAll('Offers', { filterByFormula: '{Clicks}>0', 'fields[]': ['Clicks'] }),
+    fetchAll('Offers', { filterByFormula: '{Clicks}>0', 'fields[]': ['Clicks', 'Copies'] }),
   ])
+  // Liens suivis (backed.fr/l/…) : table créée le 28/11/2026, absente des anciennes bases.
+  const links = await fetchAll('Liens suivis', { 'fields[]': ['Source', 'Clics'] }).catch(() => [])
 
   const brandOk = new Map(brands.map((b) => [b.id, Boolean(b.fields['Name'] && b.fields['slug'])]))
   const creatorName = new Map(creators.map((c) => [c.id, c.fields['Name'] || '']))
@@ -78,10 +81,17 @@ async function main() {
 
   const activeCreators = new Set(offers.map((r) => creatorName.get(r.fields['Creator']?.[0])).filter(Boolean))
   const clicks = {}
+  const copies = {}
   let totalClicks = 0
   for (const r of clicked) {
     clicks[r.id] = r.fields['Clicks']
     totalClicks += r.fields['Clicks']
+    if (r.fields['Copies']) copies[r.id] = r.fields['Copies']
+  }
+  const linkClicks = {}
+  for (const r of links) {
+    const s = r.fields['Source']
+    if (s) linkClicks[s] = (linkClicks[s] || 0) + (r.fields['Clics'] || 0) // deux lignes possibles si deux premiers clics simultanés
   }
 
   const fields = {
@@ -93,6 +103,8 @@ async function main() {
     'Créateurs soutenus': creators.length,
     'Clics cumulés': totalClicks,
     'Clics par offre': JSON.stringify(clicks),
+    'Copies par offre': JSON.stringify(copies),
+    'Liens suivis': JSON.stringify(linkClicks),
   }
 
   const res = await fetch(`https://api.airtable.com/v0/${BASE}/${encodeURIComponent(STATS_TABLE)}`, {
@@ -102,7 +114,7 @@ async function main() {
   })
   if (!res.ok) throw new Error(`Airtable [${STATS_TABLE}] ${res.status}: ${await res.text()}`)
 
-  const { ['Clics par offre']: _, ...summary } = fields
+  const { ['Clics par offre']: _, ['Copies par offre']: __, ...summary } = fields
   console.log('✅ Relevé écrit :', summary)
 }
 
